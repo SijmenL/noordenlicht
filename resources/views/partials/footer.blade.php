@@ -1,10 +1,11 @@
 @section('footer')
-    <div class="mt-3 bg-primary shadow-sm p-5 mb-0 text-white rounded-top-5">
+    <div class="bg-primary shadow-sm p-5 mb-0 text-white rounded-top-5" style="position: relative; z-index: 3; margin-top: -25px;">
         <div class="container d-flex flex-row-responsive gap-5 align-items-center">
 
             <div class="col-md-8">
                 <div class="d-flex flex-column gap-1" style="line-height: 10px">
-                    <p>&copy; Alle rechten voorbehouden</p>
+                    <p>&copy;NoordenLicht 2021 - {{ date("Y") }}</p>
+                    <p>Versie {{ env("VERSION", "1.0") }}</p>
                     <br>
                     <a class="text-white" href="https://maps.app.goo.gl/WFHn4RoEyxuUf1ndA" target="_blank">
                     <p>NoordenLicht</p>
@@ -24,11 +25,15 @@
             </div>
 
             <div class="col-md-4 text-center mb-3">
-                <a class="text-white" href="{{ route('') }}">
-                <img class=" img-fluid" style="max-width: 350px; width: 75%" alt="logo" src="{{ asset('img/logo/logo_white.png') }}">
+                <a class="text-white" href="/">
+                <img class=" img-fluid" style="max-width: 350px; width: 75%" alt="logo" src="{{ asset('img/logo/logo_white.webp') }}">
                 </a>
             </div>
 
+        </div>
+
+        <div class="text-center mt-5">
+            <p>Website met liefde gemaakt door <a class="text-white" href="https://www.sijmenlokers.nl/" target="_blank">Sijmen Lokers</a>.</p>
         </div>
     </div>
 @endsection

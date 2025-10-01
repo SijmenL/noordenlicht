@@ -1,0 +1,148 @@
+.text-editor {
+    background-color: #ffffff;
+    width: 90vmin;
+    padding: 50px 30px;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    left: 50%;
+    top: 50%;
+    border-radius: 10px;
+}
+
+.editor-parent {
+    background-color: #A98B2F;
+    padding: 15px;
+    border-radius: 15px;
+}
+
+.options {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 20px;
+    position: sticky;
+    top: 98px;
+    padding: 10px;
+    background-color: #A98B2F; /* Solid background color */
+    min-height: 50px;
+    -webkit-box-shadow: 0px 17px 19px -15px rgba(0, 0, 0, 0.20);
+    -moz-box-shadow: 0px 17px 19px -15px rgba(0, 0, 0, 0.20);
+    box-shadow: 0px 17px 19px -15px rgba(0, 0, 0, 0.20);
+    z-index: 2;
+}
+
+.options-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+#text-input {
+    transform: translateY(-5px);
+    padding: 20px;
+    max-width: calc(100%);
+    width: 100%;
+    background-color: rgb(255, 255, 255);
+    min-height: 130px;
+    border: none;
+}
+
+#text-input img {
+    width: 50%;
+}
+
+.option-button {
+    height: 28px;
+    width: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 3px;
+    border: none;
+    background-color: #ffffff;
+    outline: none;
+    color: #000000;
+    user-select: none;
+}
+
+select {
+    padding: 7px;
+    border: 1px solid #5a7123;
+    border-radius: 3px;
+    user-select: none;
+}
+
+.color-picker {
+    visibility :hidden;
+    width: 0;
+    padding: 0;
+    margin: 0 0 0 -48px;
+}
+
+.wysiwyg-button {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: start;
+}
+
+
+.options label,
+.options select {
+    font-family: "Poppins", sans-serif;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: transparent;
+    width: 40px;
+    height: 28px;
+    border: none;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border-radius: 15px;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 3px #5a7123;
+}
+
+input[type="color"]::-moz-color-swatch {
+    border-radius: 15px;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 3px #5a7123;
+}
+
+.active-button {
+    background-color: #5a7123;
+    color: white;
+}
+
+.invalid {
+    animation: 1 isInvalid 0.5s linear;
+}
+
+@keyframes isInvalid {
+    0% {
+        transform: translateX(-10px);
+        color: #ff7670;
+    }
+    25% {
+        transform: translateX(7px);
+    }
+    75% {
+        transform: translateX(-2px);
+    }
+    100% {
+        transform: translateX(0px);
+        color: black;
+    }
+}

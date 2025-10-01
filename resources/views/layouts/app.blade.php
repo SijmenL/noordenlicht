@@ -22,19 +22,20 @@
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"/>
     <!-- Scripts -->
-    @vite(['resources/sass/app.scss', 'resources/css/app.css', 'resources/js/app.js', 'resources/js/bootstrap.js'])
+
+    @vite(['resources/sass/app.scss', 'resources/css/app.css', 'resources/js/app.js', 'resources/js/bootstrap.js', 'resources/js/texteditor.js', 'resources/js/user-export.js', 'resources/css/texteditor.css'])
 </head>
 <body>
 <div id="app">
-    <div>
-        <nav class="navbar rounded-bottom-5 navbar-expand-md navbar-light bg-white sticky-top">
-            <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    <img class="logo" alt="logo" src="{{ asset('img/logo/logo.png') }}">
-                </a>
-                <div class="d-flex flex-row justify-content-center align-items-center">
+    <div class="d-flex flex-column justify-content-between min-vh-100">
+        @yield('above-nav')
+        <nav class="navbar navbar-expand-md navbar-light bg-white sticky-top rounded-bottom-5"
+             style="margin-bottom: -30px; z-index: 99998;">
+            <div class="container d-flex flex-column">
+                <!-- Hamburger Menu rechtsboven -->
+                <div class="d-flex justify-content-end w-100">
                     <a id="hamburger-menu" class="navbar-toggler" data-bs-toggle="collapse"
-                       data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                       data-bs-target="#navbarContent" aria-controls="navbarContent"
                        aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
                         <svg id="hamburger-icon" aria-hidden="true" role="presentation"
                              class="w-100 navbar-closed"
@@ -50,82 +51,69 @@
                         </svg>
                     </a>
                 </div>
-                <div class="collapse navbar-collapse navbar-info rounded-bottom-5" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav align-items-start justify-content-start justify-content-md-start"
-                        id="navbar">
-                        <li class="nav-item">
-                            <a class="nav-link d-flex flex-row gap-1 justify-content-center align-items-center white-text"
-                               href="">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex flex-row gap-1 justify-content-center align-items-center white-text"
-                               href="">Accommodaties</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex flex-row gap-1 justify-content-center align-items-center white-text"
-                               href="">Events</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex flex-row gap-1 justify-content-center align-items-center white-text"
-                               href="">BosVrienden</a>
-                        </li>
-                    </ul>
 
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ms-auto d-flex align-items-center">
-                        <!-- Authentication Links -->
-                        <ul class="navbar-nav align-items-start justify-content-start justify-content-md-start"
-                            id="navbar">
-                            <li class="nav-item">
-                                <a class="nav-link no-line d-flex flex-row gap-1 justify-content-center align-items-center white-text"
-                                   href=""><span class="material-symbols-rounded">shopping_cart</span></a>
-                            </li>
-                            @guest
-                                @if (Route::has('login'))
-                                    <li class="nav-item">
-                                        <a class="nav-link no-line d-flex flex-row gap-1 justify-content-center align-items-center white-text"
-                                           href=""><span class="material-symbols-rounded">login</span></a>
-                                    </li>
-                                @endif
-                            @else
-                                <li class="nav-item dropdown" id="menu-dropdown">
-                                    <a id="navbarDropdown" class="dropdown-toggle" href="#" role="button"
-                                       data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                        @if(Auth::user()->profile_picture)
-                                            <img alt="profielfoto" class="profle-picture"
-                                                 src="{{ asset('/profile_pictures/' . Auth::user()->profile_picture) }}">
-                                        @else
-                                            <img alt="profielfoto" class="profle-picture"
-                                                 src="{{ asset('img/no_profile_picture.webp') }}">
-                                        @endif
+                <!-- Navbar links gecentreerd -->
+                <div class="collapse navbar-collapse justify-content-center rounded-bottom-5 navbar-info" id="navbarContent">
+                    <ul class="navbar-nav text-center align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="{{ route('home') }}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="#">Accommodaties</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="#">Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="#">Info</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="{{ route('contact') }}">Contact</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="#"><span class="material-symbols-rounded">shopping_cart</span></a>
+                        </li>
+
+                        @guest
+                            @if (Route::has('login'))
+                                <li class="nav-item">
+                                    <a class="nav-link white-text" href="{{ route('login') }}">
+                                        <span class="material-symbols-rounded">login</span>
                                     </a>
-                                    <div id="dropdown-menu" class="dropdown-menu dropdown-menu-end"
-                                         aria-labelledby="navbarDropdown">
-                                        <a class="dropdown-item" href="{{ route('logout') }}"
-                                           onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                            {{ __('Log uit') }}
-                                        </a>
-
-                                        <form id="logout-form" action="{{ route('logout') }}" method="POST"
-                                              class="d-none">
-                                            @csrf
-                                        </form>
-                                    </div>
                                 </li>
-                            @endguest
-                        </ul>
+                            @endif
+                        @else
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    @if(Auth::user()->profile_picture)
+                                        <img alt="profielfoto" class="profle-picture"
+                                             src="{{ asset('/profile_pictures/' . Auth::user()->profile_picture) }}">
+                                    @else
+                                        <img alt="profielfoto" class="profle-picture"
+                                             src="{{ asset('img/no_profile_picture.webp') }}">
+                                    @endif
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <a class="dropdown-item" href="{{ route('logout') }}"
+                                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        {{ __('Log uit') }}
+                                    </a>
+                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                        @csrf
+                                    </form>
+                                </div>
+                            </li>
+                        @endguest
                     </ul>
                 </div>
             </div>
         </nav>
 
-        <main class="py-4">
+
+        <main class="py-4" style="max-width: 100vw; overflow: hidden">
             @yield('content')
         </main>
-    </div>
-    <div>
         <footer>
             @yield('footer')
         </footer>
