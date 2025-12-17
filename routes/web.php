@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\AccommodatieController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NonLoggedInController;
+use App\Http\Controllers\PriceController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,9 +42,26 @@ Route::post('/agenda/public/activiteit/{id}', [NonLoggedInController::class, 'ha
 
 Route::get('/agenda/feed/{token}.ics', [AgendaController::class, 'exportFeed'])->name('agenda.feed');
 
+Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact');
+
+Route::get('/accommodaties', [AccommodatieController::class, 'home'])->name('accommodaties');
+Route::get('/accommodaties/{id}', [AccommodatieController::class, 'details'])->name('accommodaties.details');
+
+Route::get('/winkel', [ProductController::class, 'shop'])->name('shop');
+Route::get('/winkel/product/{id}', [ProductController::class, 'details'])->name('shop.details');
+
+// Shopping Cart
+Route::get('/winkelmandje', [CartController::class, 'index'])->name('cart.index');
+Route::post('/winkelmandje/toevoegen/{id}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/winkelmandje/bewerken/{id}', [CartController::class, 'update'])->name('cart.update');
+Route::get('/winkelmandje/verwijderen/{id}', [CartController::class, 'remove'])->name('cart.remove');
+
 
 //Admin
 Route::middleware(['checkRole:Administratie'])->group(function () {
+    Route::post('/prices/link', [PriceController::class, 'linkPrice'])->name('admin.prices.link');
+    Route::delete('/prices/unlink/{priceLink}', [PriceController::class, 'unlinkPrice'])->name('admin.prices.unlink');
+
     Route::get('/dashboard', [AdminController::class, 'admin'])->name('admin');
 
 
@@ -55,6 +76,29 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
 
     Route::get('/dashboard/nieuws/nieuw-nieuwtje', [AdminController::class, 'newNews'])->name('admin.news.new');
     Route::post('/dashboard/nieuws/nieuw-nieuwtje', [AdminController::class, 'newsCreate'])->name('admin.news.new.create');
+
+
+    // List
+    Route::get('/dashboard/products', [ProductController::class, 'index'])->name('admin.products');
+
+    // Create
+    Route::get('/dashboard/products/new', [ProductController::class, 'create'])->name('admin.products.new');
+    Route::post('/dashboard/products/new', [ProductController::class, 'store'])->name('admin.products.new.save');
+
+    Route::get('/dashboard/products/{id}', [ProductController::class, 'productDetails'])->name('admin.products.details');
+    // Edit
+    Route::get('/dashboard/products/{id}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
+    Route::post('/dashboard/products/{id}/edit', [ProductController::class, 'update'])->name('admin.products.edit.save');
+
+    // Delete
+    Route::get('/dashboard/products/delete/{id}', [ProductController::class, 'destroy'])->name('admin.products.delete'); // Using GET as per your existing pattern, though DELETE method is safer standard
+
+    // AJAX: Temporary Uploads (Images & Icons)
+    Route::post('/dashboard/products/temp/image', [ProductController::class, 'uploadTempImage']);
+    // Note: You might need to add a specific route for deleting temp images if the logic differs from accommodations,
+    // or reuse a generic controller. For now, assuming ProductController handles its own temp logic:
+    Route::delete('/dashboard/products/temp/image/{id}', [ProductController::class, 'deleteTempImage']);
+
 
     // Account management
     Route::get('/dashboard/account-beheer', [AdminController::class, 'accountManagement'])->name('admin.account-management');
@@ -96,6 +140,7 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::get('/dashboard/contact/verwijder/{id}', [AdminController::class, 'contactDelete'])->name('admin.contact.delete');
     Route::get('/dashboard/contact/afgehandeld/{id}', [AdminController::class, 'contactSeen'])->name('admin.contact.seen');
 
+
 });
 
 
@@ -131,6 +176,25 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
 
     Route::get('/dashboard/agenda/inschrijvingen/{id}', [AgendaController::class, 'agendaSubmissionsActivity'])->name('agenda.submissions.activity');
 
+});
+
+Route::middleware(['checkRole:Administratie'])->group(function () {
+    Route::get('/dashboard/accommodaties', [AccommodatieController::class, 'accommodaties'])->name('admin.accommodaties');
+
+    Route::get('/dashboard/accommodaties/nieuw', [AccommodatieController::class, 'createAccommodatie'])->name('admin.accommodaties.new');
+    Route::post('/dashboard/accommodaties/nieuw', [AccommodatieController::class, 'createAccommodatieSave'])->name('admin.accommodaties.new.save');
+
+    Route::get('/dashboard/accommodaties/details/{id}', [AccommodatieController::class, 'accommodatieDetails'])->name('admin.accommodaties.details');
+    Route::get('/dashboard/accommodaties/bewerk/{id}', [AccommodatieController::class, 'editAccommodatie'])->name('admin.accommodaties.edit');
+    Route::post('/dashboard/accommodaties/bewerk/{id}', [AccommodatieController::class, 'editAccommodatieSave'])->name('admin.accommodaties.edit.save');
+
+    Route::get('/dashboard/accommodaties/delete/{id}', [AccommodatieController::class, 'deleteAccommodatie'])->name('admin.accommodaties.delete');
+
+
+    Route::post('/dashboard/accommodaties/temp/icon', [AccommodatieController::class, 'uploadTempIcon'])->name('admin.accommodaties.temp.icon');
+    Route::post('/dashboard/accommodaties/temp/image', [AccommodatieController::class, 'uploadTempImage'])->name('admin.accommodaties.temp.image');
+    Route::delete('/dashboard/accommodaties/temp/image/{image}', [AccommodatieController::class, 'deleteTempImage'])->name('admin.accommodaties.temp.image.delete');
+    Route::delete('/dashboard/accommodaties/temp/icon/{icon}', [AccommodatieController::class, 'deleteTempIcon'])->name('admin.accommodaties.temp.icon.delete');
 });
 
 Route::post('/upload-image', [ForumController::class, 'uploadImage'])->name('forum.image');

@@ -201,7 +201,7 @@
                                 'notificationsCount' => Contact::where('done', false)->count(),
                             ],
                             [
-                                'name' => 'Ruimtes',
+                                'name' => 'Accommodaties',
                                 'uri' => '',
                                 'fontSize' => '18px',
                                 'icon-name' => 'door_open',
@@ -214,7 +214,7 @@
                                     ],
                                     [
                                         'name' => 'Beheer',
-                                        'uri' => '',
+                                        'uri' => '/dashboard/accommodaties',
                                         'fontSize' => '14px',
                                     ],
                                 ],
@@ -227,7 +227,7 @@
                                 'sub-pages' => [
                                     [
                                         'name' => 'Producten',
-                                        'uri' => '',
+                                        'uri' => '/dashboard/products',
                                         'fontSize' => '14px',
                                     ],
                                     [
