@@ -16,54 +16,50 @@ trait AgendaPublicScheduleTrait
         $calculatedDate = $baseDate->copy()->addMonths($monthOffset);
 
 // Use a 3-month display period.
-        $rangeStart = $calculatedDate->copy()->startOfMonth()->startOfDay();
+        $rangeStart = $calculatedDate->copy()->startOfDay();
         $rangeEnd = $calculatedDate->copy()->addMonths(3)->endOfMonth()->endOfDay();
 
-        $query = Activity::where(function ($q) use ($rangeStart, $rangeEnd) {
-            $q->whereBetween('date_start', [$rangeStart, $rangeEnd])
-                ->orWhere(function ($q2) use ($rangeStart, $rangeEnd) {
-                    $q2->whereIn('recurrence_rule', ['daily', 'weekly', 'monthly'])
-                        ->where(function ($q3) use ($rangeStart) {
-                            $q3->whereNull('end_recurrence')
-                                ->orWhere('end_recurrence', '>=', $rangeStart);
-                        })
-                        ->where('date_start', '<=', $rangeEnd);
-                });
-        })
-            ->where('public', true)
-            ->orderBy('date_start');
+        $fetchedActivities = Activity::query()
+            ->where(function ($query) use ($rangeStart, $rangeEnd) {
+                $query->whereBetween('date_start', [$rangeStart, $rangeEnd])
+                    ->orWhere(function ($q) use ($rangeStart, $rangeEnd) {
+                        $q->whereIn('recurrence_rule', ['daily', 'weekly', 'monthly'])
+                            ->where(function ($q2) use ($rangeStart) {
+                                $q2->whereNull('end_recurrence')
+                                    ->orWhere('end_recurrence', '>=', $rangeStart);
+                            })
+                            ->where('date_start', '<=', $rangeEnd);
+                    });
+            })
+            ->orderBy('date_start')
+            ->get();
 
-        if ($limit !== null) {
-            $query->limit($limit);
-        }
-        $fetchedActivities = $query->get();
 
-// Load exceptions for single-instance deletions
+        // Load exceptions for single-instance deletions
         $exceptionsByActivity = ActivityException::whereIn('activity_id', $fetchedActivities->pluck('id'))
             ->get()
             ->groupBy('activity_id')
             ->map(function ($group) {
                 return $group->pluck('date')
-                    ->map(fn($d) => Carbon::parse($d)->toDateString())
+                    ->map(fn($d) => \Illuminate\Support\Carbon::parse($d)->toDateString())
                     ->toArray();
             });
 
-
-// Expand recurring events—even if the original date is far in the past.
-
+        // Expand recurring events
         $activities = collect();
         foreach ($fetchedActivities as $activity) {
             $occurrences = $this->expandRecurringActivity($activity, $rangeStart, $rangeEnd);
             $skipDates = $exceptionsByActivity[$activity->id] ?? [];
+
             foreach ($occurrences as $occurrence) {
                 $occDate = Carbon::parse($occurrence->date_start)->toDateString();
 
-// Skip single-instance exceptions
+                // Skip single-instance exceptions
                 if (in_array($occDate, $skipDates, true)) {
                     continue;
                 }
 
-// Skip occurrences after end_recurrence if set
+                // Skip beyond end_recurrence
                 if (!is_null($activity->end_recurrence)) {
                     $endRec = Carbon::parse($activity->end_recurrence)->endOfDay();
                     if (Carbon::parse($occurrence->date_start)->gt($endRec)) {
@@ -71,15 +67,13 @@ trait AgendaPublicScheduleTrait
                     }
                 }
 
-                if ($activity->recurrence_rule === 'none') {
-                    $requestedDate = Carbon::now();
-                    if ($requestedDate && $occDate !== Carbon::parse($requestedDate)->toDateString()) {
-                        continue;
-                    }
-                }
+
                 $activities->push($occurrence);
             }
         }
+
+        $activities = $activities->sortBy('date_start')->values();
+
         return $activities->take($limit);
     }
 

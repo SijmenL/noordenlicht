@@ -47,10 +47,13 @@
                     @csrf
 
                     {{-- Hidden fields for structured data --}}
-                    <input type="hidden" name="icon_data" id="icon_data" value="{{ old('icon_data', '[]') }}">
+                    {{-- Updated continuously by JS --}}
                     <input type="hidden" name="temp_image_ids" id="temp_image_ids" value="">
+                    <input type="hidden" name="prices_to_add" id="prices_to_add" value="">
+
+                    {{-- Legacy/Unused fields (kept to prevent backend errors if it expects them) --}}
+                    <input type="hidden" name="icon_data" id="icon_data" value="[]">
                     <input type="hidden" name="temp_icon_ids" id="temp_icon_ids" value="">
-                    <input type="hidden" name="prices_to_add" id="prices_to_add">
 
                     <div class="d-flex flex-column mb-3">
                         <label for="name" class="col-md-4 col-form-label ">Naam van het product</label>
@@ -66,7 +69,6 @@
                                 name="type">
                             <option @if(old('type') == "null") selected @endif value="null">Selecteer een optie</option>
                             <option @if(old('type') == "0") selected @endif value="0">Supplementen bij accommodatie</option>
-                            <option @if(old('type') == "1") selected @endif value="1">Evenement ticket</option>
                             <option @if(old('type') == "2") selected @endif value="2">Overnachting</option>
                         </select>
                     </div>
@@ -210,7 +212,6 @@
         // ------------------------------------------------------------------
 
         const PHP_TEMP_IMAGES = @json($tempImages ?? []);
-        const PHP_TEMP_ICONS = @json($tempIcons ?? []);
         const CSRF_TOKEN = document.querySelector('input[name="_token"]').value;
 
         let fileIdCounter = 0;
@@ -244,6 +245,14 @@
                 this.prices.forEach((price, index) => {
                     this.container.appendChild(this.createPriceRow(price, index));
                 });
+
+                // LIVE UPDATE
+                this.updateHiddenField();
+            },
+
+            updateHiddenField() {
+                const json = JSON.stringify(this.prices);
+                document.getElementById('prices_to_add').value = json;
             },
 
             getTypeText(type) {
@@ -299,10 +308,6 @@
             removePrice(index) {
                 this.prices.splice(index, 1);
                 this.render();
-            },
-
-            getPricesToAdd() {
-                return this.prices;
             }
         };
 
@@ -339,6 +344,16 @@
                         this.container.appendChild(this.createImageCard(image, index));
                     });
                 }
+
+                // LIVE UPDATE
+                this.updateHiddenField();
+            },
+
+            updateHiddenField() {
+                const ids = this.images
+                    .filter(img => img.db_id !== null)
+                    .map(img => img.db_id);
+                document.getElementById('temp_image_ids').value = ids.join(',');
             },
 
             createImageCard(image, index) {
@@ -396,6 +411,7 @@
                         if (data.success) {
                             imageObj.db_id = data.data.id;
                             imageObj.file = null;
+                            this.updateHiddenField(); // UPDATE ON SUCCESS
                         } else {
                             alert('Image upload failed: ' + data.message);
                             this.removeImageByTempId(imageObj.temp_id);
@@ -426,12 +442,6 @@
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
                 }).catch(err => console.error("Failed to delete temp image", err));
-            },
-
-            getNewImageIds() {
-                return this.images
-                    .filter(img => img.db_id !== null)
-                    .map(img => img.db_id);
             }
         };
 
@@ -445,16 +455,15 @@
 
             document.getElementById('add-price-btn').addEventListener('click', () => PriceEditor.addPrice());
             document.getElementById('carousel_images_input').addEventListener('change', e => ImageEditor.handleNewImages(e.target.files));
-            document.getElementById('add-icon-btn').addEventListener('click', () => IconEditor.addIcon());
+            // Removed IconEditor listeners as IconEditor is not used in Products
 
             const form = document.getElementById('product-form');
             form.addEventListener('submit', function (e) {
                 document.getElementById('description').value = document.getElementById('text-input').innerHTML;
 
-                const tempImageIds = ImageEditor.getNewImageIds();
-
-                document.getElementById('prices_to_add').value = JSON.stringify(PriceEditor.getPricesToAdd());
-                document.getElementById('temp_image_ids').value = tempImageIds.join(',');
+                // Force one last update to be sure
+                PriceEditor.updateHiddenField();
+                ImageEditor.updateHiddenField();
 
                 const saveButton = document.getElementById('save-button');
                 saveButton.disabled = true;

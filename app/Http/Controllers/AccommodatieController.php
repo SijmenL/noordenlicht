@@ -6,7 +6,11 @@ use App\Models\Accommodatie;
 use App\Models\AccommodatieIcon;
 use App\Models\AccommodatieImage;
 use App\Models\AccommodatiePrice;
-use App\Models\Price; // FIX: Added Price model import
+use App\Models\Price;
+use App\Models\Product; // Added for supplements
+use App\Models\Activity; // Added for agenda checks
+use App\Models\Order; // Added for order creation
+use App\Models\OrderItem; // Added for order items
 use App\Models\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -15,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
+use Mollie\Laravel\Facades\Mollie;
 
 class AccommodatieController extends Controller
 {
@@ -44,6 +50,206 @@ class AccommodatieController extends Controller
         }
 
         return view('accommodaties.details', ['accommodatie' => $accommodatie]);
+    }
+
+    // --- Booking Flow Methods ---
+
+    public function book($id)
+    {
+        try {
+            $accommodatie = Accommodatie::findOrFail($id);
+            // Fetch supplements (Product type 0)
+            $supplements = Product::where('type', '0')->get();
+        } catch (ModelNotFoundException $exception) {
+            return redirect()->route('accommodaties')->with('error', 'Deze accommodatie bestaat niet.');
+        }
+
+        return view('accommodaties.book', [
+            'accommodatie' => $accommodatie,
+            'supplements' => $supplements
+        ]);
+    }
+
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'start_time' => 'required',
+            'end_date' => 'required|date',
+            'end_time' => 'required',
+        ]);
+
+        $start = Carbon::parse($request->start_date . ' ' . $request->start_time);
+        $end = Carbon::parse($request->end_date . ' ' . $request->end_time);
+
+        if ($end->lte($start)) {
+            return response()->json(['available' => false, 'message' => 'Eindtijd moet na starttijd liggen.']);
+        }
+
+        // Check for overlapping activities in the agenda
+        $overlap = Activity::where(function ($query) use ($start, $end) {
+            $query->where('date_start', '<', $end)
+                ->where('date_end', '>', $start);
+        })->exists();
+
+        if ($overlap) {
+            return response()->json(['available' => false, 'message' => 'De gekozen periode is niet beschikbaar.']);
+        }
+
+        return response()->json(['available' => true]);
+    }
+
+    public function storeBooking(Request $request)
+    {
+        $request->validate([
+            'accommodatie_id' => 'required|exists:accommodaties,id',
+            'start_date' => 'required|date',
+            'start_time' => 'required',
+            'end_date' => 'required|date',
+            'end_time' => 'required',
+            'email' => 'required|email',
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'address' => 'required|string',
+            'zipcode' => 'required|string',
+            'city' => 'required|string',
+            // supplements map logic handled manually
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // 1. Re-validate Availability
+            $start = Carbon::parse($request->start_date . ' ' . $request->start_time);
+            $end = Carbon::parse($request->end_date . ' ' . $request->end_time);
+
+            // Check availability again to prevent race conditions
+            $overlap = Activity::where(function ($query) use ($start, $end) {
+                $query->where('date_start', '<', $end)
+                    ->where('date_end', '>', $start);
+            })->exists();
+
+            if ($overlap) {
+                throw new \Exception('De gekozen periode is helaas net bezet. Probeer het opnieuw.');
+            }
+
+            // 2. Create Order
+            $order = Order::create([
+                'order_number' => 'B-' . strtoupper(uniqid()),
+                'user_id' => Auth::id(), // Can be null if guest
+                'status' => 'open',
+                'payment_status' => 'pending',
+                'email' => $request->email,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'address' => $request->address,
+                'zipcode' => $request->zipcode,
+                'city' => $request->city,
+                'country' => 'NL',
+                'total_amount' => 0, // Calculated below
+            ]);
+
+            $grandTotal = 0;
+            $accommodatie = Accommodatie::findOrFail($request->accommodatie_id);
+
+            // 3. Calculate Accommodation Cost
+            // Re-calculate price per hour based on logic (simplified here, assumes price is pre-calculated or stored)
+            // Using the logic from details.blade.php as reference for base price
+            $allPrices = $accommodatie->prices->map(fn($p) => $p->price);
+            $basePrices = $allPrices->where('type', 0);
+            $percentageAdditions = $allPrices->where('type', 1);
+            $fixedDiscounts = $allPrices->where('type', 2);
+            $percentageDiscounts = $allPrices->where('type', 4);
+
+            $totalBasePrice = $basePrices->sum('amount');
+            $preDiscountPrice = $totalBasePrice;
+
+            foreach ($percentageAdditions as $percentage) {
+                $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
+            }
+            $calculatedPrice = $preDiscountPrice;
+            foreach ($percentageDiscounts as $percentage) {
+                $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
+            }
+            $calculatedPrice -= $fixedDiscounts->sum('amount');
+
+            // Calculate duration in hours (float)
+            $hours = $start->diffInMinutes($end) / 60;
+            $accommodationTotal = $calculatedPrice * $hours;
+
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => null, // It's an accommodation
+                'product_name' => $accommodatie->name . ' (' . $start->format('d-m H:i') . ' tot ' . $end->format('d-m H:i') . ')',
+                'quantity' => $hours, // storing hours as quantity
+                'unit_price' => $calculatedPrice,
+                'total_price' => $accommodationTotal,
+            ]);
+            $grandTotal += $accommodationTotal;
+
+            // 4. Process Supplements
+            $supplementsData = json_decode($request->input('supplements_data', '[]'), true);
+            if (is_array($supplementsData)) {
+                foreach ($supplementsData as $item) {
+                    $product = Product::find($item['id']);
+                    if ($product && $item['qty'] > 0) {
+                        // Use product calculated price (assuming logic exists in model or similar to above)
+                        // For simplicity using raw price or adding calculation logic here if needed
+                        // Assuming $product->calculated_price accessor exists as per OrderController
+                        $price = $product->calculated_price ?? 0;
+                        $lineTotal = $price * $item['qty'];
+
+                        OrderItem::create([
+                            'order_id' => $order->id,
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'quantity' => $item['qty'],
+                            'unit_price' => $price,
+                            'total_price' => $lineTotal,
+                        ]);
+                        $grandTotal += $lineTotal;
+                    }
+                }
+            }
+
+            $order->update(['total_amount' => $grandTotal]);
+
+            // 5. Block Agenda (Create Activity)
+            Activity::create([
+                'title' => 'Verhuur: ' . $accommodatie->name,
+                'content' => 'Geboekt door ' . $request->first_name . ' ' . $request->last_name . '. Order: ' . $order->order_number,
+                'date_start' => $start->toDateTimeString(),
+                'date_end' => $end->toDateTimeString(),
+                'public' => 0, // Not visible to public, but blocks agenda
+                'presence' => 0,
+                'user_id' => Auth::id() ?? 0, // System or User
+                'organisator' => 'Verhuur Systeem',
+                'location' => $accommodatie->name
+            ]);
+
+            // 6. Payment with Mollie
+            $payment = Mollie::api()->payments->create([
+                "amount" => [
+                    "currency" => "EUR",
+                    "value" => number_format($grandTotal, 2, '.', '')
+                ],
+                "description" => "Booking " . $order->order_number,
+                "redirectUrl" => route('order.success', ['order_id' => $order->id]),
+                "webhookUrl" => route('webhooks.mollie'),
+                "metadata" => [
+                    "order_id" => $order->id,
+                ],
+            ]);
+
+            $order->update(['mollie_payment_id' => $payment->id]);
+
+            DB::commit();
+
+            return redirect($payment->getCheckoutUrl(), 303);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Er ging iets mis bij het boeken: ' . $e->getMessage())->withInput();
+        }
     }
 
     // Admin functions

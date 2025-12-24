@@ -62,7 +62,10 @@
                             <a class="nav-link white-text" href="{{ route('accommodaties') }}">Accommodaties</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link white-text" href="#">Events</a>
+                            <a class="nav-link white-text" href="{{ route('agenda.public.schedule') }}">Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link white-text" href="{{ route('shop') }}">Winkel</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link white-text" href="#">Info</a>
@@ -71,7 +74,7 @@
                             <a class="nav-link white-text" href="{{ route('contact') }}">Contact</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link white-text" href="{{ route('cart.index') }}"><span class="material-symbols-rounded">shopping_cart</span></a>
+                            <a class="nav-link white-text" href="{{ route('checkout') }}"><span class="material-symbols-rounded">shopping_cart</span></a>
                         </li>
 
                         @guest
@@ -111,7 +114,7 @@
         </nav>
 
 
-        <main class="py-4" style="max-width: 100vw; overflow-x: hidden">
+        <main class="py-4">
             @yield('content')
         </main>
         <footer>

@@ -9,6 +9,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NonLoggedInController;
 use App\Http\Controllers\PriceController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,9 +32,9 @@ Route::get('/nieuws/item/{id}', [NewsController::class, 'viewNewsItem'])->name('
 Route::get('/nieuws/{id}', [NewsController::class, 'viewNewsItem'])->name('news.item');
 Route::get('/nieuws/', [NewsController::class, 'viewNewsPage'])->name('news.list');
 
-Route::get('/agenda/public/maand', [AgendaController::class, 'agendaMonthPublic'])->name('agenda.public.month');
-Route::get('/agenda/public/overzicht', [AgendaController::class, 'agendaSchedulePublic'])->name('agenda.public.schedule');
-Route::get('/agenda/public/activiteit/{id}', [AgendaController::class, 'agendaActivityPublic'])->name('agenda.public.activity');
+Route::get('/agenda/maand', [AgendaController::class, 'agendaMonthPublic'])->name('agenda.public.month');
+Route::get('/agenda/overzicht', [AgendaController::class, 'agendaSchedulePublic'])->name('agenda.public.schedule');
+Route::get('/agenda/activiteit/{id}', [AgendaController::class, 'agendaActivityPublic'])->name('agenda.public.activity');
 
 Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact');
 Route::post('/contact', [NonLoggedInController::class, 'contactSubmit'])->name('contact.submit');
@@ -46,6 +47,9 @@ Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact
 
 Route::get('/accommodaties', [AccommodatieController::class, 'home'])->name('accommodaties');
 Route::get('/accommodaties/{id}', [AccommodatieController::class, 'details'])->name('accommodaties.details');
+Route::get('/accommodatie/{id}/boeken', [App\Http\Controllers\AccommodatieController::class, 'book'])->name('accommodatie.book');
+Route::post('/accommodatie/check-availability', [App\Http\Controllers\AccommodatieController::class, 'checkAvailability'])->name('accommodatie.check_availability');
+Route::post('/accommodatie/store-booking', [App\Http\Controllers\AccommodatieController::class, 'storeBooking'])->name('accommodatie.store_booking');
 
 Route::get('/winkel', [ProductController::class, 'shop'])->name('shop');
 Route::get('/winkel/product/{id}', [ProductController::class, 'details'])->name('shop.details');
@@ -54,8 +58,15 @@ Route::get('/winkel/product/{id}', [ProductController::class, 'details'])->name(
 Route::get('/winkelmandje', [CartController::class, 'index'])->name('cart.index');
 Route::post('/winkelmandje/toevoegen/{id}', [CartController::class, 'add'])->name('cart.add');
 Route::post('/winkelmandje/bewerken/{id}', [CartController::class, 'update'])->name('cart.update');
-Route::get('/winkelmandje/verwijderen/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/winkelmandje/verwijderen/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
+Route::get('/afrekenen', [App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
+Route::post('/afrekenen', [App\Http\Controllers\OrderController::class, 'store'])->name('checkout.store');
+Route::get('/bestelling/success/{order_id}', [App\Http\Controllers\OrderController::class, 'success'])->name('order.success');
+
+Route::get('/ticket/download/{ticket_uuid}', [App\Http\Controllers\TicketController::class, 'download'])->name('ticket.download');
+
+Route::post('/webhooks/mollie', [App\Http\Controllers\OrderController::class, 'handleWebhook'])->name('webhooks.mollie');
 
 //Admin
 Route::middleware(['checkRole:Administratie'])->group(function () {
@@ -81,22 +92,18 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     // List
     Route::get('/dashboard/products', [ProductController::class, 'index'])->name('admin.products');
 
-    // Create
     Route::get('/dashboard/products/new', [ProductController::class, 'create'])->name('admin.products.new');
     Route::post('/dashboard/products/new', [ProductController::class, 'store'])->name('admin.products.new.save');
 
     Route::get('/dashboard/products/{id}', [ProductController::class, 'productDetails'])->name('admin.products.details');
-    // Edit
+
     Route::get('/dashboard/products/{id}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
     Route::post('/dashboard/products/{id}/edit', [ProductController::class, 'update'])->name('admin.products.edit.save');
 
-    // Delete
     Route::get('/dashboard/products/delete/{id}', [ProductController::class, 'destroy'])->name('admin.products.delete'); // Using GET as per your existing pattern, though DELETE method is safer standard
 
-    // AJAX: Temporary Uploads (Images & Icons)
     Route::post('/dashboard/products/temp/image', [ProductController::class, 'uploadTempImage']);
-    // Note: You might need to add a specific route for deleting temp images if the logic differs from accommodations,
-    // or reuse a generic controller. For now, assuming ProductController handles its own temp logic:
+
     Route::delete('/dashboard/products/temp/image/{id}', [ProductController::class, 'deleteTempImage']);
 
 
@@ -158,6 +165,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/agenda/activiteit/niet-aanwezig/{id}/{user}', [AgendaController::class, 'agendaAbsent'])->name('agenda.activity.absent');
 
     Route::post('/dashboard/agenda/token', [AgendaController::class, 'generateToken']);
+
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/tickets/', [TicketController::class, 'list'])->name('admin.tickets.list');
+    Route::get('/dashboard/tickets/scan', [TicketController::class, 'scanTickets'])->name('admin.tickets.scan');
+
+    Route::post('/dashboard/tickets/check', [TicketController::class, 'check'])->name('admin.tickets.check');
+
+    Route::post('/dashboard/tickets/check/{id}/checkin/', [TicketController::class, 'checkIn'])->name('admin.tickets.checkin');
+    Route::post('/dashboard/tickets/check/{id}/cancel/', [TicketController::class, 'cancel'])->name('admin.tickets.cancel');
 
 });
 

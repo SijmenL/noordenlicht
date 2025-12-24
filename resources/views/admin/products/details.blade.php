@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
+
     <div class="container col-md-11">
         <h1>Details @if($product !== null)
                 {{$product->name}}
@@ -17,11 +18,6 @@
         @if(Session::has('error'))
             <div class="alert alert-danger" role="alert">
                 {{ session('error') }}
-            </div>
-        @endif
-        @if(Session::has('success'))
-            <div class="alert alert-success" role="alert">
-                {{ session('success') }}
             </div>
         @endif
 
@@ -62,13 +58,13 @@
                 // --- End Price Calculation ---
 
 
-                                    $carrousel_images = [];
+
+                    $carrousel_images[] = 'files/products/images/'.$product->image;
                 foreach($product->images as $image) {
                     $carrousel_images[] = 'files/products/carousel/'.$image->image;
                 }
-                if(empty($carrousel_images)) {
-                    $carrousel_images[] = 'files/products/images/'.$product->image;
-                }
+
+
             @endphp
             <div class="d-flex flex-row-responsive justify-content-center align-items-start gap-5">
                 {{-- Carousel Section --}}
@@ -79,7 +75,8 @@
                         <div class="alert alert-secondary">Geen afbeeldingen beschikbaar</div>
                         @if($product->image)
                             {{-- Fallback to main image if no carousel images exist --}}
-                            <img src="{{ asset('files/products/images/' . $product->image) }}" class="img-fluid rounded" alt="{{ $product->name }}">
+                            <img src="{{ asset('files/products/images/' . $product->image) }}" class="img-fluid rounded"
+                                 alt="{{ $product->name }}">
                         @endif
                     @endif
                 </div>
@@ -92,8 +89,12 @@
                     <div class="p-3 d-flex flex-column align-items-start border rounded bg-light mt-3">
                         @if($hasDiscount)
                             <p class="badge bg-success mb-2">
-                                @if($totalPercentageDiscounts > 0) {{ $totalPercentageDiscounts }}% @endif
-                                @if($fixedDiscounts->sum('amount') > 0) -€{{ $fixedDiscounts->sum('amount') }} @endif
+                                @if($totalPercentageDiscounts > 0)
+                                    {{ $totalPercentageDiscounts }}%
+                                @endif
+                                @if($fixedDiscounts->sum('amount') > 0)
+                                    -€{{ $fixedDiscounts->sum('amount') }}
+                                @endif
                                 korting!
                             </p>
 
@@ -117,7 +118,13 @@
                                             (incl.
                                             @foreach($percentageAdditions as $index => $cost)
                                                 {{ $cost->name }} {{ $cost->amount }}%
-                                                (@if($cost->amount > 0)+@endif&#8364;{{ number_format($totalBasePrice * ($cost->amount / 100), 2) }})@if(!$loop->last), @endif
+                                                (@if($cost->amount > 0)
+                                                    +
+                                                @endif
+                                                &#8364;{{ number_format($totalBasePrice * ($cost->amount / 100), 2) }}
+                                                )@if(!$loop->last)
+                                                    ,
+                                                @endif
                                             @endforeach
                                             )
                                         </p>
@@ -128,7 +135,9 @@
                                             (excl.
                                             @foreach($extraCosts as $index => $cost)
                                                 {{ $cost->name }}
-                                                &#8364;{{ number_format($cost->amount, 2, ',', '.') }}@if(!$loop->last), @endif
+                                                &#8364;{{ number_format($cost->amount, 2, ',', '.') }}@if(!$loop->last)
+                                                    ,
+                                                @endif
                                             @endforeach
                                             )
                                         </p>

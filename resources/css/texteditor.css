@@ -10,24 +10,23 @@
 }
 
 .editor-parent {
-    background-color: #A98B2F;
-    padding: 15px;
+    background-color: white;
+    border: 1px solid #dee2e6;
     border-radius: 15px;
 }
 
 .options {
     display: flex;
+    border-radius: 15px 15px 0 0;
     align-items: start;
     justify-content: space-between;
     gap: 20px;
     position: sticky;
     top: 98px;
     padding: 10px;
-    background-color: #A98B2F; /* Solid background color */
+    background-color: white;
+    border-bottom: 1px solid #dee2e6;
     min-height: 50px;
-    -webkit-box-shadow: 0px 17px 19px -15px rgba(0, 0, 0, 0.20);
-    -moz-box-shadow: 0px 17px 19px -15px rgba(0, 0, 0, 0.20);
-    box-shadow: 0px 17px 19px -15px rgba(0, 0, 0, 0.20);
     z-index: 2;
 }
 
@@ -41,12 +40,12 @@
 
 #text-input {
     transform: translateY(-5px);
-    padding: 20px;
-    max-width: calc(100%);
-    width: 100%;
+    margin: 15px;
+    padding: 10px;
     background-color: rgb(255, 255, 255);
+    border-radius: 15px;
     min-height: 130px;
-    border: none;
+    border: 1px solid #dee2e6;
 }
 
 #text-input img {
@@ -145,4 +144,9 @@ input[type="color"]::-moz-color-swatch {
         transform: translateX(0px);
         color: black;
     }
+}
+
+#characters {
+    margin-left: 15px;
+    margin-bottom: 15px;
 }

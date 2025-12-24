@@ -362,7 +362,8 @@
                 const priceData = this.prices[index];
                 const priceLinkId = priceData.id;
 
-                const url = UNLINK_PRICE_URL_BASE.replace('PLACEHOLDER', priceLinkId);
+                // FIX: Append model_type so Controller knows which table to check
+                const url = UNLINK_PRICE_URL_BASE.replace('PLACEHOLDER', priceLinkId) + '?model_type=product';
 
                 try {
                     const response = await fetch(url, {

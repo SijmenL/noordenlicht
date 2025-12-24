@@ -1,4 +1,4 @@
-@extends('layouts.contact')
+@extends('layouts.app')
 
 @vite('resources/js/calendar.js')
 
@@ -8,39 +8,7 @@
 @endphp
 
 @section('content')
-
-    <script>
-        function sendHeight() {
-            const height = document.body.getBoundingClientRect().height + 100;
-            console.log('Sending height:', height);
-            window.parent.postMessage(height, 'https://waterscoutingmhg.nl'); // Ensure this matches the parent origin
-        }
-
-        window.addEventListener('message', (event) => {
-            console.log('Message received from:', event.origin);
-            if (event.origin === 'https://waterscoutingmhg.nl' && event.data === 'getHeight') {
-                console.log('Valid request for height');
-                sendHeight();
-            }
-        });
-
-
-        if (window.top === window.self) {
-            // Redirect to the parent page if the child page is accessed directly
-            window.location.href = `https://waterscoutingmhg.nl/over-onze-club/activiteiten`;
-        } else {
-            sendHeight();  // Send height on load in case of initial message issue
-        }
-
-    </script>
-
-    <script>
-        function breakOut(id) {
-            window.parent.location.href = `https://waterscoutingmhg.nl/over-onze-club/activiteit?id=${id}&view=month`;
-        }
-    </script>
-
-    <div>
+    <div class="container col-md-11 mt-5 mb-5">
         <div class="d-flex flex-row-responsive align-items-center gap-5" style="width: 100%">
             <div class="" style="width: 100%;">
                 <div id="nav">
@@ -186,9 +154,19 @@
                                         $formattedStart = $activitiestart->format('d-m H:i');
                                         $formattedEnd = $activityEnd->format('d-m H:i');
                                     }
+
+                                     $activitiesStart = Carbon::parse($activity->date_start);
+
+                                    $linkParams = [
+                                        'id' => $activity->id,
+                                        'month' => $monthOffset,
+                                        'startDate' => $activitiesStart->format('Y-m-d'),
+                                        'view' => 'month',
+                                    ];
                                 @endphp
 
-                                <a onclick="breakOut({{ $activity->id }})"
+                                <a
+                                    href="{{ route('agenda.public.activity', $linkParams) }}"
                                    style="top: {{ 40 + ($activityPositions[$activity->id] ?? 0) * 35 }}px;"
 
                                    data-event-id="{{ $activity->id }}"

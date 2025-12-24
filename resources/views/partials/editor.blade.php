@@ -58,6 +58,26 @@
                     <span class="material-symbols-rounded">subscript</span>
                 </button>
             </div>
+
+            <div class="wysiwyg-button">
+                <div class="input-wrapper">
+                    <input type="color" id="foreColor" class="adv-option-button color-picker"/>
+                    <button type="button" title="tekst kleur" id="textColorButton"
+                            class="option-button color d-flex justify-content-center">
+                        <label for="foreColor"><span
+                                class="material-symbols-rounded">format_color_text</span></label>
+                    </button>
+                </div>
+                <div class="input-wrapper">
+                    <input type="color" id="backColor" class="adv-option-button color-picker"/>
+                    <button type="button" title="markeer kleur" id="highlightColorButton"
+                            class="option-button color d-flex justify-content-center overflow-hidden">
+                        <label for="backColor"><span
+                                class="material-symbols-rounded">format_ink_highlighter</span></label>
+                    </button>
+                </div>
+            </div>
+
             <!-- List -->
             <div class="wysiwyg-button">
                 <button type="button" title="nummering" id="insertOrderedList"
@@ -97,8 +117,7 @@
                     <span class="material-symbols-rounded">format_indent_decrease</span>
                 </button>
             </div>
-        </div>
-        <div class="options-container">
+
             <!-- Clear format -->
             <div class="wysiwyg-button">
                 <button type="button" title="verwijder stijling" id="clear"

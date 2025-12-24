@@ -2,90 +2,113 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Activity;
 use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Carbon\Carbon;
 
 class CartController extends Controller
 {
-    /**
-     * Display the shopping cart.
-     */
-    public function index()
+    public function add(Request $request, $id)
     {
-        $cart = Session::get('cart', []);
-        $cartItems = [];
-        $totalPrice = 0;
+        $type = $request->input('type', 'product');
+        $quantity = (int) $request->input('quantity', 1);
+        $startDate = $request->input('start_date'); // Expecting Y-m-d H:i:s
 
-        if (!empty($cart)) {
-            $products = Product::with(['prices.price'])->whereIn('id', array_keys($cart))->get();
+        if ($quantity < 1) {
+            return redirect()->back()->with('error', 'Aantal moet minimaal 1 zijn.');
+        }
 
-            foreach ($products as $product) {
-                $quantity = $cart[$product->id];
-                $unitPrice = $product->calculated_price;
-                $lineTotal = $unitPrice * $quantity;
+        $cart = Session::get('cart_mixed', [
+            'products' => [],
+            'activities' => []
+        ]);
 
-                $cartItems[] = [
-                    'product' => $product,
+        // Sync legacy cart if exists
+        if (Session::has('cart') && empty($cart['products'])) {
+            $cart['products'] = Session::get('cart');
+        }
+
+        if ($type === 'activity') {
+            $activity = Activity::find($id);
+            if (!$activity) return redirect()->back()->with('error', 'Activiteit niet gevonden.');
+
+            if (! $activity->hasTicketsAvailable($quantity)) {
+                return back()->withErrors(['message' => 'Er zijn geen tickets meer beschikbaar voor dit evenement.']);
+            }
+            // Create a unique key using ID and Timestamp to separate occurrences
+            $dateKey = $startDate ? Carbon::parse($startDate)->timestamp : '0';
+            $cartKey = "{$id}_{$dateKey}";
+
+            if (isset($cart['activities'][$cartKey])) {
+                $cart['activities'][$cartKey]['quantity'] += $quantity;
+            } else {
+                $cart['activities'][$cartKey] = [
+                    'id' => $id,
                     'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'total_price' => $lineTotal
+                    'start_date' => $startDate ?? $activity->date_start
                 ];
+            }
+        } else {
+            $product = Product::find($id);
+            if (!$product) return redirect()->back()->with('error', 'Product niet gevonden.');
 
-                $totalPrice += $lineTotal;
+            if (isset($cart['products'][$id])) {
+                $cart['products'][$id] += $quantity;
+            } else {
+                $cart['products'][$id] = $quantity;
             }
         }
 
-        return view('shop.cart', compact('cartItems', 'totalPrice'));
+        Session::put('cart_mixed', $cart);
+        Session::put('cart', $cart['products']);
+
+        return redirect()->back()->with('success', 'CardAdded');
     }
 
-    /**
-     * Add a product to the cart.
-     */
-    public function add(Request $request, $id)
+    public function update(Request $request)
     {
-        $product = Product::findOrFail($id);
-        $cart = Session::get('cart', []);
+        $id = $request->input('id'); // This is the composite key for activities
+        $type = $request->input('type');
+        $quantity = (int) $request->input('quantity');
 
-        if (isset($cart[$id])) {
-            $cart[$id]++;
+        $cart = Session::get('cart_mixed', ['products' => [], 'activities' => []]);
+
+        if ($quantity > 0) {
+            if ($type === 'activity') {
+                if (isset($cart['activities'][$id])) {
+                    $cart['activities'][$id]['quantity'] = $quantity;
+                }
+            } else {
+                $cart['products'][$id] = $quantity;
+            }
         } else {
-            $cart[$id] = 1;
+            return $this->remove($request);
         }
 
-        Session::put('cart', $cart);
+        Session::put('cart_mixed', $cart);
+        Session::put('cart', $cart['products']);
 
-        return redirect()->back()->with('success', 'Product toegevoegd aan winkelmandje!');
+        return redirect()->route('checkout')->with('success', 'Winkelwagen bijgewerkt.');
     }
 
-    /**
-     * Update cart quantity.
-     */
-    public function update(Request $request, $id)
+    public function remove(Request $request)
     {
-        $quantity = max(1, intval($request->quantity));
-        $cart = Session::get('cart', []);
+        $id = $request->input('id');
+        $type = $request->input('type');
 
-        if (isset($cart[$id])) {
-            $cart[$id] = $quantity;
-            Session::put('cart', $cart);
+        $cart = Session::get('cart_mixed', ['products' => [], 'activities' => []]);
+
+        if ($type === 'activity') {
+            unset($cart['activities'][$id]);
+        } else {
+            unset($cart['products'][$id]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Winkelmandje bijgewerkt.');
-    }
+        Session::put('cart_mixed', $cart);
+        Session::put('cart', $cart['products']);
 
-    /**
-     * Remove item from cart.
-     */
-    public function remove($id)
-    {
-        $cart = Session::get('cart', []);
-
-        if (isset($cart[$id])) {
-            unset($cart[$id]);
-            Session::put('cart', $cart);
-        }
-
-        return redirect()->route('cart.index')->with('success', 'Product verwijderd uit winkelmandje.');
+        return redirect()->route('checkout')->with('success', 'Item verwijderd uit winkelwagen.');
     }
 }

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityPrice;
 use App\Models\Price;
 use App\Models\AccommodatiePrice;
+use App\Models\ProductPrice; // FIX: Added Import
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -12,16 +14,15 @@ class PriceController extends Controller
 {
     /**
      * Links a new price component to a given model.
-     * For now, it's hardcoded for Accommodatie, but can be adapted for polymorphism.
      */
     public function linkPrice(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'model_id' => 'required|integer',
-            'model_type' => 'required|string|in:accommodatie|in:products', // Can be expanded later
+            'model_type' => 'required|string|in:accommodatie,product,activity',
             'name' => 'required|string|max:255',
             'amount' => 'required|numeric',
-            'type' => 'required|integer|in:0,1,2,3,4', // Added '4' for percentage discount
+            'type' => 'required|integer|in:0,1,2,3,4',
         ]);
 
         if ($validator->fails()) {
@@ -37,36 +38,56 @@ class PriceController extends Controller
             ]);
 
             // Step 2: Create the link (pivot) record
+            $priceLink = null;
+
             if ($request->input('model_type') === 'accommodatie') {
                 $priceLink = AccommodatiePrice::create([
                     'accommodatie_id' => $request->input('model_id'),
                     'price_id' => $price->id,
                 ]);
-
-                // Eager load the price data to return to the frontend
-                $priceLink->load('price');
+            } elseif ($request->input('model_type') === 'product') {
+                $priceLink = ProductPrice::create([
+                    'product_id' => $request->input('model_id'),
+                    'price_id' => $price->id,
+                ]);
+            } elseif ($request->input('model_type') === 'activity') {
+                $priceLink = ActivityPrice::create([
+                    'activity_id' => $request->input('model_id'),
+                    'price_id' => $price->id,
+                ]);
             } else {
                 return response()->json(['success' => false, 'message' => 'Invalid model type provided.'], 400);
             }
 
+            // Eager load the price data to return to the frontend
+            $priceLink->load('price');
+
             return response()->json(['success' => true, 'data' => $priceLink]);
 
         } catch (\Exception $e) {
-            // Log the error for debugging
             \Log::error('Error linking price: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }
 
-    /**
-     * Unlinks a price component from a model by deleting the pivot record.
-     * Note: This does not delete the original Price record, allowing it to be reused.
-     */
-    public function unlinkPrice(AccommodatiePrice $priceLink)
+    public function unlinkPrice($id, Request $request)
     {
         try {
+            $priceLink = null;
+
+            if ($request->input('model_type') === 'accommodatie') {
+                $priceLink = AccommodatiePrice::findOrFail($id);
+            } elseif ($request->input('model_type') === 'product') {
+                $priceLink = ProductPrice::findOrFail($id);
+            } elseif ($request->input('model_type') === 'activity') {
+                $priceLink = ActivityPrice::findOrFail($id);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Invalid model type provided.'], 400);
+            }
+
             $priceLink->delete();
             return response()->json(['success' => true, 'message' => 'Price unlinked successfully.']);
+
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Price link not found.'], 404);
         } catch (\Exception $e) {
@@ -75,4 +96,3 @@ class PriceController extends Controller
         }
     }
 }
-

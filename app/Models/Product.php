@@ -2,63 +2,59 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'name',
-        'user_id',
-        'type', // e.g. "Physical Good", "Digital", etc.
-        'description',
-        'image'
-    ];
+    protected $fillable = ['name', 'type', 'description', 'image', 'price', 'user_id'];
 
     public function images()
     {
-        return $this->hasMany(ProductImage::class, 'product_id');
+        return $this->hasMany(ProductImage::class);
     }
 
-    /**
-     * Defines the relationship to the prices via the pivot model.
-     */
     public function prices()
     {
-        return $this->hasMany(ProductPrice::class, 'product_id');
+        // Assuming you are using the pivot table 'product_prices' created earlier
+        // If you are using a polymorphic relationship, adjust accordingly.
+        return $this->hasMany(ProductPrice::class);
     }
 
     /**
-     * Helper to calculate the current price based on the pricing system rules
+     * Centralized Price Calculation Accessor.
+     * Use as: $product->calculated_price
      */
     public function getCalculatedPriceAttribute()
     {
-        $allPrices = $this->prices->map(fn($p) => $p->price);
+        // Eager load prices if not already loaded to prevent N+1 queries
+        $allPrices = $this->relationLoaded('prices')
+            ? $this->prices->map(fn($pp) => $pp->price)
+            : $this->prices()->with('price')->get()->map(fn($pp) => $pp->price);
 
         $basePrices = $allPrices->where('type', 0);
         $percentageAdditions = $allPrices->where('type', 1);
         $fixedDiscounts = $allPrices->where('type', 2);
-        //$extraCosts = $allPrices->where('type', 3); // Usually excluded from base unit price
         $percentageDiscounts = $allPrices->where('type', 4);
 
         $totalBasePrice = $basePrices->sum('amount');
-        $currentPrice = $totalBasePrice;
+        $preDiscountPrice = $totalBasePrice;
 
-        // 1. Apply percentage additions
+        // 1. Additions
         foreach ($percentageAdditions as $percentage) {
-            $currentPrice += $totalBasePrice * ($percentage->amount / 100);
+            $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
         }
 
-        // 2. Apply percentage discounts
+        $calculatedPrice = $preDiscountPrice;
+
+        // 2. Percentage Discounts
         foreach ($percentageDiscounts as $percentage) {
-            $currentPrice -= $currentPrice * ($percentage->amount / 100);
+            $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
         }
 
-        // 3. Apply fixed amount discounts
-        $currentPrice -= $fixedDiscounts->sum('amount');
+        // 3. Fixed Discounts
+        $calculatedPrice -= $fixedDiscounts->sum('amount');
 
-        return max(0, $currentPrice);
+        return max($calculatedPrice, 0);
     }
+
 }

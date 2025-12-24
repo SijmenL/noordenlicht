@@ -37,6 +37,10 @@ html.noscroll {
     margin-bottom: 0; /* Optional: remove margin to align with content */
 }
 
+.nav-tabs .nav-item .nav-link {
+    padding: 5px;
+}
+
 
 ::selection {
     background-color: var(--primary-color);
@@ -1210,7 +1214,7 @@ th .form-control, .form-select {
     justify-content: center;
     height: auto; /* Let the cell grow based on content */
     min-height: 100px; /* Minimum height for cells */
-    border: 0.25px solid var(--secondary-color);
+    border: 0.25px solid #dee2e6;
     font-size: 1.3rem;
     transition: 0.1s;
 }
@@ -1276,7 +1280,8 @@ th .form-control, .form-select {
 }
 
 .calendar-cell.highlight {
-    background-color: var(--secondary-color);
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .calendar-cell.empty {
@@ -1459,6 +1464,12 @@ th .form-control, .form-select {
     border-radius: 50%;
     aspect-ratio: 1/1;
     object-fit: cover;
+}
+
+.event {
+    background-color: var(--light-color);
+    border-radius: 15px;
+    padding: 10px;
 }
 
 .day-name {

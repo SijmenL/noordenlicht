@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductPrice; // Added: Pivot model
+use App\Models\Price;        // Added: Price model
 use App\Models\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -18,16 +20,30 @@ class ProductController extends Controller
     public function shop()
     {
         $search = request('search');
+        $type = request('type');
 
-        if (request('search')) {
-            $products = Product::where(function ($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('type', 'like', '%' . $search . '%')
+        $query = Product::query();
+
+        // Exclude 'Supplementen bij accommodatie' (type 0)
+        $query->where('type', '!=', '0');
+
+        // Search Logic
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
                     ->orWhere('description', 'like', '%' . $search . '%');
-            })->orderBy('name')->paginate(25);
-        } else {
-            $products = Product::orderBy('name')->paginate(25);
+            });
         }
+
+        // Category Filter
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        // Sort by Category first, then Name
+        $products = $query->orderBy('type')
+            ->orderBy('name')
+            ->paginate(25);
 
         return view('shop.list', ['products' => $products, 'search' => $search]);
     }
@@ -40,7 +56,13 @@ class ProductController extends Controller
             return redirect()->route('shop')->with('error', 'Dit product bestaat niet.');
         }
 
-        return view('shop.details', ['product' => $product]);
+        // Logic to fetch supplements if the product is an 'Overnachting' (Type 2)
+        $supplements = collect();
+        if ($product->type == '2') {
+            $supplements = Product::where('type', '0')->get();
+        }
+
+        return view('shop.details', ['product' => $product, 'supplements' => $supplements]);
     }
 
     // --- Admin Functions ---
@@ -90,28 +112,55 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'required|string',
             'description' => 'required|string|max:65535',
-            'image' => 'required|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'prices_to_add' => 'nullable|string', // Validating the price JSON
+            'temp_image_ids' => 'nullable|string',
         ]);
 
-        $tempImageIds = array_filter(explode(',', $request->input('temp_image_ids', '')));
+        $tempImageIds = array_filter(explode(',', $request->input('temp_image_ids') ?? ''));
 
         DB::beginTransaction();
         try {
-            $mainImageFile = $request->file('image');
-            $mainImageName = time() . '_main.' . $mainImageFile->extension();
-            $mainImagePath = public_path('files/products/images');
-            $mainImageFile->move($mainImagePath, $mainImageName);
+            if($request->input('image')) {
+                $mainImageFile = $request->file('image');
+                $mainImageName = time() . '_main.' . $mainImageFile->extension();
+                $mainImagePath = public_path('files/products/images');
+                $mainImageFile->move($mainImagePath, $mainImageName);
+            } else {
+                $mainImageName = null;
+            }
 
+            // Removed 'price' => 0 because the column no longer exists
             $product = Product::create([
                 'name' => $request->input('name'),
                 'type' => $request->input('type'),
-                'price' => $request->input('price'),
                 'description' => $request->input('description'),
                 'image' => $mainImageName,
                 'user_id' => Auth::id(),
             ]);
 
-            // Move and link temporary carousel images
+            // 1. Process Prices (Create Price model first, then link)
+            if (!empty($request->input('prices_to_add'))) {
+                $prices = json_decode($request->input('prices_to_add'), true);
+                if (is_array($prices)) {
+                    foreach ($prices as $priceData) {
+                        // Create the generic Price record
+                        $price = Price::create([
+                            'name' => $priceData['name'],
+                            'amount' => $priceData['amount'],
+                            'type' => $priceData['type'],
+                        ]);
+
+                        // Link it to the Product
+                        ProductPrice::create([
+                            'product_id' => $product->id,
+                            'price_id' => $price->id,
+                        ]);
+                    }
+                }
+            }
+
+            // 2. Move and link temporary carousel images
             if (!empty($tempImageIds)) {
                 $tempImages = ProductImage::whereIn('id', $tempImageIds)->whereNull('product_id')->get();
                 foreach ($tempImages as $tempImage) {
@@ -138,8 +187,8 @@ class ProductController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error("Product save error: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Opslaan mislukt.')->withInput();
+            \Illuminate\Support\Facades\Log::error("Product save error: " . $e->getMessage(), ['exception' => $e]);
+            return redirect()->back()->with('error', 'Opslaan mislukt: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -165,7 +214,8 @@ class ProductController extends Controller
 
         DB::beginTransaction();
         try {
-            $product->update($request->only('name', 'type', 'price', 'description'));
+            // Removed 'price' from the update list
+            $product->update($request->only('name', 'type', 'description'));
 
             if ($request->hasFile('image')) {
                 File::delete(public_path('files/products/images/' . $product->image));
@@ -187,7 +237,7 @@ class ProductController extends Controller
             }
 
             // Process new images
-            $tempImageIds = array_filter(explode(',', $request->input('temp_image_ids', '')));
+            $tempImageIds = array_filter(explode(',', $request->input('temp_image_ids') ?? ''));
             if (!empty($tempImageIds)) {
                 $tempImages = ProductImage::whereIn('id', $tempImageIds)->whereNull('product_id')->get();
                 foreach ($tempImages as $tempImage) {
@@ -225,7 +275,6 @@ class ProductController extends Controller
         return redirect()->route('admin.products')->with('success', 'Product verwijderd.');
     }
 
-    // --- Helpers for AJAX Uploads ---
     public function uploadTempImage(Request $request)
     {
         $file = $request->file('file');
@@ -238,6 +287,4 @@ class ProductController extends Controller
         $img = ProductImage::create(['product_id' => null, 'image' => $fileName, 'temp_id' => $uniqueId]);
         return response()->json(['success' => true, 'data' => ['id' => $img->id]]);
     }
-
-    // ... Similar for Icons
 }

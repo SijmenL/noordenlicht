@@ -559,41 +559,58 @@
 
 
                     <div class="mt-4">
-                        <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">event_note</span>Extra's
+                        <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">local_activity</span>Tickets
                         </h2>
-                        <div class="w-100 d-flex flex-row-responsive align-items-end gap-2">
+                        <p>Als het evenement gratis is kun je dit overslaan.</p>
+                        <div class="mb-5 p-3 border rounded-3 bg-white">
+                            <h2 class="h5 mb-3">Prijsconfiguratie</h2>
 
-                            <div class="w-100">
-                                <label for="presence" class="col-form-label">
-                                    Laat de gebruikers zich aan of af melden voor deze activiteit
-                                    <span class="required-form">*</span>
-                                </label>
+                            <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
+                                <div class="flex-grow-1">
+                                    <label for="new_price_name" class="form-label mb-1">Naam (bv. "Basisprijs")</label>
+                                    <input type="text" id="new_price_name" class="form-control" placeholder="Naam van prijscomponent">
+                                </div>
+                                <div style="max-width: 150px;">
+                                    <label for="new_price_amount" class="form-label mb-1">Bedrag / %</label>
+                                    <input type="number" step="0.01" id="new_price_amount" class="form-control" placeholder="0.00">
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label for="new_price_type" class="form-label mb-1">Type</label>
+                                    <select id="new_price_type" class="form-select">
+                                        <option value="0">Standaard Prijs (€)</option>
+                                        <option value="1">Percentage Toeslag (%)</option>
+                                        <option value="2">Vaste Korting (€)</option>
+                                        <option value="4">Percentage Korting (%)</option>
+                                        <option value="3">Extra Kosten (excl.)</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="add-price-btn" class="btn btn-primary" style="min-width: 100px;">
+                                    Toevoegen
+                                </button>
+                            </div>
+                            <small id="price-add-error" class="text-danger d-block mb-3"></small>
 
-                                <select id="presence" class="form-select @error('presence') is-invalid @enderror"
-                                        name="presence">
-                                    <option @if($activity->presence === "0") selected @endif value="0">Nee</option>
-                                    <option @if($activity->presence !== "0") selected @endif value="1">Ja</option>
-                                </select>
-                                @error('presence')
-                                <span class="invalid-feedback" role="alert">
-            <strong>{{ $message }}</strong>
-        </span>
-                                @enderror
+                            <div id="price-list-container" class="d-flex flex-column gap-2 py-2 border-top border-bottom">
+                                {{-- Prices will be rendered here by JavaScript --}}
                             </div>
-                            <div id="date-container" class="w-100 mt-2">
-                                <label for="presence-date" class="col-form-label">Deadline om aan- of af te melden:
-                                    (wanneer dit veld leeg gelaten wordt zal er geen deadline op zitten)</label>
-                                <input type="datetime-local" id="presence-date" name="presence-date"
-                                       value="{{ $activity->presence }}"
-                                       class="form-control @error('presence-date') is-invalid @enderror">
-                                @error('presence-date')
-                                <span class="invalid-feedback" role="alert">
-            <strong>{{ $message }}</strong>
-        </span>
-                                @enderror
-                            </div>
+                            <p id="price-list-placeholder" class="text-muted w-100 m-0 p-3">
+                                Nog geen prijscomponenten toegevoegd.
+                            </p>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label for="max_tickets" class="col-form-label ">Maximale hoeveelheid tickets</label>
+                            <input name="max_tickets" type="number" class="form-control" id="max_tickets"
+                                   value="{{ $activity->max_tickets }}"
+                            >
+                            @error('max_tickets')
+                            <span class="text-danger">{{ $message }}</span>
+                            @enderror
                         </div>
 
+                    </div>
+                    <div class="mt-4">
+                        <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">event_note</span>Extra's
+                        </h2>
                         <script>
                             document.addEventListener("DOMContentLoaded", function () {
                                 const presenceSelect = document.getElementById("presence");
@@ -618,16 +635,13 @@
                         @if(!isset($lesson))
 
                             <div class="w-100">
-                                <label for="public" class="col-form-label ">Maak dit een openbare activiteit (Het zal
-                                    ook op
-                                    de
-                                    normale website komen te staan als activiteit) <span
+                                <label for="public" class="col-form-label ">Zichtbaarheid<span
                                         class="required-form">*</span></label>
                                 <select id="public" type="text"
                                         class="form-select @error('public') is-invalid @enderror"
                                         name="public">
-                                    <option @if($activity->public === false) selected @endif value="0">Nee</option>
-                                    <option @if($activity->public === true) selected @endif value="1">Ja</option>
+                                    <option @if($activity->public === false) selected @endif value="0">Openbaar</option>
+                                    <option @if($activity->public === true) selected @endif value="1">Verborgen</option>
                                 </select>
                                 @error('public')
                                 <span class="invalid-feedback" role="alert">
@@ -636,29 +650,13 @@
                                 @enderror
                             </div>
 
-
-                            <div class="w-100">
-                                <label for="price" class="col-form-label ">Prijs (als je dit
-                                    veld leeg laat vermelden we de prijs niet en voor een gratis evenement kun je 0
-                                    invullen)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">€</span>
-                                    <input name="price" type="number" class="form-control" aria-label="price"
-                                           aria-describedby="price" id="price" value="{{ $activity->price }}">
-                                </div>
-                                @error('price')
-                                <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
                         @else
                             <input name="public" type="hidden" value="0">
                             <input name="lesson_id" type="hidden" value="{{$lesson->id}}">
                         @endif
 
                         <div class="d-flex flex-column">
-                            <label for="location" class="col-form-label ">Locatie, bijvoorbeeld Tramstraat 54a"</label>
+                            <label for="location" class="col-form-label ">Locatie, bijvoorbeeld "Tramstraat 54a"</label>
                             <input name="location" type="text" class="form-control" id="location"
                                    value="{{ $activity->location }}"
                             >
@@ -670,7 +668,7 @@
                         @if(!isset($lesson))
 
                             <div class="d-flex flex-column">
-                                <label for="organisator" class="col-form-label ">Organisatie, bijvoorbeeld "Bosvrienden"/label>
+                                <label for="organisator" class="col-form-label ">Organisatie, bijvoorbeeld "Bosvrienden" </label>
                                 <input name="organisator" type="text" class="form-control" id="organisator"
                                        value="{{ $activity->organisator }}"
                                 >
@@ -679,102 +677,6 @@
                                 @enderror
                             </div>
 
-
-                            <div class="mt-4">
-                                <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">for_you</span>Rollen
-                                    & Mensen</h2>
-                                <p>Als je geen rollen of gebruikers toevoegt aan je activiteit wordt deze voor iedereen
-                                    zichtbaar!</p>
-                                <p>Om een activiteit aan te maken voor bijvoorbeeld de Zeeverkenners, kun je de rol
-                                    "Zeeverkenners" kiezen onder "Eventuele rollen waarvoor je activiteit geldt".</p>
-                                <p>Vergeet niet om ook de leiding rol toe te voegen als je iets aan je speltak
-                                    toevoegd!</p>
-                                <div class="d-flex flex-column mt-4 mb-2">
-                                    <div class="accordion" id="accordionExample">
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button"
-                                                        data-bs-toggle="collapse" data-bs-target="#collapseOne"
-                                                        aria-expanded="false" aria-controls="collapseOne">
-                                                    <label for="select-roles" class="col-md-4 col-form-label ">Eventuele
-                                                        rollen
-                                                        waarvoor je activiteit geldt</label>
-                                                </button>
-                                            </h2>
-
-                                            <div id="collapseOne" class="accordion-collapse collapse"
-                                                 data-bs-parent="#accordionExample">
-                                                <div class="accordion-body">
-                                                    <div class="custom-select">
-                                                        @php
-                                                            $selectedRoles = explode(',', $activity->roles);
-                                                        @endphp
-
-                                                        <select id="select-roles" class="d-none" name="roles[]"
-                                                                multiple>
-                                                            @foreach($all_roles as $role)
-                                                                <option data-description="{{ $role->description }}"
-                                                                        value="{{ $role->id }}"
-                                                                        @if(in_array($role->id, $selectedRoles)) selected @endif>
-                                                                    {{ $role->role }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-
-
-                                                    </div>
-                                                    <div class="d-flex flex-wrap gap-1" id="button-container"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button"
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#collapseTwo" aria-expanded="false"
-                                                        aria-controls="collapseTwo">
-                                                    <label for="users" class="col-md-4 col-form-label ">Eventuele
-                                                        gebruikers
-                                                        waarvoor je activiteit
-                                                        geldt</label>
-                                                </button>
-                                            </h2>
-                                            <div id="collapseTwo" class="accordion-collapse collapse"
-                                                 data-bs-parent="#accordionExample">
-                                                <div class="accordion-body">
-                                                    <input id="users" name="users" type="text"
-                                                           value="{{ $activity->users }}"
-                                                           class="user-select-window user-select-none form-control"
-                                                           placeholder="Kies een gebruiker uit de lijst"
-                                                           aria-label="user" aria-describedby="basic-addon1">
-                                                    <div class="user-select-window-popup d-none mt-2"
-                                                         style="position: unset; display: block !important;">
-                                                        <h3>Selecteer gebruikers</h3>
-                                                        <div class="input-group">
-                                                            <label class="input-group-text" id="basic-addon1">
-                                                                <span
-                                                                    class="material-symbols-rounded">search</span></label>
-                                                            <input type="text" data-type="multiple" data-stayopen="true"
-                                                                   class="user-select-search form-control"
-                                                                   placeholder="Zoeken op naam, email, adres etc."
-                                                                   aria-label="Zoeken" aria-describedby="basic-addon1"
-
-                                                            >
-                                                        </div>
-                                                        <div class="user-list no-scrolbar">
-                                                            <div
-                                                                class="w-100 h-100 d-flex justify-content-center align-items-center"><span
-                                                                    class="material-symbols-rounded rotating"
-                                                                    style="font-size: xxx-large">progress_activity</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         @endif
                     </div>
                     <div>
@@ -997,6 +899,194 @@
                 saveBtn.querySelector('.button-text').style.display = 'inline-block';
                 saveBtn.querySelector('.loading-spinner').style.display = 'none';
                 saveBtn.querySelector('.loading-text').style.display = 'none';
+            });
+        });
+    </script>
+
+    <script>
+        // --- Configuration ---
+        const ACTIVITY_ID = {{ $activity->id }};
+
+        // Assumes a polymorphic price controller or similar shared logic
+        const LINK_PRICE_URL = '{{ route('admin.prices.link') }}';
+        const UNLINK_PRICE_URL_BASE = '{{ route('admin.prices.unlink', ['priceLink' => 'PLACEHOLDER']) }}';
+
+        const CSRF_TOKEN = document.querySelector('input[name="_token"]').value;
+
+        // --- Global State ---
+        let fileIdCounter = 0;
+
+        // --- Utility Functions ---
+        const createElement = (tag, attributes = {}, innerHTML = '') => {
+            const el = document.createElement(tag);
+            for (const key in attributes) {
+                if (key === 'className') el.className = attributes[key];
+                else if (key === 'onclick' && typeof attributes[key] === 'function') el.onclick = attributes[key];
+                else if (key === 'oninput' && typeof attributes[key] === 'function') el.oninput = attributes[key];
+                else el.setAttribute(key, attributes[key]);
+            }
+            el.innerHTML = innerHTML;
+            return el;
+        };
+
+        // ===========================================
+        // Price Editor (ASYNC version)
+        // ===========================================
+        const PriceEditor = {
+            prices: [],
+            container: document.getElementById('price-list-container'),
+            placeholder: document.getElementById('price-list-placeholder'),
+            errorEl: document.getElementById('price-add-error'),
+
+            initialize() {
+                // Initialize with existing prices relation
+                const existingPrices = @json($activity->prices->map(function($pp) {
+                    return [
+                        'id' => $pp->id, // This is the linkage ID
+                        'price' => $pp->price
+                    ];
+                }) ?? []);
+
+                this.prices = existingPrices;
+                this.render();
+            },
+
+            render() {
+                this.container.innerHTML = '';
+                this.placeholder.style.display = this.prices.length === 0 ? 'block' : 'none';
+
+                this.prices.forEach((priceData, index) => {
+                    this.container.appendChild(this.createPriceRow(priceData, index));
+                });
+            },
+
+            getTypeText(type) {
+                switch(parseInt(type, 10)) {
+                    case 0: return 'Standaard Prijs (€)';
+                    case 1: return 'Percentage Toeslag (%)';
+                    case 2: return 'Vaste Korting (€)';
+                    case 3: return 'Extra Kosten (excl.)';
+                    case 4: return 'Percentage Korting (%)';
+                    default: return 'Onbekend';
+                }
+            },
+
+            createPriceRow(priceData, index) {
+                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded' });
+                const nameEl = createElement('div', { className: 'flex-grow-1' }, `<strong>${priceData.price.name}</strong>`);
+                const amountText = `${(parseInt(priceData.price.type, 10) === 1 || parseInt(priceData.price.type, 10) === 4) ? '' : '€ '}${parseFloat(priceData.price.amount).toFixed(2)}${(parseInt(priceData.price.type, 10) === 1 || parseInt(priceData.price.type, 10) === 4) ? '%' : ''}`;
+                const amountEl = createElement('div', { className: 'fw-bold', style: 'min-width: 80px; text-align: right;'}, amountText);
+                const typeEl = createElement('div', { className: 'text-muted small', style: 'min-width: 150px;' }, this.getTypeText(priceData.price.type));
+                const removeBtn = createElement('button', {
+                    type: 'button', className: 'btn btn-sm btn-outline-danger', title: 'Verwijder prijs', onclick: () => this.removePrice(index)
+                }, '&times;');
+
+                wrapper.appendChild(nameEl);
+                wrapper.appendChild(typeEl);
+                wrapper.appendChild(amountEl);
+                wrapper.appendChild(removeBtn);
+
+                return wrapper;
+            },
+
+            async addPrice() {
+                this.errorEl.textContent = '';
+                const nameInput = document.getElementById('new_price_name');
+                const amountInput = document.getElementById('new_price_amount');
+                const typeInput = document.getElementById('new_price_type');
+
+                const name = nameInput.value.trim();
+                const amount = amountInput.value;
+                const type = typeInput.value;
+
+                if (!name || !amount) {
+                    this.errorEl.textContent = 'Naam en bedrag zijn verplicht.';
+                    return;
+                }
+
+                const payload = {
+                    model_id: ACTIVITY_ID,
+                    model_type: 'activity',
+                    name: name,
+                    amount: amount,
+                    type: type
+                };
+
+                try {
+                    const response = await fetch(LINK_PRICE_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Failed to add price.');
+                    }
+
+                    this.prices.push(result.data);
+                    this.render();
+
+                    // Clear inputs
+                    nameInput.value = '';
+                    amountInput.value = '';
+                    typeInput.value = '0';
+
+                } catch (error) {
+                    this.errorEl.textContent = `Fout: ${error.message}`;
+                    console.error("Error adding price:", error);
+                }
+            },
+
+            async removePrice(index) {
+                const priceData = this.prices[index];
+                const priceLinkId = priceData.id;
+
+                // FIX: Append model_type so Controller knows which table to check
+                const url = UNLINK_PRICE_URL_BASE.replace('PLACEHOLDER', priceLinkId) + '?model_type=activity';
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN }
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Failed to remove price.');
+                    }
+
+                    this.prices.splice(index, 1);
+                    this.render();
+
+                } catch (error) {
+                    alert(`Kon prijs niet verwijderen: ${error.message}`);
+                    console.error("Error removing price:", error);
+                }
+            },
+        };
+
+
+        // ===========================================
+        // Main Form Submission & Initialization
+        // ===========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            PriceEditor.initialize();
+            document.getElementById('add-price-btn').addEventListener('click', () => PriceEditor.addPrice());
+
+            const form = document.getElementById('activity-form');
+            form.addEventListener('submit', function (e) {
+                // Update description from editor
+                document.getElementById('description').value = document.getElementById('text-input').innerHTML;
+
+                // Set loading state
+                const saveButton = document.getElementById('save-button');
+                saveButton.disabled = true;
+                saveButton.querySelector('.button-text').style.display = 'none';
+                saveButton.querySelector('.loading-spinner').style.display = 'inline-block';
+                saveButton.querySelector('.loading-text').style.display = 'inline-block';
             });
         });
     </script>

@@ -1,4 +1,4 @@
-@extends('layouts.contact')
+@extends('layouts.app')
 
 @php
     use Carbon\Carbon;
@@ -7,6 +7,17 @@
 @endphp
 
 @section('content')
+    <div class="container col-md-11 mt-5 mb-5">
+        @if(Session::has('error'))
+            <div class="alert alert-danger" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
+        @if(Session::has('success'))
+            <div class="alert alert-success" role="alert">
+                {{ session('success') }}
+            </div>
+        @endif
     @if($limit === null)
         <div>
             @else
@@ -83,8 +94,17 @@
                                     <div class="month-devider-line"></div>
                                 </div>
                             @endif
+                            @php
+                                $linkParams = [
+                                    'id' => $activity->id,
+                                    'month' => $monthOffset,
+                                    'startDate' => $activitiesStart->format('Y-m-d'),
+                                    'view' => 'schedule',
+                                ];
+                            @endphp
 
-                            <a onclick="breakOut({{ $activity->id }})"
+                            <a
+                                    href="{{ route('agenda.public.activity', $linkParams) }}"
                                class="text-decoration-none"
                                style="color: unset; cursor: pointer">
                                 <div class="d-flex flex-row">
@@ -136,4 +156,5 @@
                     @endif
 
                 </div>
+        </div>
         @endsection

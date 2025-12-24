@@ -6,10 +6,14 @@ use App\Exports\AgendaExport;
 use App\Models\Activity;
 use App\Models\ActivityFormElement;
 use App\Models\ActivityFormResponses;
+use App\Models\ActivityPrice;
 use App\Models\Log;
 use App\Models\Presence;
+use App\Models\Price;
+use App\Models\ProductPrice;
 use App\Models\Role;
 use App\Models\ActivityException;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Traits\AgendaPublicScheduleTrait;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -116,15 +120,12 @@ class AgendaController extends Controller
             'date_start' => 'date|required',
             'date_end' => 'date|required',
             'reoccurrence' => 'string|required',
-            'roles' => 'array|nullable',
-            'users' => 'string|nullable',
+            'max_tickets' => 'integer|nullable',
             'public' => 'boolean|required',
-            'presence' => 'boolean|required',
-            'presence-date' => 'date|nullable',
-            'price' => 'numeric|nullable',
             'location' => 'string|nullable',
             'organisator' => 'string|nullable',
             'image' => 'mimes:jpeg,png,jpg,gif,webp|max:6000',
+
             'form_labels' => 'nullable|array',
             'form_types' => 'nullable|array',
             'form_options' => 'nullable|array',
@@ -173,8 +174,9 @@ class AgendaController extends Controller
                 'roles' => $roles,
                 'users' => $users,
                 'public' => $request->input('public'),
+                'max_tickets' => $request->input('max_tickets'),
                 'presence' => $presence,
-                'price' => $request->input('price'),
+                'price' => $request->input('price'), // Note: this looks like a flat price field, separate from the 'prices' relation below
                 'location' => $request->input('location'),
                 'organisator' => $request->input('organisator'),
                 'image' => $newPictureName,
@@ -187,7 +189,7 @@ class AgendaController extends Controller
 
             $log = new Log();
 
-// 3) Branch by editType
+            // 3) Branch by editType
             if ($editType === 'all' || !$activity->recurrence_rule) {
                 // Entire series
                 $activity->update($data);
@@ -208,7 +210,20 @@ class AgendaController extends Controller
 
                 $new->save();
 
-// Trim original up to the chosen date
+                // --- CLONE PRICES ---
+                foreach ($activity->prices as $price) {
+                    $newPrice = $price->replicate();
+                    $newPrice->activity_id = $new->id;
+                    $newPrice->save();
+                }
+
+                // --- MOVE TICKETS ---
+                // Move tickets that are for the occurrence date or later to the new activity
+                Ticket::where('activity_id', $activity->id)
+                    ->whereDate('start_date', '>=', $occurrenceDate)
+                    ->update(['activity_id' => $new->id]);
+
+                // Trim original up to the chosen date
                 $activity->update([
                     'end_recurrence' => $occurrenceDate,
                 ]);
@@ -233,13 +248,26 @@ class AgendaController extends Controller
                 // 3d) Clone one‐off event
                 $new = $activity->replicate();
                 $new->fill($data);
-                $new->recurrence_rule = null;
+                $new->recurrence_rule = "never";
 
                 $newStart = Carbon::parse("{$occurrenceDate} " . $origStart->format('H:i:s'));
                 $new->date_start = $newStart->toDateTimeString();
                 $new->date_end = $newStart->copy()->addSeconds($durationSec)->toDateTimeString();
 
                 $new->save();
+
+                // --- CLONE PRICES ---
+                foreach ($activity->prices as $price) {
+                    $newPrice = $price->replicate();
+                    $newPrice->activity_id = $new->id;
+                    $newPrice->save();
+                }
+
+                // --- MOVE TICKETS ---
+                // Move tickets specifically for this date to the new one-off activity
+                Ticket::where('activity_id', $activity->id)
+                    ->whereDate('start_date', $occurrenceDate)
+                    ->update(['activity_id' => $new->id]);
 
                 $activity = $new;
             }
@@ -283,17 +311,17 @@ class AgendaController extends Controller
             );
 
             // 5) Redirect back
-
-
             return redirect()
                 ->route(
                     'agenda.activity',
-                    ['id' => $activity->id, 'startDate' => $occurrenceDate, 'month' => $month, 'all' => $wantViewAll, 'view' => $view, ''])
+                    ['id' => $activity->id, 'startDate' => $occurrenceDate, 'month' => $month, 'all' => $wantViewAll, 'view' => $view])
                 ->with('success', 'Je agendapunt is bijgewerkt!');
 
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
+            // It is often useful to log the error for debugging:
+            // \Log::error($e->getMessage());
             return redirect()->back()
                 ->with('error', 'Er is een fout opgetreden. Probeer opnieuw.')
                 ->withInput();
@@ -767,7 +795,7 @@ class AgendaController extends Controller
                     $query->whereNotNull('recurrence_rule');
                 });;
         })
-            ->where('public', true)
+            ->where('public', "0")
             ->get();
 
         // Load exceptions for single-instance deletions
@@ -1279,19 +1307,19 @@ class AgendaController extends Controller
 
         // Fetch the public activity by id
         $activity = Activity::where('id', $id)
-            ->where('public', true)
+            ->where('public', "0")
             ->first();
 
-        $dateStart = $request->query('dateStart');
+        $dateStart = $request->query('startDate');
+
         if (!$dateStart || !$activity->recurrence_rule) {
-            return redirect()->route('agenda.month')->with('error', 'Activiteit niet gevonden.');
+            return redirect()->route('agenda.public.schedule')->with('error', 'Activiteit niet gevonden.');
         }
 
         if (!self::isValidRepetitionDate($activity, $dateStart)) {
-            return redirect()->route('agenda.month')->with('error', 'Deze herhaling van de activiteit bestaat niet.');
+            return redirect()->route('agenda.public.schedule')->with('error', 'Deze herhaling van de activiteit bestaat niet.');
         }
 
-// Update activity dates for the current occurrence
 // Update activity dates for the current occurrence
         $originalStart = \Carbon\Carbon::parse($activity->date_start);
         $originalEnd = \Carbon\Carbon::parse($activity->date_end);
@@ -1378,13 +1406,9 @@ class AgendaController extends Controller
             'content' => 'string|max:65535|nullable',
             'date_start' => ['date', 'required', 'before_or_equal:date_end'],
             'date_end' => ['date', 'required', 'after_or_equal:date_start'],
-            'roles' => 'array|nullable',
-            'users' => 'string|nullable',
             'public' => 'boolean|required',
-            'presence' => 'boolean|required',
-            'presence-date' => 'date|nullable',
-            'price' => 'numeric|nullable',
             'location' => 'string|nullable',
+            'max_tickets' => 'integer|nullable',
             'organisator' => 'string|nullable',
             'image' => 'mimes:jpeg,png,jpg,gif,webp|max:6000',
 
@@ -1394,6 +1418,8 @@ class AgendaController extends Controller
             'form_types' => 'nullable|array',
             'form_options' => 'nullable|array',
             'is_required' => 'nullable|array',
+
+            'prices_to_add' => 'nullable|string'
         ]);
 
         try {
@@ -1405,41 +1431,47 @@ class AgendaController extends Controller
                 $request->file('image')->move(public_path($destinationPath), $newPictureName);
             }
 
-            // Handle roles and users input
-            $roles = $request->input('roles') ? implode(', ', $request->input('roles')) : null;
-            $users = $request->input('users') ? implode(', ', array_map('trim', array_filter(explode(',', $request->input('users'))))) : null;
-
             // Validate content for disallowed elements or styles
             if (ForumController::validatePostData($request->input('content'))) {
-
-                $presence = $request->input('presence');
-
-                if ($presence === "1" && $request->filled('presence-date')) {
-                    $presence = $request->input('presence-date');
-                }
-
 
                 // Create the activity
                 $activity = Activity::create([
                     'content' => $request->input('content'),
-                    'price' => $request->input('price'),
                     'organisator' => $request->input('organisator'),
                     'location' => $request->input('location'),
+                    'max_tickets' => $request->input('max_tickets'),
                     'date_start' => $request->input('date_start'),
                     'date_end' => $request->input('date_end'),
                     'title' => $request->input('title'),
                     'user_id' => Auth::id(),
-                    'roles' => $roles,
-                    'users' => $users,
                     'image' => $newPictureName,
                     'public' => $request->input('public'),
-                    'presence' => $presence,
                     'recurrence_rule' => $request->input('reoccurrence')
                 ]);
 
+                if (!empty($request->input('prices_to_add'))) {
+                    $prices = json_decode($request->input('prices_to_add'), true);
+                    if (is_array($prices)) {
+                        foreach ($prices as $priceData) {
+                            // Create the generic Price record
+                            $price = Price::create([
+                                'name' => $priceData['name'],
+                                'amount' => $priceData['amount'],
+                                'type' => $priceData['type'],
+                            ]);
+
+                            // Link it to the Product
+                            ActivityPrice::create([
+                                'activity_id' => $activity->id,
+                                'price_id' => $price->id,
+                            ]);
+                        }
+                    }
+                }
+
                 // Log the creation of the activity
                 $log = new Log();
-                $log->createLog(auth()->user()->id, 2, 'Create activity', 'agenda', 'Activity id: ' . $activity->id, '');
+                $log->createLog(auth()->user()->id, 2, 'Create event', 'agenda', 'Activity id: ' . $activity->id, '');
 
                 // Handle form elements (if provided)
                 if (isset($validatedData['form_labels']) && $request->input('reoccurrence') === "never") {

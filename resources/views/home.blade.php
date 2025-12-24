@@ -344,7 +344,7 @@
         </div>
 
         <div class=" bg-white d-flex flex-column container-block"
-             style="position: relative; z-index: 4; margin-top: -25px; margin-bottom: -125px; background-image: url('{{ asset('img/logo/doodles/BuizerdVlucht.webp') }}'); background-repeat: no-repeat; background-size: 150vw; background-position: center">
+             style="position: relative; z-index: 4; margin-top: -25px; background-image: url('{{ asset('img/logo/doodles/BuizerdVlucht.webp') }}'); background-repeat: no-repeat; background-size: 150vw; background-position: center">
             <h1 class="text-center">Blog</h1>
             @if($news->count() > 0)
                 <div class="d-flex flex-row-responsive gap-4 justify-content-center"

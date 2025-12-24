@@ -120,7 +120,7 @@
 
                                 <!-- Booking Actions -->
                                 <div class="d-grid gap-3 mt-4">
-                                    <a class="btn btn-primary btn-lg rounded-pill shadow">Nu Boeken</a>
+                                    <a href="{{ route('accommodatie.book', $accommodatie->id) }}" class="btn btn-primary btn-lg rounded-pill shadow">Nu Boeken</a>
                                     <a class="btn btn-outline-primary rounded-pill">Bekijk Huisregels</a>
                                 </div>
                             </div>

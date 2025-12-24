@@ -175,18 +175,18 @@
                                 ],
                             ],
                             [
-                                'name' => 'Agenda',
+                                'name' => 'Events',
                                 'uri' => '/agenda/maand',
                                 'fontSize' => '18px',
                                 'icon-name' => 'calendar_month',
                                 'sub-pages' => [
                                     [
                                         'name' => 'Overzicht',
-                                        'uri' => '/dashboard/agenda/maand',
+                                        'uri' => '/dashboard/agenda/overzicht',
                                         'fontSize' => '14px',
                                     ],
                                     [
-                                        'name' => 'Nieuw agendapunt',
+                                        'name' => 'Nieuw event',
                                         'uri' => '/dashboard/agenda/nieuw',
                                         'fontSize' => '14px',
                                     ],

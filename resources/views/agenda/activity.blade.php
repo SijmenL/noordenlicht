@@ -11,6 +11,41 @@
     $eventEnd = Carbon::parse($activity->date_end);
 
     $eventMonth = $eventStart->translatedFormat('F');
+
+    // --- Price Calculation Logic (UNCHANGED) ---
+    $allPrices = $activity->prices->map(fn($p) => $p->price);
+
+    $basePrices = $allPrices->where('type', 0);
+    $percentageAdditions = $allPrices->where('type', 1);
+    $fixedDiscounts = $allPrices->where('type', 2);
+    $extraCosts = $allPrices->where('type', 3);
+    $percentageDiscounts = $allPrices->where('type', 4);
+
+    $totalBasePrice = $basePrices->sum('amount');
+    $preDiscountPrice = $totalBasePrice;
+
+    // 1. Apply percentage additions
+    $totalPercentageAdditions = 0;
+    foreach ($percentageAdditions as $percentage) {
+        $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
+        $totalPercentageAdditions += $percentage->amount;
+    }
+
+    $calculatedPrice = $preDiscountPrice;
+
+    $totalPercentageDiscounts = 0;
+    // 2. Apply percentage discounts
+    foreach ($percentageDiscounts as $percentage) {
+        $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
+        $totalPercentageDiscounts += $percentage->amount;
+    }
+
+    // 3. Apply fixed amount discounts
+    $calculatedPrice -= $fixedDiscounts->sum('amount');
+
+    $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
+    // --- End Price Calculation ---
+
 @endphp
 
 @section('content')
@@ -21,29 +56,7 @@
                                    'Praktijkbegeleider', 'Loodsen Mentor', 'Ouderraad'
                                ]);
                            }) || $isTeacher)
-        <div id="popUpPresence" class="popup" style="margin-top: -122px; display: none;">
-            <div class="popup-body" style="width: 97vw; height: 95vh">
-                <h2>Aanwezigheid {{ $activity->title }}</h2>
-                <div class="w-100" style="height: 100%; min-height: 0px">
-                    @if(isset($lesson))
-                        <iframe width="100%" height="100%" style="border: none;"
-                                src="{{ route('agenda.presence.activity', ['id' => $activity->id, 'lessonId' => $lesson->id, 'startDate' => date("Y-m-d", strtotime($activity->date_start))]) }}">
-                        </iframe>
-                    @else
-                        <iframe width="100%" height="100%" style="border: none;"
-                                src="{{ route('agenda.presence.activity', ['id' => $activity->id, 'startDate' => date("Y-m-d", strtotime($activity->date_start))]) }}">
-                        </iframe>
-                    @endif
-                </div>
-                <div class="button-container">
-                    <a id="close-presence-popup" class="btn btn-outline-danger"><span
-                            class="material-symbols-rounded">close</span></a>
-                </div>
-            </div>
-        </div>
-
-
-        <div id="popUpSubmission" class="popup" style="margin-top: -122px; display: none">
+        <div id="popUpSubmission" class="popup" style="margin-top: -122px; display: none; z-index: 99999; top: 681px; left: 0; position: absolute">
             <div class="popup-body" style="width: 97vw; height: 95vh">
                 <h2>Inschrijvingen {{ $activity->title }}</h2>
                 <div class="w-100" style="height: 100%; min-height: 0px">
@@ -135,13 +148,6 @@
                 @else
                     <h2 class="text-center">{{ $eventStart->format('d-m-Y') }} tot {{ $eventEnd->format('d-m-Y') }}</h2>
                 @endif
-                @if(isset($activity->price))
-                    @if($activity->price > 0)
-                        <h3 class="text-center">€{{ $activity->price }}</h3>
-                    @else
-                        <h3 class="text-center">Deze activiteit is gratis!</h3>
-                    @endif
-                @endif
                 @if(isset($activity->image))
                     <img class="mt-3 zoomable-image"
                          style="width: 100%; max-width: 800px; object-fit: cover; object-position: center;"
@@ -187,16 +193,78 @@
                             <p class="m-0">{{ $activity->organisator }}</p>
                         </div>
                     @endif
-                    @if(isset($activity->price))
+
+                    @if($calculatedPrice !== 0)
                         <div>
-                            <h4 class="mb-2">Prijs</h4>
-                            @if($activity->price > 0)
-                                <p class="m-0">€{{ $activity->price }}</p>
-                            @else
-                                <p class="m-0">Deze activiteit is gratis!</p>
+                            <h4 class="mb-2">Tickets</h4>
+
+                            @if($activity->max_tickets !== null)
+                            <p class="m-0">{{ $activity->ticketsSold() }} tickets verkocht van de {{ $activity->max_tickets }}</p>
+                                @else
+                                <p class="m-0">{{ $activity->ticketsSold() }} tickets verkocht</p>
+
                             @endif
                         </div>
                     @endif
+                    <div>
+                        <h4 class="mb-2">Prijs</h4>
+                        @if($hasDiscount)
+                            <p class="badge bg-success mb-2">
+                                @if($totalPercentageDiscounts > 0)
+                                    {{ $totalPercentageDiscounts }}%
+                                @endif
+                                @if($fixedDiscounts->sum('amount') > 0)
+                                    -€{{ $fixedDiscounts->sum('amount') }}
+                                @endif
+                                korting!
+                            </p>
+
+                            <div class="d-flex flex-row gap-2 align-items-baseline">
+                                <h3 class="d-inline-block text-muted"
+                                    style="text-decoration: line-through; opacity: 0.6; font-size: 1.2rem;">
+                                    &#8364;{{ number_format($preDiscountPrice, 2, ',', '.') }}
+                                </h3>
+                                @else
+                                    <div class="">
+                                        @endif
+
+                                        <h3 class="d-inline-block fw-bold text-primary">
+                                            &#8364;{{ number_format($calculatedPrice, 2, ',', '.') }}
+                                        </h3>
+                                    </div>
+
+                                    {{-- Price Breakdown --}}
+                                    @if($totalPercentageAdditions !== 0)
+                                        <p class="text-muted small mb-0 mt-1">
+                                            (incl.
+                                            @foreach($percentageAdditions as $index => $cost)
+                                                {{ $cost->name }} {{ $cost->amount }}%
+                                                (@if($cost->amount > 0)
+                                                    +
+                                                @endif
+                                                &#8364;{{ number_format($totalBasePrice * ($cost->amount / 100), 2) }}
+                                                )@if(!$loop->last)
+                                                    ,
+                                                @endif
+                                            @endforeach
+                                            )
+                                        </p>
+                                    @endif
+
+                                    @if($extraCosts->isNotEmpty())
+                                        <p class="text-muted small mb-0 mt-1">
+                                            (excl.
+                                            @foreach($extraCosts as $index => $cost)
+                                                {{ $cost->name }}
+                                                &#8364;{{ number_format($cost->amount, 2, ',', '.') }}@if(!$loop->last)
+                                                    ,
+                                                @endif
+                                            @endforeach
+                                            )
+                                        </p>
+                                    @endif
+                            </div>
+                    </div>
                 </div>
             </div>
 
@@ -442,7 +510,8 @@
                         <script>
                             let submissionButton = document.getElementById('submission-button');
                             let submissionPopUp = document.getElementById('popUpSubmission');
-
+                            let body = document.getElementById('app');
+                            let html = document.querySelector('html');
 
                             submissionButton.addEventListener('click', function () {
                                 openSubmissionPopup();
@@ -469,8 +538,6 @@
             </div>
 
         @endif
-
-    </div>
 
     </div>
 @endsection

@@ -49,14 +49,6 @@
                         @endif
                     </div>
 
-                    @if($user &&  $user->roles->contains('role', 'Administratie'))
-                        <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="show-all"
-                               @if($wantViewAll === true) checked @endif>
-                        <label class="form-check-label" for="show-all">Geef alle agendapunten weer</label>
-            </div>
-                    @endif
-
                     <div class="dropdown">
                         <button class="btn btn-primary text-white dropdown-toggle" type="button" id="calendarDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
