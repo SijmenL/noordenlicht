@@ -7,6 +7,7 @@ use App\Models\Activity;
 use App\Models\ActivityFormElement;
 use App\Models\ActivityFormResponses;
 use App\Models\ActivityPrice;
+use App\Models\Booking;
 use App\Models\Log;
 use App\Models\Presence;
 use App\Models\Price;
@@ -287,9 +288,11 @@ class AgendaController extends Controller
 
                     ActivityFormElement::create([
                         'activity_id' => $activity->id,
+                        'product_id' => null,
                         'label' => $label,
                         'type' => $type,
                         'option_value' => $opts,
+                        'location' => 'activity',
                         'is_required' => $isRequired,
                     ]);
                 }
@@ -661,6 +664,13 @@ class AgendaController extends Controller
             })
             ->get();
 
+        $fetchedBookings = Booking::with('accommodatie')
+            ->where('status', '!=', 'cancelled')
+            ->where(function ($query) use ($rangeStart, $rangeEnd) {
+                $query->whereBetween('start', [$rangeStart, $rangeEnd])
+                    ->orWhereBetween('end', [$rangeStart, $rangeEnd]);
+            })->get();
+
         // Load exceptions for single-instance deletions
         $exceptionsByActivity = ActivityException::whereIn('activity_id', $fetchedActivities->pluck('id'))
             ->get()
@@ -688,6 +698,24 @@ class AgendaController extends Controller
                 }
                 $activities->push($occurrence);
             }
+        }
+
+        foreach ($fetchedBookings as $booking) {
+            // Duck-typing booking as an activity for the view
+            $fakeActivity = new Activity();
+            $fakeActivity->id = 'booking-' . $booking->id; // Unique string ID
+            $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
+            $fakeActivity->content = "Geboekt door " . ($booking->order->first_name ?? 'Onbekend');
+            $fakeActivity->date_start = $booking->start;
+            $fakeActivity->date_end = $booking->end;
+            $fakeActivity->image = null; // Or accommodation image
+            $fakeActivity->should_highlight = false; // Styling
+            $fakeActivity->lesson_id = null; // Not a lesson
+
+            // Allow admin access
+            $fakeActivity->should_highlight = false; // Or true if you want to highlight rentals
+
+            $activities->push($fakeActivity);
         }
 
         $activities = $activities->filter(function ($activity) use ($user, $rolesIDList, $canViewAll) {
@@ -1489,8 +1517,10 @@ class AgendaController extends Controller
                         ActivityFormElement::create([
                             'option_value' => $optionsString,
                             'activity_id' => $activity->id,
+                            'product_id' => null,
                             'label' => $label,
                             'type' => $type,
+                            'location' => 'activity',
                             'is_required' => $isRequired,
                         ]);
                     }
@@ -1716,4 +1746,6 @@ class AgendaController extends Controller
             'Content-Disposition' => 'attachment; filename="mhg-calender.ics"',
         ]);
     }
+
+
 }

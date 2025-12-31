@@ -28,7 +28,7 @@ class newActivityRegistration extends Mailable
      */
     public function build()
     {
-        return $this->subject('Er heeft zich iemand ingeschreven op je activiteit')
+        return $this->subject('Er heeft zich iemand ingeschreven op je event')
             ->markdown('emails.new_activity_registration')
             ->with(['data' => $this->data]);
     }

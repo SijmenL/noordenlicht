@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Accommodatie extends Model
@@ -12,7 +11,10 @@ class Accommodatie extends Model
         'user_id',
         'type',
         'description',
-        'image'
+        'image',
+        'min_check_in',
+        'max_check_in',
+        'min_duration_minutes'
     ];
 
     public function images()
@@ -25,11 +27,13 @@ class Accommodatie extends Model
         return $this->hasMany(AccommodatieIcon::class, 'accommodatie_id');
     }
 
-    /**
-     * Defines the relationship to the prices via the pivot model.
-     */
     public function prices()
     {
         return $this->hasMany(AccommodatiePrice::class, 'accommodatie_id');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
     }
 }

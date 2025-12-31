@@ -145,6 +145,97 @@
                             </div>
 
                             <div class="mt-4">
+                                <h4 class="h5">Formulier</h4>
+                            @if($product->formElements->count() > 0)
+                                @csrf
+
+                                @foreach ($product->formElements as $formElement)
+                                    @php
+                                        $options = $formElement->option_value ? explode(',', $formElement->option_value) : [];
+                                        $oldValue = old('form_elements.' . $formElement->id);
+                                    @endphp
+
+                                    <div class="form-group">
+                                        <label
+                                            for="formElement{{ $formElement->id }}">{{ $formElement->label }} @if($formElement->is_required)
+                                                <span class="required-form">*</span>
+                                            @endif</label>
+
+                                        @switch($formElement->type)
+                                            @case('text')
+                                            @case('email')
+                                            @case('number')
+                                            @case('date')
+                                                <input type="{{ $formElement->type }}"
+                                                       id="formElement{{ $formElement->id }}"
+                                                       name="form_elements[{{ $formElement->id }}]"
+                                                       class="form-control"
+                                                       value="{{ $oldValue ?? '' }}"
+                                                    {{ $formElement->is_required ? 'required' : '' }}>
+                                                @break
+
+                                            @case('select')
+                                                <select id="formElement{{ $formElement->id }}"
+                                                        name="form_elements[{{ $formElement->id }}]"
+                                                        class="form-select w-100"
+                                                    {{ $formElement->is_required ? 'required' : '' }}>
+                                                    <option value="">Selecteer een optie</option>
+                                                    @foreach ($options as $option)
+                                                        <option value="{{ $option }}"
+                                                            {{ $oldValue == $option ? 'selected' : '' }}>
+                                                            {{ $option }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                @break
+
+                                            @case('radio')
+                                                @foreach ($options as $option)
+                                                    <div class="form-check">
+                                                        <input type="radio"
+                                                               id="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                               name="form_elements[{{ $formElement->id }}]"
+                                                               value="{{ $option }}"
+                                                               class="form-check-input"
+                                                            {{ $oldValue == $option ? 'checked' : '' }}
+                                                            {{ $formElement->is_required ? 'required' : '' }}>
+                                                        <label for="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                               class="form-check-label">
+                                                            {{ $option }}
+                                                        </label>
+                                                    </div>
+                                                @endforeach
+                                                @break
+
+                                            @case('checkbox')
+                                                @php
+                                                    $oldValues = is_array($oldValue) ? $oldValue : [];
+                                                @endphp
+                                                @foreach ($options as $option)
+                                                    <div class="form-check">
+                                                        <input type="checkbox"
+                                                               id="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                               name="form_elements[{{ $formElement->id }}][]"
+                                                               value="{{ $option }}"
+                                                               class="form-check-input">
+                                                        <label for="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                               class="form-check-label">{{ $option }}</label>
+                                                    </div>
+                                                @endforeach
+                                                @break
+                                        @endswitch
+
+                                        @if ($errors->has('form_elements.' . $formElement->id))
+                                            <div class="invalid-feedback">
+                                                {{ $errors->first('form_elements.' . $formElement->id) }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+
+                            <div class="mt-4">
                                 <h4 class="h5">Beschrijving</h4>
                                 <div>
                                     {!! $product->description !!}

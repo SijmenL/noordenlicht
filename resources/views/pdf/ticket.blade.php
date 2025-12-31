@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Ticket Noordenlicht - {{ $ticket->activity->title }}</title>
+    <title>Ticket NoordenLicht - {{ $ticket->activity->title }}</title>
     <style>
         @page {
             margin: 0;
@@ -172,7 +172,7 @@
             <div class="value">{{ $ticket->order->first_name }} {{ $ticket->order->last_name }}</div>
 
             <div class="label">Locatie</div>
-            <div class="value">{{ $ticket->activity->location ?? 'Noordenlicht, Tramstraat 45a, 7848 BL Schoonoord' }}</div>
+            <div class="value">{{ $ticket->activity->location ?? 'NoordenLicht, Tramstraat 45a, 7848 BL Schoonoord' }}</div>
         </div>
 
         <!-- Column 2: Order Info -->
@@ -197,7 +197,7 @@
     <!-- Simple Footer -->
     <div class="footer">
         <small>Neem dit ticket mee naar het event (mobiel of geprint).</small>
-        <small>Noordenlicht - Natuurlijk Centrum voor Verbinding en BewustZijn</small>
+        <small>NoordenLicht - Natuurlijk Centrum voor Verbinding en BewustZijn</small>
         <small>Cha'kwaini</small>
     </div>
 

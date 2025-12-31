@@ -72,14 +72,6 @@
                                                 Bewerk
                                             </a>
                                         </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <a href="{{ route('admin.products.delete', ['id' => $product->id]) }}"
-                                               class="dropdown-item text-danger"
-                                               onclick="return confirm('Weet je zeker dat je dit product wilt verwijderen?');">
-                                                Verwijderen
-                                            </a>
-                                        </li>
                                     </ul>
                                 </div>
                             </th>

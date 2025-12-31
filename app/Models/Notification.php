@@ -2,23 +2,14 @@
 
 namespace App\Models;
 
-use App\Mail\accountActivated;
 use App\Mail\accountChange;
-use App\Mail\accountDeactivated;
-use App\Mail\accountReactivated;
-use App\Mail\addParent;
+use App\Mail\ticket;
 use App\Mail\admin;
 use App\Mail\contactMessage;
-use App\Mail\deleteChild;
-use App\Mail\deleteParent;
 use App\Mail\newAccount;
 use App\Mail\newActivityRegistration;
-use App\Mail\newComment;
-use App\Mail\newPost;
-use App\Mail\newReactionComment;
+use App\Mail\newOrder;
 use App\Mail\newRegistration;
-use App\Mail\newRegistrationAdminNotification;
-use App\Mail\newsAccepted;
 use App\Mail\passwordChange;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -63,18 +54,14 @@ class Notification extends Model
                 $notification->save();
             }
 
-            if ($user->getNotificationSetting('mail_' . $notificationType) && config('app.mail') && $user->is_associate != 1) {
-//            if ($user->getNotificationSetting('mail_' . $notificationType) && $user->is_associate != 1) {
+//            if ($user->getNotificationSetting('mail_' . $notificationType) && config('app.mail') && $user->is_associate != 1) {
+            if ($user->getNotificationSetting('mail_' . $notificationType) && $user->is_associate != 1) {
 
                 if (isset($senderId)) {
                     $sender = User::find($senderId);
                 }
 
                 $isDolfijn = false;
-
-                if ($user->roles->contains('role', 'dolfijn')) {
-                    $isDolfijn = true;
-                }
 
                 if ($user) {
 
@@ -104,22 +91,6 @@ class Notification extends Model
                             Mail::to($data['email'])->send(new passwordChange($data));
                             break;
 
-                        case 'new_post':
-                            Mail::to($data['email'])->send(new newPost($data));
-                            break;
-
-                        case 'new_comment':
-                            Mail::to($data['email'])->send(new newComment($data));
-                            break;
-
-                        case 'new_reaction_comment':
-                            Mail::to($data['email'])->send(new newReactionComment($data));
-                            break;
-
-                        case 'news_accepted':
-                            Mail::to($data['email'])->send(new newsAccepted($data));
-                            break;
-
                         case 'new_activity_registration':
                             Mail::to($data['email'])->send(new newActivityRegistration($data));
                             break;
@@ -135,31 +106,15 @@ class Notification extends Model
                         case 'new_account':
                             Mail::to($data['email'])->send(new newAccount($data));
                             break;
-                        case 'new_registration_admin_notification':
-                            Mail::to($data['email'])->send(new newRegistrationAdminNotification($data));
+
+                        case 'new_order':
+                            Mail::to($data['email'])->send(new newOrder($data));
                             break;
 
-                        case 'account_activated':
-                            Mail::to($data['email'])->send(new accountActivated($data));
-                            break;
-                        case 'account_deactivated':
-                            Mail::to($data['email'])->send(new accountDeactivated($data));
-                            break;
-                        case 'account_reactivated':
-                            Mail::to($data['email'])->send(new accountReactivated($data));
+                        case 'ticket':
+                            Mail::to($data['email'])->send(new ticket($data));
                             break;
 
-                        case 'add_parent':
-                            Mail::to($data['email'])->send(new addParent($data));
-                            break;
-
-                        case 'delete_parent':
-                            Mail::to($data['email'])->send(new deleteParent($data));
-                            break;
-
-                        case 'delete_child':
-                            Mail::to($data['email'])->send(new deleteChild($data));
-                            break;
                     }
 
 

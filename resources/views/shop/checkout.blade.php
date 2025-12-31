@@ -8,9 +8,6 @@
             <a href="{{ route("shop") }}" class="btn btn-outline-primary">Verder winkelen</a>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
         @if(session('error'))
             <div class="alert alert-danger">
                 {{ session('error') }}
@@ -24,48 +21,57 @@
                     <h4 class="fw-bold text-primary mb-0">Je gegevens</h4>
                 </div>
                 <div class="p-4">
-                    <form class="d-flex flex-column gap-3" action="{{ route('checkout.store') }}" method="POST" id="checkout-form">
+                    <form class="d-flex flex-column gap-3" action="{{ route('checkout.store') }}" method="POST"
+                          id="checkout-form">
                         @csrf
                         @php
                             $fullName = Auth::user()->name ?? '';
                             $nameParts = explode(' ', $fullName, 2);
                             $defaultFirstName = $nameParts[0] ?? '';
                             $defaultLastName = $nameParts[1] ?? '';
+
                         @endphp
 
                         <div style="display: flex; gap: 1rem;">
                             <div class="d-flex flex-column w-50">
                                 <label for="first_name">Voornaam <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" required value="{{ old('first_name', $defaultFirstName) }}">
+                                <input type="text" class="form-control" id="first_name" name="first_name" required
+                                       value="{{ old('first_name', $defaultFirstName) }}">
                             </div>
                             <div class="d-flex flex-column w-50">
                                 <label for="last_name">Achternaam <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" required value="{{ old('last_name', $defaultLastName) }}">
+                                <input type="text" class="form-control" id="last_name" name="last_name" required
+                                       value="{{ old('last_name', $defaultLastName) }}">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email adres <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required value="{{ old('email', Auth::user()->email ?? '') }}">
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   value="{{ old('email', Auth::user()->email ?? '') }}">
                         </div>
 
                         <div class="form-group">
                             <label for="address">Straat en huisnummer <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="address" name="address" required value="{{ old('address', Auth::user()->address ?? '') }}">
+                            <input type="text" class="form-control" id="address" name="address" required
+                                   value="{{ old('address', Auth::user()->address ?? '') }}">
                         </div>
 
                         <div style="display: flex; gap: 1rem;">
                             <div style="flex: 2;">
                                 <label for="city">Stad <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="city" name="city" required value="{{ old('city', Auth::user()->city ?? '') }}">
+                                <input type="text" class="form-control" id="city" name="city" required
+                                       value="{{ old('city', Auth::user()->city ?? '') }}">
                             </div>
                             <div style="flex: 1;">
                                 <label for="zipcode">Postcode <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="zipcode" name="zipcode" required value="{{ old('zipcode', Auth::user()->zipcode ?? '') }}">
+                                <input type="text" class="form-control" id="zipcode" name="zipcode" required
+                                       value="{{ old('zipcode', Auth::user()->zipcode ?? '') }}">
                             </div>
                         </div>
 
-                        <button class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-sm mt-4" type="submit">
+                        <button class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-sm mt-4"
+                                type="submit">
                             Afrekenen met Mollie
                         </button>
                     </form>
@@ -85,8 +91,11 @@
                         @foreach($items as $item)
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-bottom px-0 py-3">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-3 bg-light d-flex align-items-center justify-content-center ms-2 overflow-hidden" style="width: 50px; height: 50px;">
-                                        <img src="{{ asset($item->image) }}" alt="{{ $item->name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div
+                                        class="rounded-3 bg-light d-flex align-items-center justify-content-center ms-2 overflow-hidden"
+                                        style="width: 50px; height: 50px;">
+                                        <img src="{{ asset($item->image) }}" alt="{{ $item->name }}"
+                                             style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>
                                     <div>
                                         <h6 class="my-0 fw-bold text-dark">{{ $item->name }}</h6>
@@ -97,29 +106,37 @@
                                         @endif
                                         <div class="d-flex align-items-center gap-2 mt-1">
                                             {{-- Update Quantity Form --}}
-                                            <form action="{{ route('cart.update', $item->id) }}" method="POST" class="d-flex align-items-center">
+                                            <form action="{{ route('cart.update', $item->id) }}" method="POST"
+                                                  class="d-flex align-items-center">
                                                 @csrf
                                                 <input type="hidden" name="id" value="{{ $item->id }}">
                                                 <input type="hidden" name="type" value="{{ $item->type }}">
 
-                                                <button type="submit" name="quantity" value="{{ $item->quantity - 1 }}" class="btn btn-sm btn-outline-secondary py-0 px-2">-</button>
+                                                <button type="submit" name="quantity" value="{{ $item->quantity - 1 }}"
+                                                        class="btn btn-sm btn-outline-secondary py-0 px-2">-
+                                                </button>
                                                 <span class="mx-2 small">{{ $item->quantity }}</span>
-                                                <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}" class="btn btn-sm btn-outline-secondary py-0 px-2">+</button>
+                                                <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}"
+                                                        class="btn btn-sm btn-outline-secondary py-0 px-2">+
+                                                </button>
                                             </form>
 
                                             {{-- Remove Form --}}
-                                            <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="ms-2">
+                                            <form action="{{ route('cart.remove', $item->id) }}" method="POST"
+                                                  class="ms-2">
                                                 @csrf
                                                 <input type="hidden" name="id" value="{{ $item->id }}">
                                                 <input type="hidden" name="type" value="{{ $item->type }}">
-                                                <button type="submit" class="btn btn-sm text-danger p-0" title="Verwijderen">
+                                                <button type="submit" class="btn btn-sm text-danger p-0"
+                                                        title="Verwijderen">
                                                     <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
                                                 </button>
                                             </form>
                                         </div>
                                     </div>
                                 </div>
-                                <span class="text-dark fw-bold me-2">€ {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</span>
+                                <span
+                                    class="text-dark fw-bold me-2">€ {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</span>
                             </li>
                         @endforeach
                     </ul>

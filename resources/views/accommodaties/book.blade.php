@@ -2,238 +2,176 @@
 
 @section('content')
 
-    @php
-        // --- Price Calculation Logic (UNCHANGED) ---
-                   $allPrices = $accommodatie->prices->map(fn($p) => $p->price);
-
-                   $basePrices = $allPrices->where('type', 0);
-                   $percentageAdditions = $allPrices->where('type', 1);
-                   $fixedDiscounts = $allPrices->where('type', 2);
-                   $extraCosts = $allPrices->where('type', 3);
-                   $percentageDiscounts = $allPrices->where('type', 4);
-
-                   $totalBasePrice = $basePrices->sum('amount');
-                   $preDiscountPrice = $totalBasePrice;
-
-                   // 1. Apply percentage additions
-                   $totalPercentageAdditions = 0;
-                   foreach ($percentageAdditions as $percentage) {
-                       $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
-                       $totalPercentageAdditions += $percentage->amount;
-                   }
-
-                   $calculatedPrice = $preDiscountPrice;
-
-                   $totalPercentageDiscounts = 0;
-                   // 2. Apply percentage discounts
-                   foreach ($percentageDiscounts as $percentage) {
-                       $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
-                       $totalPercentageDiscounts += $percentage->amount;
-                   }
-
-                   // 3. Apply fixed amount discounts
-                   $calculatedPrice -= $fixedDiscounts->sum('amount');
-
-                   $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
-                   // --- End Price Calculation ---
-
-
-    @endphp
-
     <div class="rounded-bottom-5 bg-light mt-5 pb-5"
-         style="position: relative; margin-top: 0 !important; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
+         style="position: relative; margin-top: 0 !important; padding-top: 50px; padding-bottom: 50px; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
 
         <div class="container">
             <h1 class="fw-bold mb-4 text-center">Boek je verblijf: {{ $accommodatie->name }}</h1>
 
-            <!-- Progress Bar -->
             <div class="row justify-content-center mb-5">
                 <div class="col-md-10 col-lg-8">
                     <div class="position-relative d-flex justify-content-between align-items-center">
-                        <!-- Line -->
                         <div class="position-absolute w-100 start-0 translate-middle-y bg-secondary-subtle" style="height: 4px; top: 30%; z-index: 0;"></div>
                         <div class="position-absolute start-0 translate-middle-y bg-primary transition-width" style="height: 4px; top: 30%; z-index: 0; width: 0%;" id="progress-line"></div>
 
-                        <!-- Step 1 -->
-                        <div class="d-flex flex-column align-items-center position-relative z-1">
-                            <div class="step-circle bg-primary text-white d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-sm" style="width: 40px; height: 40px;" id="step-circle-1">1</div>
-                            <span class="small fw-bold mt-2 bg-light px-2">Datum & Tijd</span>
-                        </div>
-
-                        <!-- Step 2 -->
-                        <div class="d-flex flex-column align-items-center position-relative z-1">
-                            <div class="step-circle bg-white border border-2 border-secondary-subtle text-secondary d-flex justify-content-center align-items-center rounded-circle fw-bold" style="width: 40px; height: 40px;" id="step-circle-2">2</div>
-                            <span class="small mt-2 bg-light px-2 text-muted">Extra's</span>
-                        </div>
-
-                        <!-- Step 3 -->
-                        <div class="d-flex flex-column align-items-center position-relative z-1">
-                            <div class="step-circle bg-white border border-2 border-secondary-subtle text-secondary d-flex justify-content-center align-items-center rounded-circle fw-bold" style="width: 40px; height: 40px;" id="step-circle-3">3</div>
-                            <span class="small mt-2 bg-light px-2 text-muted">Overzicht</span>
-                        </div>
-
-                        <!-- Step 4 -->
-                        <div class="d-flex flex-column align-items-center position-relative z-1">
-                            <div class="step-circle bg-white border border-2 border-secondary-subtle text-secondary d-flex justify-content-center align-items-center rounded-circle fw-bold" style="width: 40px; height: 40px;" id="step-circle-4">4</div>
-                            <span class="small mt-2 bg-light px-2 text-muted">Betalen</span>
-                        </div>
+                        @foreach(['Datum', 'Tijd', 'Extra\'s', 'Overzicht', 'Betalen'] as $index => $label)
+                            <div class="d-flex flex-column align-items-center position-relative z-1">
+                                <div class="step-circle bg-{{ $index == 0 ? 'primary' : 'white' }} text-{{ $index == 0 ? 'white' : 'secondary' }} d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-sm"
+                                     style="width: 40px; height: 40px;" id="step-circle-{{ $index+1 }}">{{ $index+1 }}</div>
+                                <span class="small mt-2 bg-light px-2 {{ $index == 0 ? 'fw-bold' : 'text-muted' }}">{{ $label }}</span>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
 
-            <!-- Main Content bg-white -->
             <div class="bg-white shadow-lg border-0 rounded-5 overflow-hidden">
-                <div class=" p-0">
+                <div class="p-0">
                     <form id="booking-form" action="{{ route('accommodatie.store_booking') }}" method="POST">
                         @csrf
                         <input type="hidden" name="accommodatie_id" value="{{ $accommodatie->id }}">
                         <input type="hidden" name="supplements_data" id="supplements_data_input">
 
-                        <!-- Step 1: Date & Time -->
+                        <input type="hidden" name="start_date" id="input_start_date">
+                        <input type="hidden" name="start_time" id="input_start_time">
+                        <input type="hidden" name="end_date" id="input_end_date">
+                        <input type="hidden" name="end_time" id="input_end_time">
+
                         <div id="step-content-1" class="step-content p-4 p-md-5">
-                            <h3 class="h4 fw-bold mb-4 text-primary">Kies je datum en tijd</h3>
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Startdatum & Tijd</label>
-                                    <div class="input-group">
-                                        <input type="date" class="form-control form-control-lg bg-light border-0" name="start_date" id="start_date" required min="{{ date('Y-m-d') }}">
-                                        <input type="time" class="form-control form-control-lg bg-light border-0" name="start_time" id="start_time" required>
-                                    </div>
+                            <h3 class="h4 fw-bold mb-4 text-primary">Kies een datum</h3>
+
+                            <div class="calendar-wrapper position-relative">
+                                <div id="calendar-loading" class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex justify-content-center align-items-center" style="z-index: 50; display: none; pointer-events: none">
+                                    <div class="spinner-border text-primary" role="status"></div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Einddatum & Tijd</label>
-                                    <div class="input-group">
-                                        <input type="date" class="form-control form-control-lg bg-light border-0" name="end_date" id="end_date" required min="{{ date('Y-m-d') }}">
-                                        <input type="time" class="form-control form-control-lg bg-light border-0" name="end_time" id="end_time" required>
+
+                                <div id="calendar-view">
+                                    <div class="d-flex justify-content-between align-items-center mb-4 bg-light p-3 rounded">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="prevMonth()">Vorige</button>
+                                        <h4 class="mb-0 fw-bold text-uppercase" id="calendar-month-year"></h4>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="nextMonth()">Volgende</button>
                                     </div>
+                                    <div class="d-grid grid-cols-7 gap-2 mb-2 text-center fw-bold text-muted small">
+                                        <div>MA</div><div>DI</div><div>WO</div><div>DO</div><div>VR</div><div>ZA</div><div>ZO</div>
+                                    </div>
+                                    <div id="calendar-grid" class="d-grid grid-cols-7 gap-2"></div>
                                 </div>
-                            </div>
-                            <div id="availability-message" class="mt-3"></div>
-                            <div class="d-flex justify-content-end mt-4">
-                                <button type="button" class="btn btn-primary rounded-pill px-5 btn-lg" onclick="validateStep1()">Volgende <i class="bi bi-arrow-right ms-2"></i></button>
                             </div>
                         </div>
 
-                        <!-- Step 2: Supplements -->
                         <div id="step-content-2" class="step-content p-4 p-md-5 d-none">
-                            <h3 class="h4 fw-bold mb-4 text-primary">Voeg extra's toe (Optioneel)</h3>
-                            <p class="text-muted mb-4">Maak je verblijf compleet met deze extra opties.</p>
+                            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                                <h4 class="fw-bold mb-0 text-primary" id="selected-date-display"></h4>
+                            </div>
 
-                            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> Sleep om te selecteren.</p>
+                                <span class="badge bg-light text-secondary border d-md-none">Scroll rechts &rarr;</span>
+                            </div>
 
-                                @foreach($supplements as $supplement)
-                                    <a href="{{ route('shop.details', $supplement->id) }}" class="text-decoration-none" style="min-width: 200px;">
-                                        <div
-                                            class="shop-tile h-100 d-flex flex-column bg-white overflow-hidden position-relative">
-                                            @if($supplement->image !== null)
-                                        <div class="tile-image-wrapper position-relative">
-                                            <img src="{{ asset('/files/products/images/'.$supplement->image) }}"
-                                                 class="w-100 h-100 object-fit-cover tile-img"
-                                                 alt="{{ $supplement->name }}">
+                            <div class="timeline-wrapper bg-light border rounded position-relative" style="height: 400px; overflow: hidden; display: flex; flex-direction: column;">
+                                <div class="timeline-scroll-area flex-grow-1 position-relative" id="timeline-container" style="overflow-y: auto; user-select: none; background: white; -webkit-overflow-scrolling: touch;">
 
-                                            {{-- Type Badge --}}
-                                            <span class="tile-badge">
-                                                {{ $categoryNames[$supplement->type] ?? 'Extra' }}
-                                            </span>
+                                    <div class="timeline-labels position-absolute top-0 start-0 border-end bg-white" style="width: 60px; z-index: 10;"></div>
+
+                                    <div class="timeline-grid position-absolute top-0 start-0 w-100 ps-5" id="timeline-grid" style="padding-left: 60px !important;">
+
+                                        <div id="timeline-lines-layer" class="position-absolute top-0 start-0 w-100 h-100"></div>
+
+                                        <div id="timeline-events-layer" class="position-absolute top-0 start-0 w-100 pointer-events-none"></div>
+
+                                        <div id="timeline-selection" class="timeline-selection position-absolute bg-primary bg-opacity-25 border border-primary text-center text-primary fw-bold d-flex align-items-center justify-content-center" style="display: none !important; left: 60px; right: 0; pointer-events: none; z-index: 20;">
+                                            <span class="small bg-white px-2 rounded shadow-sm">Selectie</span>
                                         </div>
+
+                                        <div id="timeline-interaction-layer" class="position-absolute top-0 start-0" style="left: 60px; width: calc(85% - 60px); cursor: crosshair; z-index: 30; touch-action: none;"></div>
+
+                                        <div class="position-absolute top-0 end-0 h-100 bg-secondary bg-opacity-10 border-start d-flex justify-content-center d-md-none" style="width: 15%; z-index: 25;">
+                                            <div class="mt-4 text-muted opacity-50 small" style="writing-mode: vertical-rl; text-orientation: mixed;">SCROLL</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-4 mt-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Start</label>
+                                    <input type="time" class="form-control" id="time-start" onchange="manualTimeChange()">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Eind</label>
+                                    <input type="time" class="form-control" id="time-end" onchange="manualTimeChange()">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-5">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(1)">Vorige</button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5" id="btn-confirm-date" disabled onclick="confirmDate()">
+                                    Bevestig Periode
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="step-content-3" class="step-content p-4 p-md-5 d-none">
+                            <h3 class="h4 fw-bold mb-4 text-primary">Voeg extra's toe</h3>
+                            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                                @foreach($supplements as $supplement)
+                                    <div class="col">
+                                        <div class="shop-tile h-100 d-flex flex-column bg-white overflow-hidden border rounded-4">
+                                            @if($supplement->image)
+                                                <div class="tile-image-wrapper" style="height: 180px;"><img src="{{ asset('/files/products/images/'.$supplement->image) }}" class="w-100 h-100 object-fit-cover"></div>
                                             @endif
-
-                                        {{-- Content Section --}}
-                                        <div class="p-4 d-flex flex-column flex-grow-1">
-                                            <h3 class="h5 fw-bold text-dark mb-2">{{ $supplement->name }}</h3>
-
-                                            <div class="text-muted small mb-4 flex-grow-1 tile-description">
-                                                {{ \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', strip_tags(html_entity_decode($supplement->description))), 80, '...') }}
-                                            </div>
-
-                                            <div
-                                                class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top border-light">
-                                                <div class="price-tag">
-                                                    € {{ number_format($supplement->calculated_price, 2, ',', '.') }}
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 30px; height: 30px; padding: 0;" onclick="changeQty({{ $supplement->id }}, -1)">-</button>
-                                                    <span class="fw-bold" id="qty-{{ $supplement->id }}" data-price="{{ $supplement->calculated_price }}">0</span>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 30px; height: 30px; padding: 0;" onclick="changeQty({{ $supplement->id }}, 1)">+</button>
+                                            <div class="p-4 d-flex flex-column flex-grow-1">
+                                                <h5 class="fw-bold">{{ $supplement->name }}</h5>
+                                                <p class="small text-muted mb-4">{{ \Illuminate\Support\Str::limit(strip_tags($supplement->description), 60) }}</p>
+                                                <div class="mt-auto d-flex justify-content-between align-items-center">
+                                                    <span class="fw-bold text-success">€ {{ number_format($supplement->calculated_price, 2, ',', '.') }}</span>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" style="width:32px;height:32px" onclick="changeQty({{ $supplement->id }}, -1)">-</button>
+                                                        <span class="fw-bold px-2" id="qty-{{ $supplement->id }}" data-price="{{ $supplement->calculated_price }}">0</span>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" style="width:32px;height:32px" onclick="changeQty({{ $supplement->id }}, 1)">+</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
-
                             <div class="d-flex justify-content-between mt-5">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(1)"><i class="bi bi-arrow-left me-2"></i> Vorige</button>
-                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="goToStep(3)">Volgende <i class="bi bi-arrow-right ms-2"></i></button>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(2)">Vorige</button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="goToStep(4)">Volgende</button>
                             </div>
                         </div>
 
-                        <!-- Step 3: Overview -->
-                        <div id="step-content-3" class="step-content p-4 p-md-5 d-none">
-                            <h3 class="h4 fw-bold mb-4 text-primary">Overzicht van je boeking</h3>
-
-                            <div class="bg-light rounded-4 p-4 mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
-                                    <div>
-                                        <h5 class="fw-bold mb-1">{{ $accommodatie->name }}</h5>
-                                        <p class="text-muted mb-0 small" id="overview-dates">...</p>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold fs-5" id="overview-acco-total">€ 0,00</div>
-                                        <div class="small text-muted" id="overview-hours">0 uur x € {{ number_format($calculatedPrice, 2, ',', '.') }}</div>
-                                    </div>
-                                </div>
-
-                                <div id="overview-supplements-list">
-                                    <!-- JS populates this -->
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top border-2">
-                                    <h4 class="fw-bold mb-0">Totaal</h4>
-                                    <h4 class="fw-bold text-primary mb-0" id="overview-grand-total">€ 0,00</h4>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(2)"><i class="bi bi-arrow-left me-2"></i> Vorige</button>
-                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="goToStep(4)">Naar betalen <i class="bi bi-arrow-right ms-2"></i></button>
-                            </div>
-                        </div>
-
-                        <!-- Step 4: Details & Pay -->
                         <div id="step-content-4" class="step-content p-4 p-md-5 d-none">
-                            <h3 class="h4 fw-bold mb-4 text-primary">Vul je gegevens in</h3>
-
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Voornaam</label>
-                                    <input type="text" class="form-control bg-light border-0" name="first_name" value="{{ Auth::check() ? Auth::user()->name : '' }}" required>
+                            <h3 class="h4 fw-bold mb-4 text-primary">Overzicht</h3>
+                            <div class="bg-light rounded-4 p-4 mb-4 border">
+                                <div class="d-flex justify-content-between mb-3 border-bottom pb-3">
+                                    <div><h5 class="fw-bold">{{ $accommodatie->name }}</h5><p class="text-muted small" id="overview-dates">...</p></div>
+                                    <div class="text-end"><div class="fw-bold fs-5" id="overview-acco-total">€ 0,00</div><div class="small text-muted" id="overview-hours"></div></div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Achternaam</label>
-                                    <input type="text" class="form-control bg-light border-0" name="last_name" value="{{ Auth::check() ? (Auth::user()->infix ? Auth::user()->infix . ' ' : '') . Auth::user()->last_name : '' }}" required>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">E-mailadres</label>
-                                    <input type="email" class="form-control bg-light border-0" name="email" value="{{ Auth::check() ? Auth::user()->email : '' }}" required>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Adres</label>
-                                    <input type="text" class="form-control bg-light border-0" name="address" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Postcode</label>
-                                    <input type="text" class="form-control bg-light border-0" name="zipcode" required>
-                                </div>
-                                <div class="col-md-8">
-                                    <label class="form-label">Woonplaats</label>
-                                    <input type="text" class="form-control bg-light border-0" name="city" required>
-                                </div>
+                                <div id="overview-supplements-list"></div>
+                                <div class="d-flex justify-content-between border-top pt-3 mt-2"><h4 class="fw-bold">Totaal</h4><h4 class="fw-bold text-primary" id="overview-grand-total">€ 0,00</h4></div>
                             </div>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(3)">Vorige</button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="goToStep(5)">Naar betalen</button>
+                            </div>
+                        </div>
 
+                        <div id="step-content-5" class="step-content p-4 p-md-5 d-none">
+                            <h3 class="h4 fw-bold mb-4 text-primary">Gegevens</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Voornaam</label><input type="text" class="form-control" name="first_name" value="{{ Auth::user()->name ?? '' }}" required></div>
+                                <div class="col-md-6"><label class="form-label">Achternaam</label><input type="text" class="form-control" name="last_name" value="{{ Auth::user()->last_name ?? '' }}" required></div>
+                                <div class="col-12"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="{{ Auth::user()->email ?? '' }}" required></div>
+                                <div class="col-12"><label class="form-label">Adres</label><input type="text" class="form-control" name="address" required></div>
+                                <div class="col-4"><label class="form-label">Postcode</label><input type="text" class="form-control" name="zipcode" required></div>
+                                <div class="col-8"><label class="form-label">Woonplaats</label><input type="text" class="form-control" name="city" required></div>
+                            </div>
                             <div class="d-flex justify-content-between mt-5">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(3)"><i class="bi bi-arrow-left me-2"></i> Vorige</button>
-                                <button type="submit" class="btn btn-success rounded-pill px-5 btn-lg shadow">Betalen & Boeken <i class="bi bi-check-lg ms-2"></i></button>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(4)">Vorige</button>
+                                <button type="submit" class="btn btn-success rounded-pill px-5 btn-lg">Boeken</button>
                             </div>
                         </div>
 
@@ -243,247 +181,564 @@
         </div>
     </div>
 
-    <!-- JavaScript for Logic -->
     <script>
+        // Global
         let currentStep = 1;
-        const accommodationPricePerHour = {{ $calculatedPrice }};
+        const pricePerHour = {{ $calculatedPrice ?? 0 }};
         const supplements = @json($supplements);
-        const selectedSupplements = {}; // { id: qty }
+        let selectedSupplements = {};
 
-        function updateProgress() {
-            // Update Line
-            const progress = ((currentStep - 1) / 3) * 100;
-            document.getElementById('progress-line').style.width = progress + '%';
+        // Calendar
+        let currentMonth = new Date().getMonth() + 1;
+        let currentYear = new Date().getFullYear();
+        let bookings = [];
+        let selectedDate = null;
 
-            // Update Circles
-            for (let i = 1; i <= 4; i++) {
-                const circle = document.getElementById(`step-circle-${i}`);
-                const label = circle.nextElementSibling;
+        // Settings with Defaults
+        let minCheckInStr = "{{ $accommodatie->min_check_in ?? '08:00' }}";
+        let maxCheckInStr = "{{ $accommodatie->max_check_in ?? '22:00' }}";
+        let minDurationMins = {{ $accommodatie->min_duration_minutes ?? 120 }};
 
-                if (i < currentStep) {
-                    circle.className = 'step-circle bg-secondary text-white d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-sm';
-                    circle.innerHTML = i;
-                    label.classList.remove('text-muted');
-                    label.classList.add('text-success');
-                } else if (i === currentStep) {
-                    circle.className = 'step-circle bg-primary text-white d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-lg';
-                    circle.innerHTML = i;
-                    label.classList.remove('text-muted');
-                    label.classList.add('fw-bold');
+        // Timeline Interaction State
+        let isMouseDown = false;
+        let isTouchDown = false;
+        let hasMoved = false;
+        let dragStartY = 0;
+        let selectionStartMins = 0;
+        let selectionEndMins = 0;
+        let startHour = 0;
+        let endHour = 24;
+        const pxPerHour = 60;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            fetchAvailability();
+            initMouseHandlers();
+            initTouchHandlers();
+        });
+
+        // --- Data Fetching ---
+        function fetchAvailability() {
+            const loading = document.getElementById('calendar-loading');
+            if (loading) loading.style.opacity = '1';
+
+            fetch(`{{ route('accommodatie.availability', $accommodatie->id) }}?month=${currentMonth}&year=${currentYear}`)
+                .then(res => res.json())
+                .then(data => {
+                    bookings = data.events || [];
+                    if(data.settings) {
+                        if(data.settings.min_check_in) minCheckInStr = data.settings.min_check_in.substring(0,5);
+                        if(data.settings.max_check_in) maxCheckInStr = data.settings.max_check_in.substring(0,5);
+                        if(data.settings.min_duration) minDurationMins = parseInt(data.settings.min_duration);
+                    }
+                    renderCalendar();
+                })
+                .catch(e => {
+                    console.error('Calendar Fetch Error:', e);
+                    renderCalendar();
+                })
+                .finally(() => {
+                    if (loading) loading.style.opacity = '0';
+                });
+        }
+
+        // --- Helper: Naive Date Parser (Ignores Timezones) ---
+        function parseNaiveDate(dateStr) {
+            // Parses "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DDTHH:mm:ss" exactly as local time
+            if (!dateStr) return new Date();
+            // Remove 'Z' or sub-seconds to ensure clean parsing
+            let cleanStr = dateStr.replace('Z', '').split('.')[0];
+            const [datePart, timePart] = cleanStr.split(/[ T]/);
+            const [y, m, d] = datePart.split('-').map(Number);
+            const [h, min, s] = (timePart || '00:00:00').split(':').map(Number);
+            // Construct date using local arguments
+            return new Date(y, m - 1, d, h, min, s || 0);
+        }
+
+        // --- Render Calendar Month ---
+        function renderCalendar() {
+            const dt = new Date(currentYear, currentMonth - 1, 1);
+            document.getElementById('calendar-month-year').innerText = dt.toLocaleString('nl-NL', { month: 'long', year: 'numeric' });
+
+            const firstDayOfWeek = (dt.getDay() + 6) % 7;
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            for(let i=0; i<firstDayOfWeek; i++) {
+                grid.appendChild(createCell('', 'bg-light border-0'));
+            }
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            for(let i=1; i<=daysInMonth; i++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const cellDate = new Date(dateStr);
+                cellDate.setHours(0,0,0,0);
+
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day p-2 rounded border d-flex flex-column align-items-center justify-content-center';
+                cell.style.minHeight = '100px';
+
+                if (cellDate < today) {
+                    cell.classList.add('bg-light', 'text-muted');
+                    cell.innerHTML = `<span class="fw-bold fs-5 opacity-50">${i}</span>`;
+                    cell.style.cursor = 'not-allowed';
                 } else {
-                    circle.className = 'step-circle bg-white border border-2 border-secondary-subtle text-secondary d-flex justify-content-center align-items-center rounded-circle fw-bold';
-                    circle.innerHTML = i;
-                    label.classList.add('text-muted');
-                    label.classList.remove('fw-bold', 'text-success');
+                    const status = checkDayStatus(dateStr);
+                    cell.innerHTML = `<span class="fw-bold fs-5">${i}</span>`;
+
+                    if (status === 'full') {
+                        cell.classList.add('bg-danger-subtle', 'text-danger', 'border-danger-subtle');
+                        cell.innerHTML += `<div class="mt-2"><span class="badge bg-danger rounded-pill px-2 py-1" style="font-size:0.65rem"><span class="no-mobile">VOL</span></span></div>`;
+                        cell.style.cursor = 'not-allowed';
+                    } else {
+                        cell.classList.add('bg-white', 'cursor-pointer', 'hover-shadow', 'border-secondary-subtle');
+                        if(status === 'partial') {
+                            cell.innerHTML += `<div class="mt-2"><span class="badge bg-warning text-dark rounded-pill px-2 py-1" style="font-size:0.65rem"><span class="no-mobile">BEPERKT</span></span></div>`;
+                            cell.onclick = () => openDayView(dateStr, i);
+                        } else {
+                            cell.innerHTML += `<div class="mt-2"><span class="badge bg-success rounded-pill px-2 py-1" style="font-size:0.65rem"><span class="no-mobile">VRIJ</span></span></div>`;
+                            cell.onclick = () => openDayView(dateStr, i);
+                        }
+                    }
+                }
+                grid.appendChild(cell);
+            }
+        }
+
+        function createCell(content, classes) {
+            const div = document.createElement('div');
+            div.className = classes + ' p-2 rounded';
+            div.innerHTML = content;
+            return div;
+        }
+
+        function checkDayStatus(dateStr) {
+            const startH = parseInt(minCheckInStr.split(':')[0]) || 0;
+            const endH = parseInt(maxCheckInStr.split(':')[0]) || 24;
+            const openMins = startH * 60;
+            const closeMins = (endH <= startH ? 24 : endH) * 60;
+
+            if (!Array.isArray(bookings)) return 'available';
+
+            const dayBookings = bookings.filter(b => b.start.startsWith(dateStr) || b.end.startsWith(dateStr))
+                .map(b => {
+                    // FIX: Use naive parser to avoid timezone shifts
+                    let s = parseNaiveDate(b.start);
+                    let e = parseNaiveDate(b.end);
+
+                    if(s < new Date(dateStr + 'T00:00')) s = new Date(dateStr + 'T00:00');
+                    if(e > new Date(dateStr + 'T23:59:59')) e = new Date(dateStr + 'T23:59:59');
+                    const startM = s.getHours()*60 + s.getMinutes();
+                    const endM = e.getHours()*60 + e.getMinutes();
+                    return { start: Math.max(startM, openMins), end: Math.min(endM, closeMins) };
+                })
+                .sort((a,b) => a.start - b.start);
+
+            let maxGap = 0;
+            let cursor = openMins;
+
+            dayBookings.forEach(b => {
+                if(b.start > cursor) maxGap = Math.max(maxGap, b.start - cursor);
+                cursor = Math.max(cursor, b.end);
+            });
+            if(closeMins > cursor) maxGap = Math.max(maxGap, closeMins - cursor);
+
+            if(maxGap < minDurationMins) return 'full';
+            if(dayBookings.length > 0) return 'partial';
+            return 'available';
+        }
+
+        // --- Timeline Day View ---
+
+        function openDayView(dateStr, dayNum) {
+            selectedDate = dateStr;
+            const dt = new Date(dateStr);
+            document.getElementById('selected-date-display').innerText = dt.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+            goToStep(2);
+            renderTimeline(dateStr);
+        }
+
+        function renderTimeline(dateStr) {
+            const container = document.getElementById('timeline-grid');
+            const labels = document.querySelector('.timeline-labels');
+            const eventsLayer = document.getElementById('timeline-events-layer');
+            const interactionLayer = document.getElementById('timeline-interaction-layer');
+            const linesLayer = document.getElementById('timeline-lines-layer');
+
+            labels.innerHTML = '';
+            eventsLayer.innerHTML = '';
+            linesLayer.innerHTML = '';
+
+            startHour = parseInt(minCheckInStr.split(':')[0]) || 0;
+            let endH = parseInt(maxCheckInStr.split(':')[0]) || 24;
+            if(endH <= startHour) endH = 24;
+            endHour = endH;
+
+            const totalHours = endHour - startHour;
+            const containerHeight = totalHours * pxPerHour;
+
+            container.style.height = containerHeight + 'px';
+            labels.style.height = containerHeight + 'px';
+            eventsLayer.style.height = containerHeight + 'px';
+            interactionLayer.style.height = containerHeight + 'px';
+            linesLayer.style.height = containerHeight + 'px';
+
+            for(let h = 0; h <= totalHours; h++) {
+                const top = h * pxPerHour;
+                const hourLabel = startHour + h;
+                const labelStr = (hourLabel < 10 ? '0' : '') + hourLabel + ':00';
+
+                const lDiv = document.createElement('div');
+                lDiv.className = 'position-absolute w-100 text-center small text-muted border-bottom';
+                lDiv.style.top = top + 'px';
+                lDiv.style.height = '0px';
+                lDiv.style.lineHeight = '0';
+                lDiv.innerHTML = `<span style="position:relative; top:-10px; background:white; padding:0 2px;">${labelStr}</span>`;
+                labels.appendChild(lDiv);
+
+                if(h < totalHours) {
+                    const line = document.createElement('div');
+                    line.className = 'position-absolute w-100 border-bottom border-light';
+                    line.style.top = top + 'px';
+                    linesLayer.appendChild(line);
                 }
             }
 
-            // Show Content
-            document.querySelectorAll('.step-content').forEach(el => el.classList.add('d-none'));
-            document.getElementById(`step-content-${currentStep}`).classList.remove('d-none');
+            const dayStartMins = startHour * 60;
+
+            if (Array.isArray(bookings)) {
+                // Ensure the bounds are also treated as naive local time boundaries
+                const selectedDayStart = new Date(dateStr + 'T00:00:00');
+                const selectedDayEnd = new Date(dateStr + 'T23:59:59');
+
+                bookings.forEach(b => {
+                    // FIX: Use naive parser here as well
+                    let s = parseNaiveDate(b.start);
+                    let e = parseNaiveDate(b.end);
+
+                    if (s <= selectedDayEnd && e >= selectedDayStart) {
+                        const startM = s.getHours()*60 + s.getMinutes();
+                        const endM = e.getHours()*60 + e.getMinutes();
+                        let displayStartM = startM;
+                        let displayEndM = endM;
+                        if (s < selectedDayStart) displayStartM = dayStartMins;
+                        if (e > selectedDayEnd) displayEndM = endHour * 60;
+                        const visibleStart = Math.max(displayStartM, dayStartMins);
+                        const visibleEnd = Math.min(displayEndM, endHour * 60);
+
+                        if(visibleEnd > visibleStart) {
+                            const top = (visibleStart - dayStartMins) * (pxPerHour / 60);
+                            const height = (visibleEnd - visibleStart) * (pxPerHour / 60);
+                            const evDiv = document.createElement('div');
+                            evDiv.className = 'position-absolute bg-danger bg-opacity-75 text-white small rounded shadow-sm d-flex align-items-center justify-content-center';
+                            evDiv.style.top = top + 'px';
+                            evDiv.style.height = height + 'px';
+                            evDiv.style.left = '60px';
+                            evDiv.style.right = '10px';
+                            evDiv.style.zIndex = '15';
+                            evDiv.innerText = 'Niet Beschikbaar';
+                            eventsLayer.appendChild(evDiv);
+                        }
+                    }
+                });
+            }
         }
 
-        function changeQty(id, delta) {
-            const el = document.getElementById(`qty-${id}`);
-            let qty = parseInt(el.innerText);
-            qty += delta;
-            if (qty < 0) qty = 0;
-            el.innerText = qty;
-            selectedSupplements[id] = qty;
-        }
+        // --- Interaction Logic: MOUSE HANDLERS ---
+        function initMouseHandlers() {
+            const layer = document.getElementById('timeline-interaction-layer');
+            if (!layer) return;
 
-        function calculateTotal() {
-            const start = new Date(document.getElementById('start_date').value + 'T' + document.getElementById('start_time').value);
-            const end = new Date(document.getElementById('end_date').value + 'T' + document.getElementById('end_time').value);
+            // 1. Mouse Down on the Layer
+            layer.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent text selection cursor
+                isMouseDown = true;
+                hasMoved = false; // Reset "moved" flag
 
-            const hours = (end - start) / 36e5; // diff in hours
-            const accoTotal = hours * accommodationPricePerHour;
+                const rect = layer.getBoundingClientRect();
+                dragStartY = e.clientY - rect.top; // Store start relative to layer
 
-            let suppTotal = 0;
-            let suppHtml = '';
+                // Show a 0-height selection immediately so visual feedback is instant
+                updateVisualSelection(dragStartY, dragStartY);
+                document.getElementById('timeline-selection').style.display = 'block';
+            });
 
-            supplements.forEach(sup => {
-                const qty = selectedSupplements[sup.id] || 0;
-                if (qty > 0) {
-                    // Assuming calculated_price is available on the model passed to view
-                    const price = parseFloat(document.getElementById(`qty-${sup.id}`).dataset.price);
-                    const total = price * qty;
-                    suppTotal += total;
-                    suppHtml += `
-                        <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
-                            <span>${sup.name} (x${qty})</span>
-                            <span>€ ${total.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                        </div>
-                    `;
+            // 2. Mouse Move on Window (prevents losing drag if moving fast)
+            window.addEventListener('mousemove', (e) => {
+                if (!isMouseDown) return;
+
+                const layer = document.getElementById('timeline-interaction-layer');
+                const rect = layer.getBoundingClientRect();
+                const currentY = e.clientY - rect.top;
+
+                // Only consider it a "drag" if moved more than 3 pixels
+                if (Math.abs(currentY - dragStartY) > 3) {
+                    hasMoved = true;
+                }
+
+                if (hasMoved) {
+                    updateVisualSelection(dragStartY, currentY);
                 }
             });
 
-            const grandTotal = accoTotal + suppTotal;
+            // 3. Mouse Up on Window
+            window.addEventListener('mouseup', (e) => {
+                if (!isMouseDown) return;
+                isMouseDown = false;
 
-            // Update UI
-            document.getElementById('overview-dates').innerText = `${start.toLocaleString('nl-NL')} tot ${end.toLocaleString('nl-NL')}`;
-            document.getElementById('overview-hours').innerText = `${hours.toLocaleString('nl-NL', {maximumFractionDigits: 1})} uur x € ${accommodationPricePerHour.toLocaleString('nl-NL', {minimumFractionDigits: 2})}`;
-            document.getElementById('overview-acco-total').innerText = '€ ' + accoTotal.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('overview-supplements-list').innerHTML = suppHtml;
-            document.getElementById('overview-grand-total').innerText = '€ ' + grandTotal.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-            // Prepare Input for Form
-            const supplementDataArray = [];
-            for (const [id, qty] of Object.entries(selectedSupplements)) {
-                if (qty > 0) supplementDataArray.push({id: id, qty: qty});
-            }
-            document.getElementById('supplements_data_input').value = JSON.stringify(supplementDataArray);
+                if (hasMoved) {
+                    // It was a drag: Validate the dragged range
+                    validateSelection();
+                } else {
+                    // It was a simple click: Create default selection
+                    createDefaultSelection(dragStartY);
+                }
+            });
         }
 
-        async function validateStep1() {
-            const sDate = document.getElementById('start_date').value;
-            const sTime = document.getElementById('start_time').value;
-            const eDate = document.getElementById('end_date').value;
-            const eTime = document.getElementById('end_time').value;
-            const msg = document.getElementById('availability-message');
+        // --- Interaction Logic: TOUCH HANDLERS ---
+        function initTouchHandlers() {
+            const layer = document.getElementById('timeline-interaction-layer');
+            if (!layer) return;
 
-            if (!sDate || !sTime || !eDate || !eTime) {
-                msg.innerHTML = '<div class="alert alert-warning">Vul alle datum- en tijdvelden in.</div>';
-                return;
-            }
+            layer.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    e.preventDefault(); // Stop native scrolling
+                    isTouchDown = true;
+                    hasMoved = false;
 
-            const start = new Date(`${sDate}T${sTime}`);
-            const end = new Date(`${eDate}T${eTime}`);
+                    const rect = layer.getBoundingClientRect();
+                    dragStartY = e.touches[0].clientY - rect.top;
 
-            if (end <= start) {
-                msg.innerHTML = '<div class="alert alert-danger">De eindtijd moet na de starttijd liggen.</div>';
-                return;
-            }
-
-            // AJAX Check
-            msg.innerHTML = '<div class="text-primary"><div class="spinner-border spinner-border-sm me-2"></div>Beschikbaarheid controleren...</div>';
-
-            try {
-                const response = await fetch("{{ route('accommodatie.check_availability') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        start_date: sDate, start_time: sTime,
-                        end_date: eDate, end_time: eTime
-                    })
-                });
-                const data = await response.json();
-
-                if (data.available) {
-                    msg.innerHTML = '';
-                    goToStep(2);
-                } else {
-                    msg.innerHTML = `<div class="alert alert-danger">${data.message || 'Niet beschikbaar.'}</div>`;
+                    updateVisualSelection(dragStartY, dragStartY);
+                    document.getElementById('timeline-selection').style.display = 'block';
                 }
-            } catch (e) {
-                msg.innerHTML = '<div class="alert alert-danger">Er ging iets mis bij het controleren. Probeer het opnieuw.</div>';
+            }, { passive: false });
+
+            layer.addEventListener('touchmove', (e) => {
+                if (isTouchDown && e.touches.length > 0) {
+                    e.preventDefault(); // Stop scrolling while dragging
+                    hasMoved = true;
+
+                    const rect = layer.getBoundingClientRect();
+                    const currentY = e.touches[0].clientY - rect.top;
+
+                    updateVisualSelection(dragStartY, currentY);
+                }
+            }, { passive: false });
+
+            layer.addEventListener('touchend', (e) => {
+                if (!isTouchDown) return;
+                isTouchDown = false;
+
+                if (hasMoved) {
+                    validateSelection();
+                } else {
+                    // Tap / Click logic
+                    createDefaultSelection(dragStartY);
+                }
+            });
+        }
+
+        // --- Helper: Create Default Block (Click) ---
+        function createDefaultSelection(startY) {
+            // Create a block downwards from the click point with min duration
+            const minHeight = minDurationMins * (pxPerHour / 60);
+            updateVisualSelection(startY, startY + minHeight);
+            validateSelection();
+        }
+
+        // --- Helper: Visual Update Only (No Logic Check) ---
+        function updateVisualSelection(y1, y2) {
+            const top = Math.min(y1, y2);
+            const h = Math.abs(y2 - y1);
+            const selection = document.getElementById('timeline-selection');
+            selection.style.top = top + 'px';
+            selection.style.height = h + 'px';
+            selection.style.display = 'block'; // Ensure visible
+
+            // Calculate Times just for display label (don't save to globals yet)
+            const dayStartMins = startHour * 60;
+            const startMins = dayStartMins + (top / (pxPerHour/60));
+            const endMins = startMins + (h / (pxPerHour/60));
+
+            const rStart = Math.round(startMins / 15) * 15;
+            const rEnd = Math.round(endMins / 15) * 15;
+
+            selection.innerHTML = `<span class="small bg-white px-2 rounded fw-bold text-primary shadow-sm">${minsToTime(rStart)} - ${minsToTime(rEnd)}</span>`;
+            selection.className = 'timeline-selection position-absolute bg-primary bg-opacity-25 border border-primary text-center text-primary fw-bold d-flex align-items-center justify-content-center';
+        }
+
+        function manualTimeChange() {
+            const sVal = document.getElementById('time-start').value;
+            const eVal = document.getElementById('time-end').value;
+            if(!sVal || !eVal) return;
+            const [sH, sM] = sVal.split(':').map(Number);
+            const [eH, eM] = eVal.split(':').map(Number);
+            selectionStartMins = sH * 60 + sM;
+            selectionEndMins = eH * 60 + eM;
+            validateSelection(true);
+        }
+
+        function validateSelection(skipInputUpdate = false) {
+            // 1. Calculate Minutes from CSS Position
+            const selection = document.getElementById('timeline-selection');
+            const top = parseFloat(selection.style.top);
+            const height = parseFloat(selection.style.height);
+
+            const dayStartMins = startHour * 60;
+            const rawStart = dayStartMins + (top / (pxPerHour/60));
+            const rawEnd = dayStartMins + ((top + height) / (pxPerHour/60));
+
+            // 2. Round to nearest 15
+            selectionStartMins = Math.round(rawStart / 15) * 15;
+            selectionEndMins = Math.round(rawEnd / 15) * 15;
+
+            // 3. Ensure Min Duration
+            if(selectionEndMins - selectionStartMins < minDurationMins) {
+                selectionEndMins = selectionStartMins + minDurationMins;
             }
+
+            // 4. Clamp to Day Bounds
+            const dayEndMins = endHour * 60;
+            if (selectionStartMins < dayStartMins) selectionStartMins = dayStartMins;
+            if (selectionEndMins > dayEndMins) selectionEndMins = dayEndMins;
+
+            // 5. Overlap Check
+            let hasOverlap = false;
+            if (selectedDate && Array.isArray(bookings)) {
+                const selectedDayStart = new Date(selectedDate + 'T00:00:00');
+                const selectedDayEnd = new Date(selectedDate + 'T23:59:59');
+                bookings.forEach(b => {
+                    // FIX: Use naive parser here too
+                    let s = parseNaiveDate(b.start);
+                    let e = parseNaiveDate(b.end);
+
+                    if (s <= selectedDayEnd && e >= selectedDayStart) {
+                        let checkStart = s.getHours()*60 + s.getMinutes();
+                        let checkEnd = e.getHours()*60 + e.getMinutes();
+                        if(s < selectedDayStart) checkStart = dayStartMins;
+                        if(e > selectedDayEnd) checkEnd = dayEndMins;
+                        if (selectionStartMins < checkEnd && selectionEndMins > checkStart) {
+                            hasOverlap = true;
+                        }
+                    }
+                });
+            }
+
+            // 6. Snap Visuals to the Validated Minutes
+            const finalTop = (selectionStartMins - dayStartMins) * (pxPerHour/60);
+            const finalHeight = (selectionEndMins - selectionStartMins) * (pxPerHour/60);
+
+            selection.style.top = finalTop + 'px';
+            selection.style.height = finalHeight + 'px';
+            selection.style.display = 'flex';
+
+            if (hasOverlap) {
+                selection.className = 'timeline-selection position-absolute bg-opacity-50 bg-danger text-white border border-danger text-center fw-bold d-flex align-items-center justify-content-center';
+                selection.style.zIndex = '30';
+                selection.innerHTML = `<span class="small px-2">Niet Beschikbaar</span>`;
+                document.getElementById('btn-confirm-date').disabled = true;
+                return;
+            }
+
+            selection.className = 'timeline-selection position-absolute bg-primary bg-opacity-25 border border-primary text-center text-primary fw-bold d-flex align-items-center justify-content-center';
+            selection.style.zIndex = '20';
+
+            if(!skipInputUpdate) {
+                document.getElementById('time-start').value = minsToTime(selectionStartMins);
+                document.getElementById('time-end').value = minsToTime(selectionEndMins);
+            }
+            selection.innerText = `${minsToTime(selectionStartMins)} - ${minsToTime(selectionEndMins)}`;
+            document.getElementById('btn-confirm-date').disabled = false;
+        }
+
+        function minsToTime(mins) {
+            const h = Math.floor(mins / 60);
+            const m = Math.floor(mins % 60);
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        }
+
+        function prevMonth() {
+            if(currentMonth === 1) { currentMonth = 12; currentYear--; } else { currentMonth--; }
+            renderCalendar(); fetchAvailability();
+        }
+        function nextMonth() {
+            if(currentMonth === 12) { currentMonth = 1; currentYear++; } else { currentMonth++; }
+            renderCalendar(); fetchAvailability();
+        }
+
+        function confirmDate() {
+            document.getElementById('input_start_date').value = selectedDate;
+            document.getElementById('input_start_time').value = document.getElementById('time-start').value;
+            document.getElementById('input_end_date').value = selectedDate;
+            document.getElementById('input_end_time').value = document.getElementById('time-end').value;
+            goToStep(3);
         }
 
         function goToStep(step) {
-            if (step === 3) calculateTotal();
+            if(step === 4) calculateTotal();
             currentStep = step;
-            updateProgress();
-            window.scrollTo(0, 0);
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('d-none'));
+            document.getElementById(`step-content-${step}`).classList.remove('d-none');
+            for(let i=1; i<=5; i++) {
+                const c = document.getElementById(`step-circle-${i}`);
+                if(i < step) { c.className = 'step-circle bg-secondary text-white d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-sm'; c.innerText = '✓'; }
+                else if(i === step) { c.className = 'step-circle bg-primary text-white d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-lg'; c.innerText = i; }
+                else { c.className = 'step-circle bg-white border text-secondary d-flex justify-content-center align-items-center rounded-circle fw-bold'; c.innerText = i; }
+            }
+            document.getElementById('progress-line').style.width = ((step-1)/4)*100 + '%';
+            window.scrollTo(0,0);
+        }
+
+        function calculateTotal() {
+            const start = new Date(selectedDate + 'T' + document.getElementById('input_start_time').value);
+            const end = new Date(selectedDate + 'T' + document.getElementById('input_end_time').value);
+            const hours = (end - start) / 36e5;
+            const total = hours * pricePerHour;
+
+            let suppTotal = 0;
+            let suppList = '';
+            for(const [id, qty] of Object.entries(selectedSupplements)) {
+                if(qty > 0) {
+                    const el = document.getElementById('qty-'+id);
+                    const p = parseFloat(el.dataset.price);
+                    suppTotal += p*qty;
+                    suppList += `<div class="d-flex justify-content-between text-muted small"><span>Extra x${qty}</span><span>€ ${(p*qty).toFixed(2).replace('.',',')}</span></div>`;
+                }
+            }
+
+            document.getElementById('overview-dates').innerText = `${start.toLocaleDateString()} ${start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+            document.getElementById('overview-hours').innerText = `${hours.toFixed(1)} uur`;
+            document.getElementById('overview-acco-total').innerText = '€ ' + total.toLocaleString('nl-NL',{minimumFractionDigits:2});
+            document.getElementById('overview-supplements-list').innerHTML = suppList;
+            document.getElementById('overview-grand-total').innerText = '€ ' + (total+suppTotal).toLocaleString('nl-NL',{minimumFractionDigits:2});
+
+            const arr = [];
+            for(const [id, qty] of Object.entries(selectedSupplements)) if(qty>0) arr.push({id, qty});
+            document.getElementById('supplements_data_input').value = JSON.stringify(arr);
+        }
+
+        function changeQty(id, d) {
+            const el = document.getElementById('qty-'+id);
+            let v = parseInt(el.innerText) + d;
+            if(v < 0) v = 0;
+            el.innerText = v;
+            selectedSupplements[id] = v;
         }
     </script>
 
     <style>
-        .step-circle {
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
-        .transition-width {
-            transition: width 0.3s ease;
-        }
-
-             /* Shop Tile */
-         .shop-tile {
-             border-radius: 16px;
-             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.04);
-             transition: transform 0.3s ease, box-shadow 0.3s ease;
-             border: 1px solid rgba(0, 0, 0, 0.02);
-         }
-
-        .shop-tile:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
-        }
-
-        /* Image Area */
-        .tile-image-wrapper {
-            height: 200px; /* Slightly smaller for supplements */
-            overflow: hidden;
-        }
-
-        .tile-img {
-            transition: transform 0.5s ease;
-        }
-
-        .shop-tile:hover .tile-img {
-            transform: scale(1.05);
-        }
-
-        .tile-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(4px);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #212529;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Text & Layout */
-        .tile-description {
-            line-height: 1.6;
-            opacity: 0.8;
-        }
-
-        .price-tag {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #198754;
-        }
-
-        /* Action Buttons */
-        .action-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-view {
-            background: #f1f3f5;
-            color: #495057;
-        }
-
-        .btn-view:hover {
-            background: #e9ecef;
-            color: #212529;
-        }
-
-        .btn-cart {
-            background: #212529;
-            color: white;
-        }
-
-        .btn-cart:hover {
-            background: #000;
-            transform: scale(1.05);
-        }
+        .grid-cols-7 { grid-template-columns: repeat(7, 1fr); }
+        .hover-shadow:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; transform: translateY(-2px); }
+        .cursor-pointer { cursor: pointer; }
+        .step-circle { transition: all 0.3s; }
+        .transition-width { transition: width 0.3s; }
+        .timeline-grid::-webkit-scrollbar { width: 6px; }
+        .timeline-grid::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        @media (max-width: 576px) { .no-mobile { display: none; } }
     </style>
 @endsection

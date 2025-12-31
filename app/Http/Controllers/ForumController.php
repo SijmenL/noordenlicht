@@ -93,6 +93,7 @@ class ForumController extends Controller
         $log->createLog(auth()->user()->id, 0, 'Upload pdf', '', '', 'Pdf uploaden mislukt');
         return response()->json(['error' => 'Invalid pdf uploaded'], 400);
     }
+
     public function searchUser(Request $request)
     {
         $search = $request->input('search', '');
@@ -102,35 +103,27 @@ class ForumController extends Controller
             $query->whereIn('id', $ids)
                 ->where(function ($query) use ($search) {
                     $query->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('last_name', 'like', '%' . $search . '%')
                         ->orWhere('email', 'like', '%' . $search . '%')
                         ->orWhere('sex', 'like', '%' . $search . '%')
-                        ->orWhere('infix', 'like', '%' . $search . '%')
                         ->orWhere('birth_date', 'like', '%' . $search . '%')
                         ->orWhere('street', 'like', '%' . $search . '%')
                         ->orWhere('postal_code', 'like', '%' . $search . '%')
                         ->orWhere('city', 'like', '%' . $search . '%')
                         ->orWhere('phone', 'like', '%' . $search . '%')
-                        ->orWhere('id', 'like', '%' . $search . '%')
-                        ->orWhere('dolfijnen_name', 'like', '%' . $search . '%')
-                        ->orWhereRaw("CONCAT(name, ' ', COALESCE(infix, ''), ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                        ->orWhere('id', 'like', '%' . $search . '%');
                 });
         })->get();
 
         $remainingUsers = User::where(function ($query) use ($search) {
             $query->where('name', 'like', '%' . $search . '%')
-                ->orWhere('last_name', 'like', '%' . $search . '%')
                 ->orWhere('email', 'like', '%' . $search . '%')
                 ->orWhere('sex', 'like', '%' . $search . '%')
-                ->orWhere('infix', 'like', '%' . $search . '%')
                 ->orWhere('birth_date', 'like', '%' . $search . '%')
                 ->orWhere('street', 'like', '%' . $search . '%')
                 ->orWhere('postal_code', 'like', '%' . $search . '%')
                 ->orWhere('city', 'like', '%' . $search . '%')
                 ->orWhere('phone', 'like', '%' . $search . '%')
-                ->orWhere('id', 'like', '%' . $search . '%')
-                ->orWhere('dolfijnen_name', 'like', '%' . $search . '%')
-                ->orWhereRaw("CONCAT(name, ' ', COALESCE(infix, ''), ' ', last_name) LIKE ?", ['%' . $search . '%']);
+                ->orWhere('id', 'like', '%' . $search . '%');
         })
             ->whereNotIn('id', $ids)
             ->orderBy('created_at', 'asc')
@@ -155,9 +148,6 @@ class ForumController extends Controller
 
         return response()->json($usersWithRemainingCount);
     }
-
-
-
 
     public static function validatePostData($content)
     {

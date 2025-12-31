@@ -1415,8 +1415,11 @@ th .form-control, .form-select {
     font-size: 24px;
     color: white;
 }
-.main-menu-item .arrow-icon.rotated {
+.main-menu-item .arrow-icon {
     transform: rotate(-90deg); /* Rotate up for open state */
+}
+.main-menu-item .arrow-icon.rotated {
+    transform: rotate(0deg); /* Rotate up for open state */
 }
 .sub-menu {
     list-style: none;

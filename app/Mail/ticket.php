@@ -6,10 +6,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Barryvdh\DomPDF\Facade\Pdf;
 
-class deleteChild extends Mailable
+class ticket extends Mailable
 {
     use Queueable, SerializesModels;
+
+    public $data;
 
     /**
      * Create a new message instance.
@@ -28,8 +31,14 @@ class deleteChild extends Mailable
      */
     public function build()
     {
-        return $this->subject('De ouder-kind koppeling is verbroken')
-            ->markdown('emails.delete_child')
-            ->with(['data' => $this->data]);
+        // Generate PDF
+        $pdf = Pdf::loadView('pdf.ticket', ['ticket' => $this->data]);
+
+        return $this->subject('Je Ticket voor NoordenLicht')
+            ->markdown('emails.ticket')
+            ->with(['ticket' => $this->data])
+            ->attachData($pdf->output(), 'ticket-' . $this->data->activity->title . '.pdf', [
+                'mime' => 'application/pdf',
+            ]);
     }
 }

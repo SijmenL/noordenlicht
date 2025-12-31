@@ -15,12 +15,19 @@ class CartController extends Controller
         $type = $request->input('type', 'product');
         $quantity = (int) $request->input('quantity', 1);
         $startDate = $request->input('start_date'); // Expecting Y-m-d H:i:s
+        $formElements = $request->input('form_elements'); // Capture form data
 
         if ($quantity < 1) {
             return redirect()->back()->with('error', 'Aantal moet minimaal 1 zijn.');
         }
 
         $cart = Session::get('cart_mixed', [
+            'products' => [],
+            'activities' => []
+        ]);
+
+        // Retrieve existing form data session
+        $cartFormData = Session::get('cart_form_data', [
             'products' => [],
             'activities' => []
         ]);
@@ -50,6 +57,12 @@ class CartController extends Controller
                     'start_date' => $startDate ?? $activity->date_start
                 ];
             }
+
+            // Store activity form data if present (keyed by cartKey)
+            if ($formElements) {
+                $cartFormData['activities'][$cartKey] = $formElements;
+            }
+
         } else {
             $product = Product::find($id);
             if (!$product) return redirect()->back()->with('error', 'Product niet gevonden.');
@@ -59,10 +72,16 @@ class CartController extends Controller
             } else {
                 $cart['products'][$id] = $quantity;
             }
+
+            // Store product form data if present
+            if ($formElements) {
+                $cartFormData['products'][$id] = $formElements;
+            }
         }
 
         Session::put('cart_mixed', $cart);
         Session::put('cart', $cart['products']);
+        Session::put('cart_form_data', $cartFormData); // Save form data
 
         return redirect()->back()->with('success', 'CardAdded');
     }
@@ -99,15 +118,19 @@ class CartController extends Controller
         $type = $request->input('type');
 
         $cart = Session::get('cart_mixed', ['products' => [], 'activities' => []]);
+        $cartFormData = Session::get('cart_form_data', ['products' => [], 'activities' => []]);
 
         if ($type === 'activity') {
             unset($cart['activities'][$id]);
+            unset($cartFormData['activities'][$id]);
         } else {
             unset($cart['products'][$id]);
+            unset($cartFormData['products'][$id]);
         }
 
         Session::put('cart_mixed', $cart);
         Session::put('cart', $cart['products']);
+        Session::put('cart_form_data', $cartFormData);
 
         return redirect()->route('checkout')->with('success', 'Item verwijderd uit winkelwagen.');
     }

@@ -28,7 +28,7 @@ class newAccount extends Mailable
      */
     public function build()
     {
-        return $this->subject('Welkom bij de MHG!')
+        return $this->subject('Welkom bij NoordenLicht!')
             ->markdown('emails.new_account')
             ->with(['data' => $this->data]);
     }

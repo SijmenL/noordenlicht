@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Contact;
 use App\Models\Log;
 use App\Models\News;
+use App\Models\Notification;
+use App\Models\Order;
 use App\Models\Role;
 use App\Models\User;
 use DOMDocument;
@@ -25,12 +27,65 @@ class AdminController extends Controller
         $roles = $user->roles()->orderBy('role', 'asc')->get();
 
         $contact = Contact::where('done', false)->count();
+        $orders = Order::where('status', 'paid')->count();
 
-        $totalNotifications = $contact;
+        $totalNotifications = $contact + $orders;
 
-        return view('admin.admin', ['user' => $user, 'roles' => $roles, 'totalNotifications' => $totalNotifications, 'contact' => $contact]);
+        return view('admin.admin', ['user' => $user, 'roles' => $roles, 'totalNotifications' => $totalNotifications, 'contact' => $contact, 'orders' => $orders]);
     }
 
+    public function notifications()
+    {
+        $user = Auth::user();
+        $roles = $user->roles()->orderBy('role', 'asc')->get();
+
+        return view('admin.notifications.send', ['user' => $user, 'roles' => $roles]);
+    }
+
+    public function notificationsSend(Request $request)
+    {
+        $request->validate([
+            'users' => 'integer|required',
+            'display_text' => 'string|required',
+        ]);
+
+        $user = User::findOrFail($request->users);
+
+        $log = new Log();
+        $log->createLog(auth()->user()->id, 2, 'Send notification', 'Admin', $user->name . ' ' . $user->infix . ' ' . $user->last_name, $request->display_text);
+
+        $notification = new Notification();
+        $notification->sendNotification(null, [$user->id], $request->display_text, '', '', 'admin');
+
+
+        return redirect()->route('admin.notifications')->with('success', 'Notificatie verzonden!');
+    }
+
+    public function debugMail()
+    {
+        $user = Auth::user();
+        $roles = $user->roles()->orderBy('role', 'asc')->get();
+
+        return view('admin.debug.mails.mails', ['user' => $user, 'roles' => $roles]);
+    }
+
+    public function mail($id)
+    {
+        $user = Auth::user();
+
+        $data = [
+            'reciever_name' => $user->name,
+            'message' => 'John heeft je post geliked',
+            'link' => '/dolfijnen/post/15',
+            'relevant_id' => 12,
+            'location' => 'les',
+            'sender_full_name' => 'John Doe',
+            'sender_dolfijnen_name' => 'Balder',
+            'reciever_is_dolfijn' => false,
+            'email' => 'lokerssijmen@gmail.com', // Using the user's email
+        ];
+        return view('emails.'.$id, ['data' => $data]);
+    }
 
     // Logs
 

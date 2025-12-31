@@ -5,8 +5,10 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ForumController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NonLoggedInController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PriceController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TicketController;
@@ -25,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 
-Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/nieuws/item/{id}', [NewsController::class, 'viewNewsItem'])->name('news.item');
 
@@ -47,9 +49,12 @@ Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact
 
 Route::get('/accommodaties', [AccommodatieController::class, 'home'])->name('accommodaties');
 Route::get('/accommodaties/{id}', [AccommodatieController::class, 'details'])->name('accommodaties.details');
+
 Route::get('/accommodatie/{id}/boeken', [App\Http\Controllers\AccommodatieController::class, 'book'])->name('accommodatie.book');
-Route::post('/accommodatie/check-availability', [App\Http\Controllers\AccommodatieController::class, 'checkAvailability'])->name('accommodatie.check_availability');
-Route::post('/accommodatie/store-booking', [App\Http\Controllers\AccommodatieController::class, 'storeBooking'])->name('accommodatie.store_booking');
+Route::post('/accommodatie/boeken', [App\Http\Controllers\AccommodatieController::class, 'storeBooking'])->name('accommodatie.store_booking');
+
+Route::get('/accommodatie/{id}/beschikbaarheid', [App\Http\Controllers\AccommodatieController::class, 'getMonthlyAvailability'])->name('accommodatie.availability');
+Route::post('/accommodatie/check-beschikbaarheid', [App\Http\Controllers\AccommodatieController::class, 'checkAvailability'])->name('accommodatie.check_availability');
 
 Route::get('/winkel', [ProductController::class, 'shop'])->name('shop');
 Route::get('/winkel/product/{id}', [ProductController::class, 'details'])->name('shop.details');
@@ -60,13 +65,18 @@ Route::post('/winkelmandje/toevoegen/{id}', [CartController::class, 'add'])->nam
 Route::post('/winkelmandje/bewerken/{id}', [CartController::class, 'update'])->name('cart.update');
 Route::post('/winkelmandje/verwijderen/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
-Route::get('/afrekenen', [App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
-Route::post('/afrekenen', [App\Http\Controllers\OrderController::class, 'store'])->name('checkout.store');
-Route::get('/bestelling/success/{order_id}', [App\Http\Controllers\OrderController::class, 'success'])->name('order.success');
+Route::get('/afrekenen', [OrderController::class, 'checkout'])->name('checkout');
+Route::post('/afrekenen', [OrderController::class, 'store'])->name('checkout.store');
+Route::get('/bestelling/success/{order_number}', [OrderController::class, 'success'])->name('order.success');
+Route::get('/afrekenen/{id}/retry', [OrderController::class, 'retry'])->name('order.retry');
 
-Route::get('/ticket/download/{ticket_uuid}', [App\Http\Controllers\TicketController::class, 'download'])->name('ticket.download');
+Route::get('/ticket/download/{ticket_uuid}', [TicketController::class, 'download'])->name('ticket.download');
+Route::get('/tickets/stream/{ticket_uuid}/', [TicketController::class, 'streamPdf'])->name('admin.tickets.stream');
 
-Route::post('/webhooks/mollie', [App\Http\Controllers\OrderController::class, 'handleWebhook'])->name('webhooks.mollie');
+Route::post('/webhooks/mollie', [OrderController::class, 'handleWebhook'])->name('webhooks.mollie');
+
+Route::post('/user-search', [ForumController::class, 'searchUser'])->name('search-user');
+
 
 //Admin
 Route::middleware(['checkRole:Administratie'])->group(function () {
@@ -74,6 +84,9 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::delete('/prices/unlink/{priceLink}', [PriceController::class, 'unlinkPrice'])->name('admin.prices.unlink');
 
     Route::get('/dashboard', [AdminController::class, 'admin'])->name('admin');
+
+    Route::get('/dashboard/debug/mail', [AdminController::class, 'debugMail'])->name('admin.debug.mail');
+    Route::get('/dashboard/debug/mail/{id}', [AdminController::class, 'mail'])->name('admin.debug.mail.view');
 
 
     Route::get('/dashboard/nieuws', [AdminController::class, 'news'])->name('admin.news');
@@ -88,23 +101,45 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::get('/dashboard/nieuws/nieuw-nieuwtje', [AdminController::class, 'newNews'])->name('admin.news.new');
     Route::post('/dashboard/nieuws/nieuw-nieuwtje', [AdminController::class, 'newsCreate'])->name('admin.news.new.create');
 
+    Route::get('/dashboard/mail', [AdminController::class, 'notifications'])->name('admin.notifications');
+    Route::post('/dashboard/mail', [AdminController::class, 'notificationsSend'])->name('admin.notifications.send');
 
-    // List
-    Route::get('/dashboard/products', [ProductController::class, 'index'])->name('admin.products');
+    // products
+    Route::get('/dashboard/producten', [ProductController::class, 'index'])->name('admin.products');
 
-    Route::get('/dashboard/products/new', [ProductController::class, 'create'])->name('admin.products.new');
-    Route::post('/dashboard/products/new', [ProductController::class, 'store'])->name('admin.products.new.save');
+    Route::get('/dashboard/producten/new', [ProductController::class, 'create'])->name('admin.products.new');
+    Route::post('/dashboard/producten/new', [ProductController::class, 'store'])->name('admin.products.new.save');
 
-    Route::get('/dashboard/products/{id}', [ProductController::class, 'productDetails'])->name('admin.products.details');
+    Route::get('/dashboard/producten/{id}', [ProductController::class, 'productDetails'])->name('admin.products.details');
 
-    Route::get('/dashboard/products/{id}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
-    Route::post('/dashboard/products/{id}/edit', [ProductController::class, 'update'])->name('admin.products.edit.save');
+    Route::get('/dashboard/producten/{id}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
+    Route::post('/dashboard/producten/{id}/edit', [ProductController::class, 'update'])->name('admin.products.edit.save');
 
-    Route::get('/dashboard/products/delete/{id}', [ProductController::class, 'destroy'])->name('admin.products.delete'); // Using GET as per your existing pattern, though DELETE method is safer standard
+    Route::get('/dashboard/producten/delete/{id}', [ProductController::class, 'destroy'])->name('admin.products.delete');
 
-    Route::post('/dashboard/products/temp/image', [ProductController::class, 'uploadTempImage']);
+    Route::post('/dashboard/producten/temp/image', [ProductController::class, 'uploadTempImage']);
 
-    Route::delete('/dashboard/products/temp/image/{id}', [ProductController::class, 'deleteTempImage']);
+    Route::delete('/dashboard/producten/temp/image/{id}', [ProductController::class, 'deleteTempImage']);
+
+    // Orders
+    Route::get('/dashboard/bestellingen', [OrderController::class, 'list'])->name('admin.orders');
+    Route::get('/dashboard/bestellingen/{id}', [OrderController::class, 'details'])->name('admin.orders.details');
+
+    Route::post('/dashboard/bestellingen/{id}', [OrderController::class, 'updateStatus'])->name('admin.orders.details.update');
+
+
+    // Tickets
+    Route::get('/dashboard/tickets/scan', [TicketController::class, 'scanTickets'])->name('admin.tickets.scan');
+
+    Route::post('/dashboard/tickets/scan', [TicketController::class, 'check'])->name('admin.tickets.check');
+
+    Route::post('/dashboard/tickets/check/{uuid}/checkin/', [TicketController::class, 'checkIn'])->name('admin.tickets.checkin');
+    Route::post('/dashboard/tickets/check/{uuid}/cancel/', [TicketController::class, 'cancel'])->name('admin.tickets.cancel');
+
+    Route::get('/dashboard/tickets', [TicketController::class, 'list'])->name('admin.tickets.list');
+    Route::get('/dashboard/tickets/{uuid}', [TicketController::class, 'details'])->name('admin.tickets.details');
+
+    Route::post('/dashboard/tickets/{uuid}', [TicketController::class, 'updateStatus'])->name('admin.tickets.details.update');
 
 
     // Account management
@@ -165,17 +200,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/agenda/activiteit/niet-aanwezig/{id}/{user}', [AgendaController::class, 'agendaAbsent'])->name('agenda.activity.absent');
 
     Route::post('/dashboard/agenda/token', [AgendaController::class, 'generateToken']);
-
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard/tickets/', [TicketController::class, 'list'])->name('admin.tickets.list');
-    Route::get('/dashboard/tickets/scan', [TicketController::class, 'scanTickets'])->name('admin.tickets.scan');
-
-    Route::post('/dashboard/tickets/check', [TicketController::class, 'check'])->name('admin.tickets.check');
-
-    Route::post('/dashboard/tickets/check/{id}/checkin/', [TicketController::class, 'checkIn'])->name('admin.tickets.checkin');
-    Route::post('/dashboard/tickets/check/{id}/cancel/', [TicketController::class, 'cancel'])->name('admin.tickets.cancel');
 
 });
 

@@ -6,7 +6,7 @@
             <div class="popup-body">
                 <div class="page">
                     <h2>Toegevoegd aan winkelwagen!</h2>
-                    <p>Je ticket is aan de winkelwagen toegevoegd. Winkel verder of reken af via één van de onderstaande
+                    <p>Dit product is aan de winkelwagen toegevoegd. Winkel verder of reken af via één van de onderstaande
                         knoppen.</p>
                     <div class="d-grid gap-2">
                         <button id="close" class="btn btn-success">Verder winkelen</button>
@@ -83,7 +83,6 @@
                         $carrousel_images[] = 'files/products/carousel/'.$image->image;
                     }
 
-
                 @endphp
 
                     <!-- Header Block -->
@@ -103,17 +102,33 @@
                     <!-- Carousel -->
                     @if($product->image !== null)
 
-                    <div class="w-100">
-                        <div class="sticky-top" style="top: 90px;">
-                            <x-carousel :images="$carrousel_images"/>
+                        <div class="w-100">
+                            <div class="sticky-top" style="top: 90px;">
+                                <x-carousel :images="$carrousel_images"/>
+                            </div>
                         </div>
-                    </div>
                     @endif
 
                     <!-- Details & Cart -->
                     <div class="w-100">
                         <div class="shadow-lg bg-white border-0 rounded-5 mb-4 p-4"
                              style="background-image: url('{{ asset('img/logo/doodles/Treewoman2a.webp') }}'); background-repeat: no-repeat; background-size: cover; background-position: center; border: 3px solid #5a7123; width: 100% !important;">
+
+                            @php
+                                // Check if user has an accommodation (type 2) in their cart
+                                $hasAccommodation = $items->contains(function ($item) {
+                                    return isset($item->model) && $item->model->type == '2';
+                                });
+                            @endphp
+
+                            {{-- If Product is a Supplement (Type 0) AND no Accommodation in cart --}}
+                            @if($product->type == '0' && !$hasAccommodation)
+                                <div class="alert alert-info">
+                                    <span class="material-symbols-rounded align-middle me-2">info</span>
+                                    Dit product kan alleen besteld worden in combinatie met een overnachting.
+                                    Voeg eerst een overnachting toe aan je winkelwagen.
+                                </div>
+                            @endif
 
                             <div class="p-0">
                                 <div class="mb-3">
@@ -164,9 +179,98 @@
                                 </div>
 
                                 <div class="d-grid gap-3 mt-4">
-                                    <form action="{{ route('cart.add', $product->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow w-100">
+
+                                        <form action="{{ route('cart.add', $product->id) }}" method="POST">
+                                            @csrf
+                                @if($product->formElements->count() > 0)
+
+                                            @foreach ($product->formElements as $formElement)
+                                                @php
+                                                    $options = $formElement->option_value ? explode(',', $formElement->option_value) : [];
+                                                    $oldValue = old('form_elements.' . $formElement->id);
+                                                @endphp
+
+                                                <div class="form-group">
+                                                    <label
+                                                        for="formElement{{ $formElement->id }}">{{ $formElement->label }} @if($formElement->is_required)
+                                                            <span class="required-form">*</span>
+                                                        @endif</label>
+
+                                                    @switch($formElement->type)
+                                                        @case('text')
+                                                        @case('email')
+                                                        @case('number')
+                                                        @case('date')
+                                                            <input type="{{ $formElement->type }}"
+                                                                   id="formElement{{ $formElement->id }}"
+                                                                   name="form_elements[{{ $formElement->id }}]"
+                                                                   class="form-control"
+                                                                   value="{{ $oldValue ?? '' }}"
+                                                                {{ $formElement->is_required ? 'required' : '' }}>
+                                                            @break
+
+                                                        @case('select')
+                                                            <select id="formElement{{ $formElement->id }}"
+                                                                    name="form_elements[{{ $formElement->id }}]"
+                                                                    class="form-select w-100"
+                                                                {{ $formElement->is_required ? 'required' : '' }}>
+                                                                <option value="">Selecteer een optie</option>
+                                                                @foreach ($options as $option)
+                                                                    <option value="{{ $option }}"
+                                                                        {{ $oldValue == $option ? 'selected' : '' }}>
+                                                                        {{ $option }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                            @break
+
+                                                        @case('radio')
+                                                            @foreach ($options as $option)
+                                                                <div class="form-check">
+                                                                    <input type="radio"
+                                                                           id="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                                           name="form_elements[{{ $formElement->id }}]"
+                                                                           value="{{ $option }}"
+                                                                           class="form-check-input"
+                                                                        {{ $oldValue == $option ? 'checked' : '' }}
+                                                                        {{ $formElement->is_required ? 'required' : '' }}>
+                                                                    <label for="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                                           class="form-check-label">
+                                                                        {{ $option }}
+                                                                    </label>
+                                                                </div>
+                                                            @endforeach
+                                                            @break
+
+                                                        @case('checkbox')
+                                                            @php
+                                                                $oldValues = is_array($oldValue) ? $oldValue : [];
+                                                            @endphp
+                                                            @foreach ($options as $option)
+                                                                <div class="form-check">
+                                                                    <input type="checkbox"
+                                                                           id="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                                           name="form_elements[{{ $formElement->id }}][]"
+                                                                           value="{{ $option }}"
+                                                                           class="form-check-input">
+                                                                    <label for="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                                           class="form-check-label">{{ $option }}</label>
+                                                                </div>
+                                                            @endforeach
+                                                            @break
+                                                    @endswitch
+
+                                                    @if ($errors->has('form_elements.' . $formElement->id))
+                                                        <div class="invalid-feedback">
+                                                            {{ $errors->first('form_elements.' . $formElement->id) }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                                                   @endif
+                                        {{-- Disable button if requirement not met --}}
+                                        <button type="submit" class="btn btn-primary mt-3 btn-lg rounded-pill shadow w-100"
+                                                @if($product->type == '0' && !$hasAccommodation) disabled @endif>
                                             In winkelmandje
                                         </button>
                                     </form>
@@ -185,13 +289,13 @@
                 @if($product->type == '2' && isset($supplements) && $supplements->count() > 0)
                     <div class="mt-5 pt-5 border-top border-secondary-subtle">
                         <div class="d-flex align-items-center mb-4 gap-3">
-                            <span class="material-symbols-rounded">hotel_class</span>
-                            <h3 class="fw-bold m-0 h2">Maak je verblijf compleet</h3>
+                            <h3 class="fw-bold text-secondary m-0 h2">Maak je verblijf compleet</h3>
                         </div>
 
                         <div class="d-flex flex-row-responsive gap-4 justify-content-center">
                             @foreach ($supplements as $supplement)
-                                <a href="{{ route('shop.details', $supplement->id) }}" class="text-decoration-none" style="min-width: 200px;">
+                                <a href="{{ route('shop.details', $supplement->id) }}" class="text-decoration-none"
+                                   style="min-width: 200px;">
                                     <div
                                         class="shop-tile h-100 d-flex flex-column bg-white overflow-hidden position-relative">
                                         @if($supplement->image !== null)
@@ -225,7 +329,7 @@
                                         </div>
                                     </div>
                                 </a>
-                        @endforeach
+                            @endforeach
                         </div>
                     </div>
         </div>

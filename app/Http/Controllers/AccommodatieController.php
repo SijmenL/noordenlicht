@@ -6,6 +6,7 @@ use App\Models\Accommodatie;
 use App\Models\AccommodatieIcon;
 use App\Models\AccommodatieImage;
 use App\Models\AccommodatiePrice;
+use App\Models\Booking;
 use App\Models\Price;
 use App\Models\Product; // Added for supplements
 use App\Models\Activity; // Added for agenda checks
@@ -57,16 +58,92 @@ class AccommodatieController extends Controller
     public function book($id)
     {
         try {
-            $accommodatie = Accommodatie::findOrFail($id);
-            // Fetch supplements (Product type 0)
+            // Eager load prices to avoid N+1 and ensure data is available
+            $accommodatie = Accommodatie::with('prices.price')->findOrFail($id);
             $supplements = Product::where('type', '0')->get();
+
+            // --- Price Calculation Logic (Moved from View) ---
+            $allPrices = $accommodatie->prices->map(fn($p) => $p->price);
+
+            $basePrices = $allPrices->where('type', 0);
+            $percentageAdditions = $allPrices->where('type', 1);
+            $fixedDiscounts = $allPrices->where('type', 2);
+            $percentageDiscounts = $allPrices->where('type', 4);
+
+            $totalBasePrice = $basePrices->sum('amount');
+            $preDiscountPrice = $totalBasePrice;
+
+            // 1. Apply percentage additions
+            foreach ($percentageAdditions as $percentage) {
+                $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
+            }
+
+            $calculatedPrice = $preDiscountPrice;
+
+            // 2. Apply percentage discounts
+            foreach ($percentageDiscounts as $percentage) {
+                $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
+            }
+
+            // 3. Apply fixed amount discounts
+            $calculatedPrice -= $fixedDiscounts->sum('amount');
+
+            // Ensure price isn't negative
+            $calculatedPrice = max(0, $calculatedPrice);
+
         } catch (ModelNotFoundException $exception) {
             return redirect()->route('accommodaties')->with('error', 'Deze accommodatie bestaat niet.');
         }
 
         return view('accommodaties.book', [
             'accommodatie' => $accommodatie,
-            'supplements' => $supplements
+            'supplements' => $supplements,
+            'calculatedPrice' => $calculatedPrice
+        ]);
+    }
+
+    public function getMonthlyAvailability(Request $request, $id)
+    {
+        // 1. Retrieve the accommodation
+        $accommodatie = Accommodatie::findOrFail($id);
+
+        // 2. Get input dates
+        $month = $request->input('month');
+        $year = $request->input('year');
+
+        // 3. Define the time window
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+
+        // 4. Fetch bookings using the correct foreign key (accommodatie_id)
+        $bookings = Booking::where('accommodatie_id', $id) // FIXED: Changed 'id' to 'accommodatie_id'
+        ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+            $q->whereBetween('start', [$startOfMonth, $endOfMonth])
+                ->orWhereBetween('end', [$startOfMonth, $endOfMonth])
+                ->orWhere(function($sub) use ($startOfMonth, $endOfMonth) {
+                    $sub->where('start', '<', $startOfMonth)
+                        ->where('end', '>', $endOfMonth);
+                });
+        })
+            ->get();
+
+        // Removed dd($bookings) so the code proceeds to return the response
+
+        $events = [];
+        foreach ($bookings as $b) {
+            $events[] = [
+                'start' => Carbon::parse($b->start)->toIso8601String(),
+                'end' => Carbon::parse($b->end)->toIso8601String(),
+            ];
+        }
+
+        return response()->json([
+            'events' => $events,
+            'settings' => [
+                'min_check_in' => $accommodatie->min_check_in ?? '00:00',
+                'max_check_in' => $accommodatie->max_check_in ?? '23:59',
+                'min_duration' => $accommodatie->min_duration_minutes ?? 120
+            ]
         ]);
     }
 
@@ -86,11 +163,12 @@ class AccommodatieController extends Controller
             return response()->json(['available' => false, 'message' => 'Eindtijd moet na starttijd liggen.']);
         }
 
-        // Check for overlapping activities in the agenda
-        $overlap = Activity::where(function ($query) use ($start, $end) {
-            $query->where('date_start', '<', $end)
-                ->where('date_end', '>', $start);
-        })->exists();
+        // Check for overlaps
+        $overlap = Activity::where('title', 'like', 'Verhuur: ' . Accommodatie::find($request->accommodatie_id)->name . '%')
+            ->where(function ($query) use ($start, $end) {
+                $query->where('date_start', '<', $end)
+                    ->where('date_end', '>', $start);
+            })->exists();
 
         if ($overlap) {
             return response()->json(['available' => false, 'message' => 'De gekozen periode is niet beschikbaar.']);
@@ -113,29 +191,30 @@ class AccommodatieController extends Controller
             'address' => 'required|string',
             'zipcode' => 'required|string',
             'city' => 'required|string',
-            // supplements map logic handled manually
         ]);
 
         DB::beginTransaction();
         try {
-            // 1. Re-validate Availability
             $start = Carbon::parse($request->start_date . ' ' . $request->start_time);
             $end = Carbon::parse($request->end_date . ' ' . $request->end_time);
+            $accommodatie = Accommodatie::findOrFail($request->accommodatie_id);
 
-            // Check availability again to prevent race conditions
-            $overlap = Activity::where(function ($query) use ($start, $end) {
-                $query->where('date_start', '<', $end)
-                    ->where('date_end', '>', $start);
-            })->exists();
+            // Double check availability (Race condition protection)
+            $overlap = Booking::where('accommodatie_id', $accommodatie->id)
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($query) use ($start, $end) {
+                    $query->where('start', '<', $end)
+                        ->where('end', '>', $start);
+                })->lockForUpdate()->exists();
 
             if ($overlap) {
-                throw new \Exception('De gekozen periode is helaas net bezet. Probeer het opnieuw.');
+                throw new \Exception('Deze periode is zojuist geboekt door iemand anders.');
             }
 
-            // 2. Create Order
+            // Create Order
             $order = Order::create([
                 'order_number' => 'B-' . strtoupper(uniqid()),
-                'user_id' => Auth::id(), // Can be null if guest
+                'user_id' => Auth::id(),
                 'status' => 'open',
                 'payment_status' => 'pending',
                 'email' => $request->email,
@@ -145,56 +224,33 @@ class AccommodatieController extends Controller
                 'zipcode' => $request->zipcode,
                 'city' => $request->city,
                 'country' => 'NL',
-                'total_amount' => 0, // Calculated below
+                'total_amount' => 0,
             ]);
 
-            $grandTotal = 0;
-            $accommodatie = Accommodatie::findOrFail($request->accommodatie_id);
-
-            // 3. Calculate Accommodation Cost
-            // Re-calculate price per hour based on logic (simplified here, assumes price is pre-calculated or stored)
-            // Using the logic from details.blade.php as reference for base price
+            // Calculate Price (Same logic as before)
             $allPrices = $accommodatie->prices->map(fn($p) => $p->price);
-            $basePrices = $allPrices->where('type', 0);
-            $percentageAdditions = $allPrices->where('type', 1);
-            $fixedDiscounts = $allPrices->where('type', 2);
-            $percentageDiscounts = $allPrices->where('type', 4);
+            $calculatedPrice = $this->calculateBasePrice($allPrices);
 
-            $totalBasePrice = $basePrices->sum('amount');
-            $preDiscountPrice = $totalBasePrice;
-
-            foreach ($percentageAdditions as $percentage) {
-                $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
-            }
-            $calculatedPrice = $preDiscountPrice;
-            foreach ($percentageDiscounts as $percentage) {
-                $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
-            }
-            $calculatedPrice -= $fixedDiscounts->sum('amount');
-
-            // Calculate duration in hours (float)
             $hours = $start->diffInMinutes($end) / 60;
             $accommodationTotal = $calculatedPrice * $hours;
 
+            // Add Order Item
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => null, // It's an accommodation
+                'product_id' => null,
                 'product_name' => $accommodatie->name . ' (' . $start->format('d-m H:i') . ' tot ' . $end->format('d-m H:i') . ')',
-                'quantity' => $hours, // storing hours as quantity
+                'quantity' => $hours,
                 'unit_price' => $calculatedPrice,
                 'total_price' => $accommodationTotal,
             ]);
-            $grandTotal += $accommodationTotal;
+            $grandTotal = $accommodationTotal;
 
-            // 4. Process Supplements
+            // Process Supplements
             $supplementsData = json_decode($request->input('supplements_data', '[]'), true);
             if (is_array($supplementsData)) {
                 foreach ($supplementsData as $item) {
                     $product = Product::find($item['id']);
                     if ($product && $item['qty'] > 0) {
-                        // Use product calculated price (assuming logic exists in model or similar to above)
-                        // For simplicity using raw price or adding calculation logic here if needed
-                        // Assuming $product->calculated_price accessor exists as per OrderController
                         $price = $product->calculated_price ?? 0;
                         $lineTotal = $price * $item['qty'];
 
@@ -213,43 +269,67 @@ class AccommodatieController extends Controller
 
             $order->update(['total_amount' => $grandTotal]);
 
-            // 5. Block Agenda (Create Activity)
-            Activity::create([
-                'title' => 'Verhuur: ' . $accommodatie->name,
-                'content' => 'Geboekt door ' . $request->first_name . ' ' . $request->last_name . '. Order: ' . $order->order_number,
-                'date_start' => $start->toDateTimeString(),
-                'date_end' => $end->toDateTimeString(),
-                'public' => 0, // Not visible to public, but blocks agenda
-                'presence' => 0,
-                'user_id' => Auth::id() ?? 0, // System or User
-                'organisator' => 'Verhuur Systeem',
-                'location' => $accommodatie->name
+            // Create the Booking record (The new model)
+            Booking::create([
+                'accommodatie_id' => $accommodatie->id,
+                'user_id' => Auth::id(),
+                'order_id' => $order->id,
+                'start' => $start,
+                'end' => $end,
+                'status' => 'confirmed', // Assuming pending payment keeps it reserved
             ]);
 
-            // 6. Payment with Mollie
+            if ($grandTotal == 0) {
+                $order->update([
+                    'status' => 'paid',
+                    'payment_status' => 'paid',
+                    'mollie_payment_id' => 'free'
+                ]);
+
+                DB::commit();
+                return redirect()->route('order.success', ['order_number' => $order->order_number]);
+            }
+
+            // Payment
             $payment = Mollie::api()->payments->create([
                 "amount" => [
                     "currency" => "EUR",
                     "value" => number_format($grandTotal, 2, '.', '')
                 ],
                 "description" => "Booking " . $order->order_number,
-                "redirectUrl" => route('order.success', ['order_id' => $order->id]),
-                "webhookUrl" => route('webhooks.mollie'),
-                "metadata" => [
-                    "order_id" => $order->id,
-                ],
+                "redirectUrl" => route('order.success', ['order_number' => $order->order_number]),
+//                "webhookUrl" => route('webhooks.mollie'),
+                "metadata" => ["order_id" => $order->id],
             ]);
 
             $order->update(['mollie_payment_id' => $payment->id]);
 
             DB::commit();
-
             return redirect($payment->getCheckoutUrl(), 303);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Er ging iets mis bij het boeken: ' . $e->getMessage())->withInput();
+            return redirect()->back()->with('error', 'Fout: ' . $e->getMessage())->withInput();
         }
+    }
+
+    private function calculateBasePrice($allPrices) {
+        $basePrices = $allPrices->where('type', 0);
+        $percentageAdditions = $allPrices->where('type', 1);
+        $fixedDiscounts = $allPrices->where('type', 2);
+        $percentageDiscounts = $allPrices->where('type', 4);
+
+        $price = $basePrices->sum('amount');
+
+        foreach ($percentageAdditions as $p) {
+            $price += $basePrices->sum('amount') * ($p->amount / 100);
+        }
+        foreach ($percentageDiscounts as $p) {
+            $price -= $price * ($p->amount / 100);
+        }
+        $price -= $fixedDiscounts->sum('amount');
+
+        return $price;
     }
 
     // Admin functions
@@ -299,6 +379,10 @@ class AccommodatieController extends Controller
             'temp_icon_data' => 'nullable|string',
             'temp_icon_ids' => 'nullable|string', // ADDED: Fallback for legacy ID list
             'prices_to_add' => 'nullable|string',
+
+            'min_check_in' => 'nullable|date_format:H:i',
+            'max_check_in' => 'nullable|date_format:H:i',
+            'min_duration_minutes' => 'nullable|integer',
         ]);
 
 
@@ -318,6 +402,9 @@ class AccommodatieController extends Controller
                 'description' => $request->input('description'),
                 'image' => $mainImageName,
                 'user_id' => Auth::id(),
+                'min_check_in' => $request->input('min_check_in', '00:00'),
+                'max_check_in' => $request->input('max_check_in', '23:59'),
+                'min_duration_minutes' => $request->input('min_duration_minutes', 60),
             ]);
 
             // 1. Process Prices (Create Price model first, then link)
@@ -451,11 +538,15 @@ class AccommodatieController extends Controller
             'images_to_remove' => 'nullable|string',
             'icons_to_remove' => 'nullable|string',
             'updated_icon_data' => 'nullable|string',
+
+            'min_check_in' => 'nullable|date_format:H:i',
+            'max_check_in' => 'nullable|date_format:H:i',
+            'min_duration_minutes' => 'nullable|integer',
         ]);
 
         DB::beginTransaction();
         try {
-            $accommodatie->update($request->only('name', 'type', 'price', 'description'));
+            $accommodatie->update($request->only('name', 'type', 'description', 'min_check_in', 'max_check_in', 'min_duration_minutes'));
 
             if ($request->hasFile('image')) {
                 File::delete(public_path('files/accommodaties/images/' . $accommodatie->image));

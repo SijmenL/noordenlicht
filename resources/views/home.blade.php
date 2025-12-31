@@ -5,7 +5,7 @@
     <div class="bg-white d-flex flex-column align-items-center justify-content-center gap-0 p-2"
          style="z-index: 99999">
         <img style="width: clamp(100px, 75vw, 250px)" src="{{ asset('img/logo/logo zonder tekst.webp') }}"
-             alt="Logo Noordenlicht">
+             alt="Logo NoordenLicht">
         <p style="text-align: center; font-weight: bold; font-family: Georgia,Times,Times New Roman,serif;"
            class="m-0 p-0 text-secondary">Natuurlijk Centrum voor Verbinding en BewustZijn</p>
         <p style="text-align: center; font-weight: bold; font-family: Georgia,Times,Times New Roman,serif;"
@@ -179,6 +179,13 @@
                             $activityEnd = Carbon::parse($activity->date_end);
 
                             $activityMonth = $activitiesStart->translatedFormat('F');
+
+                            $linkParams = [
+                                'id' => $activity->id,
+                                'month' => $monthOffset,
+                                'startDate' => $activitiesStart->format('Y-m-d'),
+                                'view' => 'schedule',
+                            ];
                         @endphp
 
                         @if($currentMonth !== $activityMonth)
@@ -192,9 +199,10 @@
                             </div>
                         @endif
 
-                        <a onclick="breakOut({{ $activity->id }})"
-                           class="text-decoration-none"
-                           style="color: unset; cursor: pointer">
+                        <a
+                            href="{{ route('agenda.public.activity', $linkParams) }}"
+                            class="text-decoration-none"
+                            style="color: unset; cursor: pointer">
                             <div class="d-flex flex-row">
                                 <div style="width: 50px"
                                      class="d-flex flex-column gap-0 align-items-center justify-content-center">

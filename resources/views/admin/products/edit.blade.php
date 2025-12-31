@@ -9,6 +9,59 @@
 @endphp
 
 @section('content')
+    <div id="popUp" class="popup" style="display: none; z-index: 99999; top: 0; left: 0; position: fixed">
+        <div class="popup-body">
+            <div class="page">
+                <h2>Inschrijfformulier</h2>
+                <p>Je kan de volgende elementen toevoegen aan een inschrijfformulier:</p>
+                <div class="d-flex flex-column gap-2 w-100">
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info1" class="col-form-label ">Tekst</label>
+                        <input id="info1" class="form-control" type="text" value="Lorum ipsum">
+                    </div>
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info2" class="col-form-label ">Email</label>
+                        <input id="info2" class="form-control" type="email" value="administratie@waterscoutingmhg.nl">
+                    </div>
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info3" class="col-form-label ">Nummer</label>
+                        <input id="info3" class="form-control" type="number" value="42">
+                    </div>
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info4" class="col-form-label ">Datum</label>
+                        <input id="info4" class="form-control" type="date" value="2003-11-12">
+
+                    </div>
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info5" class="col-form-label ">Dropdown</label>
+                        <select id="info5" class="form-select">
+                            <option>Selecteer een optie</option>
+                            <option>Optie 1</option>
+                            <option>Optie 2</option>
+                        </select>
+                    </div>
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info6" class="col-form-label ">Radio</label>
+                        <input name="info6" id="info6" class="form-check-input" type="radio" checked="checked">
+                        <label for="info7" class="col-form-label ">Radio</label>
+                        <input name="info6" id="info7" class="form-check-input" type="radio">
+                    </div>
+                    <div class="d-flex flex-row gap-4 justify-content-between">
+                        <label for="info8" class="col-form-label ">Checkbox</label>
+                        <input name="info8" id="info8" class="form-check-input" type="checkbox" checked="checked">
+                        <label for="info9" class="col-form-label ">Checkbox</label>
+                        <input name="info8" id="info9" class="form-check-input" type="checkbox" checked="checked">
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <a id="close-popup" class="btn btn-outline-danger"><span
+                        class="material-symbols-rounded">close</span></a>
+            </div>
+        </div>
+    </div>
+
+
     <div class="container col-md-11">
         <h1>Product bewerken</h1>
 
@@ -106,11 +159,233 @@
                         @enderror
                     </div>
 
-                    <hr>
+                    <div class="mt-4 mb-4 bg-white rounded-3 border border-1 p-3" id="custom-form">
+                        <div class="d-flex flex-row-responsive justify-content-between align-items-center">
+                            <h2 class="flex-row gap-3"><span
+                                    class="material-symbols-rounded me-2">app_registration</span>Inschrijfformulier
+                            </h2>
+                            <a id="help-button"
+                               class="btn btn-outline-dark d-flex align-items-center justify-content-center"
+                               style="border: none">
+                                <span class="material-symbols-rounded" style="font-size: xx-large">help</span>
+                            </a>
+                        </div>
+                        <p>Bij sommige producten is extra informatie nodig, zoals verblijfdatum, ontbijt gegevens, etc. <span
+                                id="help-button2" class="material-symbols-rounded"
+                                style="transform: translateY(7px); cursor: pointer">help</span> voor meer
+                            informatie.
+                        </p>
+
+                        <div class="alert alert-info">Het bewerken van een formulier verwijderd gegeven antwoorden.</div>
+
+                        <script>
+                            let helpButton = document.getElementById('help-button');
+                            let helpButton2 = document.getElementById('help-button2');
+                            let body = document.getElementById('app');
+                            let html = document.querySelector('html');
+                            let popUp = document.getElementById('popUp');
+
+
+                            helpButton.addEventListener('click', function () {
+                                openPopup();
+                            });
+
+                            helpButton2.addEventListener('click', function () {
+                                openPopup();
+                            });
+
+                            closeButton = document.getElementById('close-popup');
+                            closeButton.addEventListener('click', closePopup);
+
+                            function openPopup() {
+                                let scrollPosition = window.scrollY;
+                                html.classList.add('no-scroll');
+                                window.scrollTo(0, scrollPosition);
+                                popUp.style.display = 'flex';
+                            }
+
+                            function closePopup() {
+                                popUp.style.display = 'none';
+                                html.classList.remove('no-scroll');
+                            }
+
+                        </script>
+                        <p>Druk op de knop "Voeg veld toe" om een invoerveld toe te voegen.</p>
+
+                        <div id="form-elements"
+                             class="d-flex flex-column bg-info p-2 gap-2 m-2 rounded @if(!$product->form_labels))d-none @endif">
+                            @if(isset($product->formElements) && $product->formElements->isNotEmpty())
+                                @foreach($product->formElements as $index => $formElement)
+                                    <div class="d-flex flex-column gap-2 bg-white rounded p-4 align-items-start"
+                                         id="formElement{{ $index }}">
+                                        <button type="button" class="btn btn-outline-danger align-self-end"
+                                                onclick="removeFormElement({{ $index }})">Verwijder veld
+                                        </button>
+
+                                        <label for="fieldLabel{{ $index }}">Veldlabel (bijvoorbeeld: Naam,
+                                            Achternaam,
+                                            Adres)</label>
+                                        <input id="fieldLabel{{ $index }}" class="form-control" type="text"
+                                               name="form_labels[]" value="{{ $formElement->label }}">
+
+                                        <label for="fieldType{{ $index }}">Type veld</label>
+                                        <select id="fieldType{{ $index }}" class="form-control" name="form_types[]"
+                                                onchange="handleFieldTypeChange(this, {{ $index }})">
+                                            <option
+                                                value="text" {{ $formElement->type == 'text' ? 'selected' : '' }}>
+                                                Tekst
+                                            </option>
+                                            <option
+                                                value="email" {{ $formElement->type == 'email' ? 'selected' : '' }}>
+                                                E-mail
+                                            </option>
+                                            <option
+                                                value="number" {{ $formElement->type == 'number' ? 'selected' : '' }}>
+                                                Getal
+                                            </option>
+                                            <option
+                                                value="date" {{ $formElement->type == 'date' ? 'selected' : '' }}>
+                                                Datum
+                                            </option>
+                                            <option
+                                                value="select" {{ $formElement->type == 'select' ? 'selected' : '' }}>
+                                                Dropdown
+                                            </option>
+                                            <option
+                                                value="radio" {{ $formElement->type == 'radio' ? 'selected' : '' }}>
+                                                Radio
+                                            </option>
+                                            <option
+                                                value="checkbox" {{ $formElement->type == 'checkbox' ? 'selected' : '' }}>
+                                                Checkbox
+                                            </option>
+                                        </select>
+
+                                        @if(in_array($formElement->type, ['select', 'radio', 'checkbox']))
+                                            <div id="optionsContainer{{ $index }}" class="mt-2 w-100">
+                                                <label>Waardes die in je dropdown, radio of checkbox komen te
+                                                    staan</label>
+                                                <div id="options{{ $index }}" class="w-100">
+                                                    @foreach(explode(',', $formElement->option_value) as $option)
+                                                        <!-- Split the string into an array -->
+                                                        <div
+                                                            class="d-flex flex-row-responsive align-items-center gap-2 w-100 mt-2">
+                                                            <input type="text" class="form-control w-full"
+                                                                   name="form_options[{{ $index }}][]"
+                                                                   value="{{ trim($option) }}">
+                                                            <!-- Trim whitespace -->
+                                                            <button type="button"
+                                                                    class="btn btn-outline-danger d-flex align-items-center justify-content-center"
+                                                                    style="min-width: 10%"
+                                                                    onclick="removeOption(this)">
+                                                                <span class="material-symbols-rounded">close</span>
+                                                            </button>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                <button type="button" class="btn btn-info mt-2"
+                                                        onclick="addOption({{ $index }})">Voeg optie toe
+                                                </button>
+                                            </div>
+                                        @endif
+
+                                        <label for="fieldRequired{{ $index }}">Verplicht veld</label>
+                                        <input id="fieldRequired{{ $index }}" class="form-check-input"
+                                               type="checkbox"
+                                               name="is_required[]" {{ $formElement->is_required ? 'checked' : '' }}>
+                                    </div>
+                                @endforeach
+                            @endif
+
+                        </div>
+                        <button class="btn btn-primary text-white" type="button" onclick="addFormElement()">Voeg
+                            veld
+                            toe
+                        </button>
+                        <script>
+                            let fields = {{ isset($product->formElements) ? $product->formElements->count() : 0 }};
+
+                            function addFormElement() {
+                                let elementContainer = document.getElementById('form-elements');
+                                elementContainer.classList.remove('d-none');
+
+                                let html = `
+        <div class="d-flex flex-column gap-2 bg-white rounded p-4 align-items-start" id="formElement${fields}">
+            <button type="button" class="btn btn-outline-danger align-self-end" onclick="removeFormElement(${fields})">Verwijder veld</button>
+            <label for="fieldLabel${fields}">Veldlabel (bijvoorbeeld: Naam, Achternaam, Adres)</label>
+            <input id="fieldLabel${fields}" class="form-control" type="text" name="form_labels[]">
+
+            <label for="fieldType${fields}">Type veld (wat je veld accepteert)</label>
+            <select id="fieldType${fields}" class="form-select" name="form_types[]" onchange="handleFieldTypeChange(this, ${fields})">
+                <option value="text">Tekst</option>
+                <option value="email">E-mail</option>
+                <option value="number">Getal</option>
+                <option value="date">Datum</option>
+                <option value="select">Dropdown</option>
+                <option value="radio">Radio</option>
+                <option value="checkbox">Checkbox</option>
+            </select>
+
+            <div id="optionsContainer${fields}" class="d-none mt-2 w-100">
+                <label>Waardes die in je dropdown, radio of checkbox komen te staan</label>
+                <div id="options${fields}" class="w-100">
+                    <div class="d-flex flex-row align-items-center gap-2 w-100 mt-2">
+                        <input type="text" class="form-control w-full" name="form_options[${fields}][]">
+                        <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" style="min-width: 10%" onclick="removeOption(this)">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-info mt-2" onclick="addOption(${fields})">Voeg optie toe</button>
+            </div>
+
+            <label for="fieldRequired${fields}">Verplicht veld</label>
+            <input id="fieldRequired${fields}" class="form-check-input" type="checkbox" name="is_required[]">
+        </div>`;
+
+                                elementContainer.insertAdjacentHTML('beforeend', html);
+                                fields++;
+                            }
+
+                            function removeFormElement(index) {
+                                let element = document.getElementById(`formElement${index}`);
+                                if (element) element.remove();
+                            }
+
+                            function addOption(fieldIndex) {
+                                let optionsContainer = document.getElementById(`options${fieldIndex}`);
+                                let newOptionHtml = `
+        <div class="d-flex align-items-center gap-2 w-100 mt-2">
+            <input type="text" class="form-control w-full" name="form_options[${fieldIndex}][]">
+            <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center" style="min-width: 10%" onclick="removeOption(this)">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>`;
+                                optionsContainer.insertAdjacentHTML('beforeend', newOptionHtml);
+                            }
+
+                            function removeOption(button) {
+                                button.parentElement.remove();
+                            }
+
+                            function handleFieldTypeChange(select, fieldIndex) {
+                                let optionsContainer = document.getElementById(`optionsContainer${fieldIndex}`);
+                                let selectedValue = select.value;
+
+                                if (['select', 'radio', 'checkbox'].includes(selectedValue)) {
+                                    optionsContainer.classList.remove('d-none');
+                                } else {
+                                    optionsContainer.classList.add('d-none');
+                                }
+                            }
+                        </script>
+                    </div>
 
                     {{-- PRICE EDITOR --}}
-                    <div class="mb-5 p-3 border rounded-3 bg-white">
-                        <h2 class="h5 mb-3">Prijsconfiguratie</h2>
+                    <div class="mb-4 p-3 border rounded-3 bg-white">
+                         <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
+                        </h2>
 
                         <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
                             <div class="flex-grow-1">
@@ -148,8 +423,10 @@
                     <hr>
 
                     {{-- IMAGE CAROUSEL EDITOR --}}
-                    <div class="mb-5 p-3 border rounded-3 bg-white">
-                        <h2 class="h5 mb-3">Afbeeldingencarousel bewerken</h2>
+                    <div class="mb-4 p-3 border rounded-3 bg-white">
+                        <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">image</span>Afbeeldingencarousel bewerken
+                        </h2>
 
                         <div class="d-flex align-items-center gap-3 mb-4">
                             <label for="carousel_images_input" class="form-label mb-0">Nieuwe afbeeldingen uploaden:</label>
@@ -166,7 +443,6 @@
                         </div>
                     </div>
 
-                    <hr>
 
                     <div class="d-flex flex-row align-items-center flex-wrap gap-2">
                         <button

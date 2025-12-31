@@ -28,7 +28,7 @@ class passwordChange extends Mailable
      */
     public function build()
     {
-        return $this->subject('Je MHG wachtwoord is gewijzigd')
+        return $this->subject('Je NoordenLicht wachtwoord is gewijzigd')
             ->markdown('emails.password_change')
             ->with(['data' => $this->data]);
     }

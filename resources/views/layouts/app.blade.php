@@ -86,26 +86,8 @@
                                 </li>
                             @endif
                         @else
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    @if(Auth::user()->profile_picture)
-                                        <img alt="profielfoto" class="profle-picture"
-                                             src="{{ asset('/profile_pictures/' . Auth::user()->profile_picture) }}">
-                                    @else
-                                        <img alt="profielfoto" class="profle-picture"
-                                             src="{{ asset('img/no_profile_picture.webp') }}">
-                                    @endif
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                        {{ __('Log uit') }}
-                                    </a>
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                        @csrf
-                                    </form>
-                                </div>
+                            <li class="nav-item">
+                                <a class="nav-link white-text" href="{{ route('admin') }}"><span class="material-symbols-rounded">dashboard</span></a>
                             </li>
                         @endguest
                     </ul>

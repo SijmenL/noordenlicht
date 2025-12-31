@@ -6,6 +6,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Activity;
+use App\Models\ActivityFormElement;
+use App\Models\ActivityFormResponses;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -19,6 +21,7 @@ use Carbon\Carbon;
 
 class OrderController extends Controller
 {
+    // ... checkout() function (unchanged) ...
     public function checkout()
     {
         $cart = Session::get('cart_mixed', [
@@ -93,11 +96,17 @@ class OrderController extends Controller
             'address' => 'required|string',
             'zipcode' => 'required|string',
             'city' => 'required|string',
-            'create_account' => 'nullable|boolean', // Toggle validation
+            'create_account' => 'nullable|boolean',
         ]);
 
         $cart = Session::get('cart_mixed', [
             'products' => Session::get('cart', []),
+            'activities' => []
+        ]);
+
+        // Retrieve the form data we saved in CartController
+        $cartFormData = Session::get('cart_form_data', [
+            'products' => [],
             'activities' => []
         ]);
 
@@ -110,29 +119,24 @@ class OrderController extends Controller
             // --- Account Creation Logic ---
             $userId = Auth::id();
             if (!$userId && $request->filled('create_account') && $request->create_account == 1) {
-                // Check if user exists
                 $existingUser = User::where('email', $request->email)->first();
 
                 if (!$existingUser) {
                     $randomPassword = Str::random(10);
                     $newUser = User::create([
                         'email' => $request->email,
-                        'name' => $request->first_name, // Using First Name as Name
+                        'name' => $request->first_name,
                         'last_name' => $request->last_name,
                         'street' => $request->address,
                         'postal_code' => $request->zipcode,
                         'city' => $request->city,
                         'password' => Hash::make($randomPassword),
-                        // Add other default fields or make them nullable in DB
                     ]);
 
                     $userId = $newUser->id;
-                    Auth::login($newUser); // Auto login the new user
-
-                    // Ideally, send an email here with the $randomPassword
+                    Auth::login($newUser);
                 } else {
                     $userId = $existingUser->id;
-                    // Optional: Link order to existing user even if not logged in
                 }
             }
 
@@ -140,7 +144,7 @@ class OrderController extends Controller
                 'order_number' => 'ORD-' . strtoupper(uniqid()),
                 'user_id' => $userId,
                 'status' => 'open',
-                'payment_status' => 'pending', // Will be set to paid immediately for test
+                'payment_status' => 'open', // Initial status
                 'email' => $request->email,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
@@ -171,6 +175,43 @@ class OrderController extends Controller
                     ]);
 
                     $grandTotal += $lineTotal;
+
+                    // --- SAVE FORM DATA FOR PRODUCT ---
+                    if (isset($cartFormData['products'][$product->id])) {
+                        $formData = $cartFormData['products'][$product->id];
+
+                        // Calculate next submitted_id for this product context
+                        $maxSubmittedId = ActivityFormResponses::where('product_id', $product->id)->max('submitted_id');
+                        $nextSubmittedId = $maxSubmittedId ? $maxSubmittedId + 1 : 1;
+
+                        foreach ($formData as $formElementId => $response) {
+                            $element = ActivityFormElement::find($formElementId);
+                            if(!$element) continue;
+
+                            if (is_array($response)) {
+                                foreach ($response as $checkboxValue) {
+                                    ActivityFormResponses::create([
+                                        'product_id' => $product->id,
+                                        'order_id' => $order->id, // Linked to Order
+                                        'location' => 'product',
+                                        'activity_form_element_id' => $formElementId,
+                                        'response' => $checkboxValue,
+                                        'submitted_id' => $nextSubmittedId,
+                                    ]);
+                                }
+                            } else {
+                                ActivityFormResponses::create([
+                                    'product_id' => $product->id,
+                                    'order_id' => $order->id, // Linked to Order
+                                    'location' => 'product',
+                                    'activity_form_element_id' => $formElementId,
+                                    'response' => $response,
+                                    'submitted_id' => $nextSubmittedId,
+                                ]);
+                            }
+                        }
+                    }
+                    // --- END FORM DATA ---
                 }
             }
 
@@ -179,10 +220,9 @@ class OrderController extends Controller
                 $activityIds = array_map(fn($item) => $item['id'], $cart['activities']);
                 $activities = Activity::with('prices.price')->whereIn('id', array_unique($activityIds))->get()->keyBy('id');
 
-                foreach ($cart['activities'] as $cartItem) {
+                foreach ($cart['activities'] as $key => $cartItem) {
                     $activity = $activities->get($cartItem['id']);
 
-                    // Helper logic we added earlier
                     if ($activity && method_exists($activity, 'hasTicketsAvailable') && !$activity->hasTicketsAvailable($cartItem['quantity'])) {
                         abort(422, 'Het evenement ' . $activity->title . ' is uitverkocht.');
                     }
@@ -212,16 +252,65 @@ class OrderController extends Controller
                             'order_id' => $order->id,
                             'activity_id' => $activity->id,
                             'start_date' => $startDate,
-                            'status' => 'valid'
+                            'status' => 'pending'
                         ]);
                     }
 
                     $grandTotal += $lineTotal;
+
+                    // --- SAVE FORM DATA FOR ACTIVITY (if applicable in future) ---
+                    if (isset($cartFormData['activities'][$key])) {
+                        $formData = $cartFormData['activities'][$key];
+                        $maxSubmittedId = ActivityFormResponses::where('activity_id', $activity->id)->max('submitted_id');
+                        $nextSubmittedId = $maxSubmittedId ? $maxSubmittedId + 1 : 1;
+
+                        foreach ($formData as $formElementId => $response) {
+                            if (is_array($response)) {
+                                foreach ($response as $val) {
+                                    ActivityFormResponses::create([
+                                        'activity_id' => $activity->id,
+                                        'order_id' => $order->id,
+                                        'location' => 'activity',
+                                        'activity_form_element_id' => $formElementId,
+                                        'response' => $val,
+                                        'submitted_id' => $nextSubmittedId,
+                                    ]);
+                                }
+                            } else {
+                                ActivityFormResponses::create([
+                                    'activity_id' => $activity->id,
+                                    'order_id' => $order->id,
+                                    'location' => 'activity',
+                                    'activity_form_element_id' => $formElementId,
+                                    'response' => $response,
+                                    'submitted_id' => $nextSubmittedId,
+                                ]);
+                            }
+                        }
+                    }
+                    // --- END ACTIVITY FORM DATA ---
                 }
             }
 
             $order->update(['total_amount' => $grandTotal]);
 
+            // --- HANDLE FREE ORDERS ---
+            if ($grandTotal == 0) {
+                $order->update([
+                    'status' => 'paid',
+                    'payment_status' => 'paid',
+                    'mollie_payment_id' => 'free'
+                ]);
+
+                Ticket::where('order_id', $order->id)->update(['status' => 'valid']);
+
+                Session::forget('cart');
+                Session::forget('cart_mixed');
+                Session::forget('cart_form_data'); // Clear Form Data
+
+                DB::commit();
+                return redirect()->route('order.success', ['order_number' => $order->order_number]);
+            }
 
             $payment = Mollie::api()->payments->create([
                 "amount" => [
@@ -229,8 +318,7 @@ class OrderController extends Controller
                     "value" => number_format($grandTotal, 2, '.', '')
                 ],
                 "description" => "Order " . $order->order_number,
-                "redirectUrl" => route('order.success', ['order_id' => $order->id]),
-//                "webhookUrl" => route('webhooks.mollie'),
+                "redirectUrl" => route('order.success', ['order_number' => $order->order_number]),
                 "metadata" => [
                     "order_id" => $order->id,
                 ],
@@ -238,6 +326,7 @@ class OrderController extends Controller
 
             Session::forget('cart');
             Session::forget('cart_mixed');
+            Session::forget('cart_form_data'); // Clear Form Data
 
             $order->update(['mollie_payment_id' => $payment->id]);
             DB::commit();
@@ -248,6 +337,9 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Fout bij verwerken: ' . $e->getMessage());
         }
     }
+
+    // ... calculateActivityPrice, success, retry, list, details, updateStatus ...
+    // (Include the rest of the existing methods here unchanged)
 
     private function calculateActivityPrice($activity)
     {
@@ -277,25 +369,152 @@ class OrderController extends Controller
         return max(0, $calculatedPrice);
     }
 
-
-    public function success($order_id)
+    public function success($order_number)
     {
-        $order = Order::with(['tickets.activity', 'items'])->findOrFail($order_id);
-        return view('shop.success', compact('order'));
+        $order = Order::with(['tickets.activity', 'items'])->where('order_number', $order_number)->limit(1)->first();
+
+        if ($order->total_amount == 0 && $order->payment_status == 'paid') {
+            return view('shop.success', compact('order'));
+        }
+
+        try {
+            $payment = Mollie::api()->payments->get($order->mollie_payment_id);
+            $paymentStatus = $payment->status;
+        } catch (\Exception $e) {
+            return redirect()->route('shop')->with('error', 'Kon betalingsstatus niet ophalen.');
+        }
+
+        $order->payment_status = $paymentStatus;
+        $order->save();
+
+        switch ($paymentStatus) {
+            case 'paid':
+                $order->update(['status' => 'paid']);
+                foreach ($order->tickets as $ticket) {
+                    $ticket->update(['status' => 'valid']);
+                }
+                return view('shop.success', compact('order'));
+
+            case 'canceled':
+            case 'failed':
+            case 'expired':
+                $order->update(['status' => $paymentStatus]);
+                foreach ($order->tickets as $ticket) {
+                    $ticket->update(['status' => 'cancelled']);
+                }
+                return view('shop.payment_failed', [
+                    'order' => $order,
+                    'status' => $paymentStatus
+                ]);
+
+            case 'open':
+            case 'pending':
+                return view('shop.payment_open', compact('order'));
+
+            default:
+                return view('shop.payment_failed', [
+                    'order' => $order,
+                    'status' => 'unknown'
+                ]);
+        }
     }
 
-    public function adminList()
+    public function retry($order_id)
     {
-        $orders = Order::with('user')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $order = Order::findOrFail($order_id);
 
-        return view('admin.orders.index', compact('orders'));
+        if ($order->status == 'paid' || $order->payment_status == 'paid') {
+            return redirect()->route('order.success', ['order_number' => $order->order_number]);
+        }
+
+        if ($order->total_amount == 0) {
+            $order->update([
+                'status' => 'paid',
+                'payment_status' => 'paid',
+                'mollie_payment_id' => 'free'
+            ]);
+
+            Ticket::where('order_id', $order->id)->update(['status' => 'valid']);
+
+            return redirect()->route('order.success', ['order_number' => $order->order_number]);
+        }
+
+        try {
+            $payment = Mollie::api()->payments->create([
+                "amount" => [
+                    "currency" => "EUR",
+                    "value" => number_format($order->total_amount, 2, '.', '')
+                ],
+                "description" => "Retry Order " . $order->order_number,
+                "redirectUrl" => route('order.success', ['order_number' => $order->order_number]),
+                "metadata" => [
+                    "order_id" => $order->id,
+                ],
+            ]);
+
+            $order->update([
+                'mollie_payment_id' => $payment->id,
+                'status' => 'open',
+                'payment_status' => 'open'
+            ]);
+
+            return redirect($payment->getCheckoutUrl(), 303);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Kon betaling niet opnieuw starten: ' . $e->getMessage());
+        }
     }
 
-    public function adminDetails($id)
+    public function list(Request $request)
     {
-        $order = Order::with(['orderItems', 'tickets', 'user'])->findOrFail($id);
-        return view('admin.orders.show', compact('order'));
+        $query = Order::with('user')->orderBy('created_at', 'desc');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('status') && $request->status != '' && $request->status != 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $orders = $query->paginate(20)->withQueryString();
+
+        return view('admin.orders.list', [
+            'orders' => $orders,
+            'search' => $request->search,
+            'status' => $request->status
+        ]);
+    }
+
+    public function details($id)
+    {
+        // Added 'tickets.activity' to eager load data for matching
+        $order = Order::with(['items.product', 'tickets.activity', 'user'])->findOrFail($id);
+
+        // Fetch all form responses associated with this order
+        $formResponses = ActivityFormResponses::with(['formElement', 'activity'])
+            ->where('order_id', $order->id)
+            ->get();
+
+        return view('admin.orders.details', compact('order', 'formResponses'));
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:open,paid,shipped,completed,cancelled'
+        ]);
+
+        $order = Order::findOrFail($id);
+        $order->status = $request->status;
+        $order->save();
+
+        return redirect()->back()->with('success', 'Orderstatus succesvol aangepast naar ' . ucfirst($request->status));
     }
 }

@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class newsAccepted extends Mailable
+class newOrder extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -28,8 +28,8 @@ class newsAccepted extends Mailable
      */
     public function build()
     {
-        return $this->subject('Je ingestuurde nieuwsitem is geplaatst!')
-            ->markdown('emails.news_accepted')
+        return $this->subject('Besteloverzicht NoordenLicht')
+            ->markdown('emails.new_order')
             ->with(['data' => $this->data]);
     }
 }

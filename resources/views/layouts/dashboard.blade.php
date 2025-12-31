@@ -1,4 +1,8 @@
-@php use App\Models\Contact; @endphp
+@php
+    use App\Models\Contact;
+    use App\Models\Order;
+
+    @endphp
 <!doctype html>
 <html lang="nl">
 <head>
@@ -39,7 +43,7 @@
 
         .navbar-root {
             overflow-y: scroll;
-            max-height: calc(100vh - 300px);
+            max-height: calc(100vh - 350px);
         }
 
         .hamburger-btn {
@@ -124,7 +128,7 @@
 <div id="app">
     <!-- Mobile Header (only visible on mobile) -->
     <div class="mobile-header">
-        <a href="{{ route('admin') }}"><img style="height: 40px" src="{{ asset('img/logo/logo_white.webp') }}" alt="Logo Noordenlicht"></a>
+        <a href="{{ route('admin') }}"><img style="height: 40px" src="{{ asset('img/logo/logo_white.webp') }}" alt="Logo NoordenLicht"></a>
         <button class="hamburger-btn" id="hamburger-toggle">
             <span class="material-symbols-rounded">menu</span>
         </button>
@@ -138,7 +142,7 @@
             <div class="sticky-top">
                 <a href="{{ route('admin') }}">
                 <img style="width: clamp(50px, 100%, 250px)" src="{{ asset('img/logo/logo_white.webp') }}"
-                     alt="Logo Noordenlicht" class="d-none d-md-block">
+                     alt="Logo NoordenLicht" class="d-none d-md-block">
                 </a>
 
                 <div id="navbar-root" class="no-scrolbar navbar-root">
@@ -190,6 +194,16 @@
                                         'uri' => '/dashboard/agenda/nieuw',
                                         'fontSize' => '14px',
                                     ],
+                                    [
+                                        'name' => 'Verkochte tickets',
+                                        'uri' => '/dashboard/tickets',
+                                        'fontSize' => '14px',
+                                    ],
+                                    [
+                                        'name' => 'Scan tickets',
+                                        'uri' => '/dashboard/tickets/scan',
+                                        'fontSize' => '14px',
+                                    ],
                                 ],
                             ],
                             [
@@ -224,25 +238,17 @@
                                 'uri' => '',
                                 'fontSize' => '18px',
                                 'icon-name' => 'shop',
+
                                 'sub-pages' => [
                                     [
                                         'name' => 'Producten',
-                                        'uri' => '/dashboard/products',
+                                        'uri' => '/dashboard/producten',
                                         'fontSize' => '14px',
                                     ],
                                     [
                                         'name' => 'Bestellingen',
-                                        'uri' => '',
-                                        'fontSize' => '14px',
-                                    ],
-                                    [
-                                        'name' => 'Verzendingen',
-                                        'uri' => '',
-                                        'fontSize' => '14px',
-                                    ],
-                                    [
-                                        'name' => 'Betalingen',
-                                        'uri' => '',
+                                        'notificationsCount' => Order::where('status', 'paid')->count(),
+                                        'uri' => '/dashboard/bestellingen',
                                         'fontSize' => '14px',
                                     ],
                                     [
@@ -252,11 +258,6 @@
                                     ],
                                     [
                                         'name' => 'Statistieken',
-                                        'uri' => '',
-                                        'fontSize' => '14px',
-                                    ],
-                                    [
-                                        'name' => 'Instellingen',
                                         'uri' => '',
                                         'fontSize' => '14px',
                                     ],
@@ -327,7 +328,12 @@
                                         $isSubItemActive = ($subPage['uri'] ?? '') === '/' . $currentPath;
                                     @endphp
                                     <li class="sub-menu-item {{ $isSubItemActive ? 'active' : '' }}">
-                                        <a href="{{ $subPage['uri'] }}" style="font-size: {{ $subPage['fontSize'] }};">{{ $subPage['name'] }}</a>
+                                        <a class="d-flex flex-row gap-1 align-items-center" href="{{ $subPage['uri'] }}" style="font-size: {{ $subPage['fontSize'] }};">{{ $subPage['name'] }}
+
+                                        @if(!empty($subPage['notificationsCount']) && $subPage['notificationsCount'] > 0)
+                                            <span class="notification-badge">{{ $subPage['notificationsCount'] }}</span>
+                                        @endif
+                                        </a>
                                     </li>
                                 @endforeach
                             </ul>
@@ -337,6 +343,11 @@
             </div>
             <div>
                 <div class="main-menu-item">
+                    <a href="{{ route('home') }}" class="menu-content" style="font-size: 18px; text-decoration: none"><span
+                            class="material-symbols-rounded">captive_portal</span><span class="menu-text">Naar website</span>
+                    </a>
+                </div>
+                <div class="main-menu-item">
                     <div onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="menu-content" style="font-size: 18px;"><span
                             class="material-symbols-rounded">logout</span><span class="menu-text">Uitloggen</span>
                     </div>
@@ -344,6 +355,7 @@
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                     @csrf
                 </form>
+
             </div>
         </div>
         <main class="py-4 p-4 w-100 main-content" style="max-width: 100vw; overflow: hidden">

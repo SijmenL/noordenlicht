@@ -7,16 +7,28 @@ use Illuminate\Database\Eloquent\Model;
 
 class ActivityFormElement extends Model
 {
+    // Added 'product_id' and 'location'
+    protected $fillable = [
+        'activity_id',
+        'product_id',
+        'location',
+        'label',
+        'type',
+        'is_required',
+        'option_value'
+    ];
 
-    protected $fillable = ['activity_id', 'label', 'type', 'is_required', 'option_value'];
-
-    // A form element belongs to an event
     public function event()
     {
-        return $this->belongsTo(Activity::class);
+        return $this->belongsTo(Activity::class, 'activity_id');
     }
 
-    // A form element can have many responses
+    // New relationship for Product
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function activityFormResponses()
     {
         return $this->hasMany(ActivityFormResponses::class);

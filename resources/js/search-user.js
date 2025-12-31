@@ -109,7 +109,7 @@ function searchUsers(searchTerm, index) {
                     listItem.classList.add('user-selected');
                 }
 
-                listItem.textContent = `${user.name}${user.infix ? ' ' + user.infix : ''} ${user.last_name}`;
+                listItem.textContent = `${user.name}`;
                 listItem.addEventListener('click', () => {
                     if (userSelectSearch[index].dataset.type === 'multiple') {
                         toggleUserId(index, user.id, listItem);

@@ -57,4 +57,14 @@ class Product extends Model
         return max($calculatedPrice, 0);
     }
 
+    public function formElements()
+    {
+        return $this->hasMany(ActivityFormElement::class);
+    }
+
+    public function activityFormElements()
+    {
+        return $this->hasMany(ActivityFormElement::class, 'product_id');
+    }
+
 }

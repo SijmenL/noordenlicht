@@ -11,7 +11,7 @@
 
 
 @section('content')
-    <div id="popUp" class="popup" style="margin-top: -122px; display: none">
+    <div id="popUp" class="popup" style="display: none; z-index: 99999; top: 0; left: 0; position: fixed">
         <div class="popup-body">
             <div class="page">
                 <h2>Inschrijfformulier</h2>
@@ -474,7 +474,9 @@
                         <div class="d-flex flex-row-responsive gap-2 justify-content-between align-items-center">
                             {{-- PRICE EDITOR --}}
                             <div class="p-3 border rounded-3 bg-white w-100">
-                                <h2 class="h5 mb-3">Prijsconfiguratie</h2>
+                                 <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
+                        </h2>
 
                                 <div
                                     class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">

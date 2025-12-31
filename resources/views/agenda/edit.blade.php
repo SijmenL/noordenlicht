@@ -11,7 +11,7 @@
 
 
 @section('content')
-    <div id="popUp" class="popup" style="margin-top: -122px; display: none">
+    <div id="popUp" class="popup" style="display: none; z-index: 99999; top: 0; left: 0; position: fixed">
         <div class="popup-body">
             <div class="page">
                 <h2>Inschrijfformulier</h2>
@@ -352,6 +352,7 @@
                                     style="transform: translateY(7px); cursor: pointer">help</span> voor meer
                                 informatie.
                             </p>
+                            <div class="alert alert-info">Het bewerken van een formulier verwijderd gegeven antwoorden.</div>
 
                             <script>
                                 let helpButton = document.getElementById('help-button');
@@ -563,7 +564,9 @@
                         </h2>
                         <p>Als het evenement gratis is kun je dit overslaan.</p>
                         <div class="mb-5 p-3 border rounded-3 bg-white">
-                            <h2 class="h5 mb-3">Prijsconfiguratie</h2>
+                             <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
+                        </h2>
 
                             <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
                                 <div class="flex-grow-1">

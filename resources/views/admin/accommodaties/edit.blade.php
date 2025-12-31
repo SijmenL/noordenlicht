@@ -110,7 +110,9 @@
 
                     {{-- PRICE EDITOR --}}
                     <div class="mb-5 p-3 border rounded-3 bg-white">
-                        <h2 class="h5 mb-3">Prijsconfiguratie</h2>
+                         <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
+                        </h2>
 
                         <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
                             <div class="flex-grow-1">
@@ -149,7 +151,9 @@
 
                     {{-- IMAGE CAROUSEL EDITOR --}}
                     <div class="mb-5 p-3 border rounded-3 bg-white">
-                        <h2 class="h5 mb-3">Afbeeldingencarousel bewerken</h2>
+                        <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">image</span>Afbeeldingencarousel bewerken
+                        </h2>
                         <div class="d-flex align-items-center gap-3 mb-4">
                             <label for="carousel_images_input" class="form-label mb-0">Nieuwe afbeeldingen toevoegen:</label>
                             <input class="form-control" type="file" id="carousel_images_input" multiple accept="image/*">

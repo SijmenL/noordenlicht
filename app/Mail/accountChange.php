@@ -28,7 +28,7 @@ class accountChange extends Mailable
      */
     public function build()
     {
-        return $this->subject('Je MHG account is gewijzigd')
+        return $this->subject('Je NoordenLicht account is gewijzigd')
             ->markdown('emails.account_change')
             ->with(['data' => $this->data]);
     }

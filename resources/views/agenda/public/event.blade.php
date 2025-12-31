@@ -192,9 +192,16 @@
                                                         @endforeach
                                                     @endif
                                                 </div>
+                                                @if(\Carbon\Carbon::parse($activity->date_end)->isPast())
+                                                    <div class="alert alert-warning text-center mb-0 border-0 bg-light">
+                                                        <h3 class="fw-bold text-dark mb-2">
+                                                            <span class="material-symbols-rounded align-middle me-1">history</span>
+                                                            Verlopen
+                                                        </h3>
+                                                        <p class="mb-0 text-muted">Dit evenement is al voorbij. Je kunt geen tickets meer kopen.</p>
+                                                    </div>
 
-                                                {{-- Add to Cart Form or Sold Out Notice --}}
-                                                @if($activity->hasTicketsAvailable())
+                                                @elseif($activity->hasTicketsAvailable())
                                                     @if($activity->ticketsLeft() !== null)
                                                         @if($activity->ticketsLeft() == 1)
                                                             <small>Nog {{ $activity->ticketsLeft() }} ticket
@@ -235,7 +242,7 @@
                                                         </h3>
                                                         <p class="mb-0 text-muted">Helaas, er zijn geen tickets meer
                                                             beschikbaar
-                                                            voor deze activiteit.</p>
+                                                            voor dit evenement.</p>
                                                     </div>
                                                 @endif
                                             </div>
