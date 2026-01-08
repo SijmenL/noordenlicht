@@ -16,105 +16,16 @@
 
         <div class="d-flex flex-row-responsive align-items-center gap-5" style="width: 100%">
             <div class="" style="width: 100%;">
-                @if(isset($lesson))
-                    <div class="d-flex flex-row justify-content-between align-items-center">
-                        <h1 class="">Planning</h1>
-                        @if($user && $isTeacher)
-                            <a href="{{ route('agenda.new', ['lessonId' => $lesson->id, 'month' => $monthOffset, 'all' => $wantViewAll, 'view' => 'schedule']) }}"
-                               class="d-flex flex-row align-items-center justify-content-center btn btn-info">
+                <div class="d-flex flex-row justify-content-between align-items-center">
+                    <h1 class="">Evenementen</h1>
+                    @if($user && $user->roles->contains('role', 'Administratie'))
+                        <a href="{{ route('agenda.new', ['month' => $monthOffset, 'all' => $wantViewAll, 'view' => 'schedule']) }}"
+                           class="d-flex flex-row align-items-center justify-content-center btn btn-info">
                             <span
                                 class="material-symbols-rounded me-2">calendar_add_on</span>
-                                <span class="no-mobile">Agendapunt toevoegen</span></a>
-                        @endif
-                    </div>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('lessons') }}">Lessen</a></li>
-                            <li class="breadcrumb-item"><a
-                                    href="{{ route('lessons.environment.lesson', $lesson->id) }}">{{ $lesson->title }}</a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">Planning</li>
-                        </ol>
-                    </nav>
-                @else
-                    <div class="d-flex flex-row justify-content-between align-items-center">
-                        <h1 class="">Agenda</h1>
-                        @if($user && $user->roles->contains('role', 'Administratie'))
-
-                            <a href="{{ route('agenda.new', ['month' => $monthOffset, 'all' => $wantViewAll, 'view' => 'schedule']) }}"
-                               class="d-flex flex-row align-items-center justify-content-center btn btn-info">
-                            <span
-                                class="material-symbols-rounded me-2">calendar_add_on</span>
-                                <span class="no-mobile">Agendapunt toevoegen</span></a>
-                        @endif
-                    </div>
-
-                    <div class="dropdown">
-                        <button class="btn btn-primary text-white dropdown-toggle" type="button" id="calendarDropdown"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                            Exporteer jouw agenda
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="calendarDropdown">
-                            <li><a class="dropdown-item calendar-link" target="_blank" href="#" data-type="google">Google
-                                    Calendar</a>
-                            </li>
-                            <li><a class="dropdown-item calendar-link" target="_blank" href="#" data-type="ical">iCalendar</a>
-                            </li>
-                            <li><a class="dropdown-item calendar-link" target="_blank" href="#" data-type="outlook">Outlook
-                                    365</a></li>
-                            <li><a class="dropdown-item calendar-link" target="_blank" href="#" data-type="download">Download
-                                    bestand</a></li>
-                        </ul>
-                    </div>
-
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            const dropdownButton = document.getElementById('calendarDropdown');
-                            let tokenLoaded = false;
-
-                            dropdownButton.addEventListener('click', function () {
-                                if (tokenLoaded) return;
-
-                                fetch('/agenda/token', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                        'Accept': 'application/json',
-                                    }
-                                })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        const token = data.token;
-                                        const webcalUrl = `webcal://${window.location.host}/agenda/feed/${token}.ics`;
-                                        const encodedWebcal = encodeURIComponent(webcalUrl);
-                                        const calendarName = encodeURIComponent('MHG Agenda');
-
-                                        document.querySelectorAll('.calendar-link').forEach(link => {
-                                            const type = link.dataset.type;
-
-                                            if (type === 'google') {
-                                                link.href = `https://calendar.google.com/calendar/u/0/r?cid=${webcalUrl}`;
-                                            } else if (type === 'outlook') {
-                                                link.href = `https://outlook.office.com/owa?path=/calendar/action/compose&rru=addsubscription&url=${encodedWebcal}&name=${calendarName}`;
-                                            } else if (type === 'ical') {
-                                                link.href = webcalUrl;
-                                            } else {
-                                                link.href = webcalUrl;
-                                            }
-
-                                            link.setAttribute('target', '_blank');
-                                        });
-
-                                        tokenLoaded = true;
-                                    })
-                                    .catch(error => {
-                                        console.error('Failed to fetch calendar token', error);
-                                    });
-                            });
-                        });
-
-                    </script>
-                @endif
+                            <span class="no-mobile">Evenement toevoegen</span></a>
+                    @endif
+                </div>
 
                 <script>
                     let showAll = document.getElementById('show-all')
@@ -133,33 +44,14 @@
                     });
                 </script>
 
-                <div id="nav">
-                    <ul class="nav nav-tabs flex-row-reverse mb-4">
-                        <li class="nav-item">
-                            @if(isset($lesson))
-                                <a class="nav-link"
-                                   href="{{ route('agenda.month', ['month' => $monthOffset, 'all' => $wantViewAll, 'lessonId' => $lesson->id]) }}#nav">
-                                    <span class="material-symbols-rounded" style="transform: translateY(5px)">calendar_view_month</span>
-                                    Maand
-                                </a>
-                            @else
-                                <a class="nav-link"
-                                   href="{{ route('agenda.month', ['month' => $monthOffset, 'all' => $wantViewAll]) }}#nav">
-                                    <span class="material-symbols-rounded" style="transform: translateY(5px)">calendar_view_month</span>
-                                    Maand
-                                </a>
-                            @endif
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" aria-current="page">
-                                <span class="material-symbols-rounded"
-                                      style="transform: translateY(5px)">calendar_today</span> Planning
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
         </div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item" aria-current="page"><a href="{{route('admin')}}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Evenementen</li>
+                </ol>
+            </nav>
 
         <div class="d-flex justify-content-between align-items-center">
             @if(!isset($lesson))

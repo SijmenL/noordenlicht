@@ -30,6 +30,8 @@
             <ul>
                 @if($contact > 0)
                     <li>{{$contact}} @if($contact !== 1) ongelezen contactformulieren @else ongelezen contactformulier @endif</li>
+                @endif
+                @if($orders > 0)
                     <li>{{$orders}} @if($orders !== 1) openstaande bestellingen @else openstaande bestelling @endif</li>
                 @endif
             </ul>

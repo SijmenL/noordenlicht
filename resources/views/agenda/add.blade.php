@@ -23,7 +23,7 @@
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info2" class="col-form-label ">Email</label>
-                        <input id="info2" class="form-control" type="email" value="administratie@waterscoutingmhg.nl">
+                        <input id="info2" class="form-control" type="email" value="info@noordenlicht.nl">
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info3" class="col-form-label ">Nummer</label>

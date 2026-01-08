@@ -10,10 +10,10 @@ let formatButtons = document.querySelectorAll(".format");
 let scriptButtons = document.querySelectorAll(".script");
 let mediaButons = document.querySelectorAll(".media");
 let inputFields = document.querySelectorAll(".text-input");
-let textInput = document.getElementById('text-input')
+let textInput = document.getElementById('text-input');
 let message = document.getElementById('content');
 let characters = document.getElementById('characters');
-let body = document.getElementById('app')
+let body = document.getElementById('app');
 let imageUpload = document.getElementById('insertImage');
 let pdfUpload = document.getElementById('insertPdf');
 let videoUpload = document.getElementById('insertYouTube');
@@ -21,17 +21,15 @@ let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('
 let addComments = document.querySelectorAll('.add-comment');
 let commentForms = document.querySelectorAll('.comment-form');
 let popUp;
-let html = document.querySelector('html')
+let html = document.querySelector('html');
 
+// State to track cursor position
+let savedRange = null;
 
 //Initial Settings
 const initializer = () => {
-    console.log(inputFields)
-
     //function calls for highlighting buttons
-    //No highlights for link, unlink,lists, undo,redo since they are one time operations
     highlighter(alignButtons, true);
-    // highlighter(spacingButtons, true);
     highlighter(formatButtons, false);
     highlighter(scriptButtons, true);
 
@@ -41,29 +39,39 @@ const initializer = () => {
 
     if (textInput) {
         textInput.addEventListener('input', function () {
-            // Call the function when the content changes
             editText();
         });
+
+        // IMPORTANT: Only save selection when user interacts with the editor
+        // We do NOT want to save selection when they click a toolbar button,
+        // because that might register a selection at the start of the body.
+        textInput.addEventListener('keyup', saveSelection);
+        textInput.addEventListener('mouseup', saveSelection);
+        textInput.addEventListener('click', saveSelection);
     }
 
-    document.addEventListener('selectionchange', updateFormatBlock);
+    // Monitor selection changes to update UI (Colors, Headings, Buttons)
+    document.addEventListener('selectionchange', updateToolbarState);
 
     document.getElementById('clear').addEventListener('click', function () {
+        restoreSelection();
         document.execCommand('removeFormat', false, null);
         document.execCommand('formatBlock', false, 'p');
     });
 
+    // Initialize Color Pickers logic
+    initColorPickers();
 
     document.addEventListener("DOMContentLoaded", function () {
-        // Find and remove all o:wrapblock elements
+        // Clean up wrapblocks
         let wrapblocks = document.getElementsByTagName("o:wrapblock");
-        let editButtons = document.querySelectorAll('.edit-button');
-
         for (let i = 0; i < wrapblocks.length; i++) {
             let wrapblock = wrapblocks[i];
             wrapblock.parentNode.removeChild(wrapblock);
         }
 
+        // --- EXISTING LOGIC FOR COMMENTS AND LIKES ---
+        let editButtons = document.querySelectorAll('.edit-button');
         let likeButtons = document.querySelectorAll('.like-button');
 
         likeButtons.forEach(function (button) {
@@ -72,16 +80,13 @@ const initializer = () => {
 
         editButtons.forEach(function (button) {
             button.addEventListener('click', function (event) {
-                event.preventDefault(); // Prevent default click behavior
-
+                event.preventDefault();
                 const comment = button.closest('.comment');
                 const content = comment.querySelector('.content');
                 const editForm = comment.querySelector('.editable-content');
                 const editableDiv = editForm.querySelector('.text-input');
                 const cancelButton = editForm.querySelector('.cancel-button');
                 const saveButton = editForm.querySelector('.save-button');
-
-                console.log(content);
 
                 content.style.display = 'none';
                 editForm.style.display = 'block';
@@ -94,19 +99,12 @@ const initializer = () => {
 
                 saveButton.addEventListener('click', function () {
                     event.preventDefault();
-
                     saveButton.innerHTML = '<span class="save-button material-symbols-rounded rotating">progress_activity</span>';
 
-                    const comment = button.closest('.comment');
-                    const content = comment.querySelector('.content');
-                    const commentContent = comment.querySelector('.comment-content');
-                    const editableDiv = editForm.querySelector('.text-input');
-
                     const commentId = comment.dataset.commentId;
+                    const commentContent = comment.querySelector('.comment-content');
+                    const updatedContent = editableDiv.innerHTML;
 
-                    const updatedContent = editableDiv.innerHTML; // Get the edited content from the editable div
-
-                    // Send AJAX request to update the comment
                     fetch(`/comments/${commentId}`, {
                         method: 'POST',
                         headers: {
@@ -116,398 +114,331 @@ const initializer = () => {
                         body: JSON.stringify({content: updatedContent})
                     })
                         .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Failed to update comment');
-                            }
+                            if (!response.ok) throw new Error('Failed to update comment');
                             return response.json();
                         })
                         .then(data => {
-                            // Update the content of the comment
                             commentContent.innerHTML = updatedContent;
                             content.style.display = 'block';
                             editForm.style.display = 'none';
                             saveButton.innerHTML = '<span class="save-button material-symbols-rounded">save</span>';
                         })
-                        .catch(error => {
-                            console.error('Error:', error);
-                        });
+                        .catch(error => console.error('Error:', error));
                 });
             });
         });
 
         if (imageUpload) {
             imageUpload.addEventListener('click', () => {
-                addImage()
+                // Ensure we have a valid range before opening file dialog
+                if(!savedRange) saveSelection();
+                addImage();
             })
         }
 
         if (pdfUpload) {
             pdfUpload.addEventListener('click', () => {
-                addPdf()
+                if(!savedRange) saveSelection();
+                addPdf();
             })
         }
 
         if (videoUpload) {
             videoUpload.addEventListener('click', () => {
-                addYouTubeVideo()
+                if(!savedRange) saveSelection();
+                addYouTubeVideo();
             })
         }
 
+        // Paste Handling
         inputFields.forEach(function (field) {
             field.addEventListener('paste', function (event) {
-                // Prevent the default paste behavior
                 event.preventDefault();
-
-                // Check if clipboard data is available
                 const clipboardData = event.clipboardData || window.clipboardData;
-                if (!clipboardData) {
-                    console.error('Clipboard data not available');
-                    return;
-                }
+                if (!clipboardData) return;
 
-                // Get the HTML from the clipboard
-                const html = clipboardData.getData('text/html');
+                const htmlData = clipboardData.getData('text/html');
                 const plainText = clipboardData.getData('text/plain');
-                if (!html && !plainText) {
-                    console.error('No HTML or plain text found in clipboard data');
-                    return;
-                }
+                if (!htmlData && !plainText) return;
 
-                // Create a temporary container for the HTML content
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html || plainText;
-
-                // Function to clean unwanted styles
-                function cleanStyles(element) {
-                    const tagsToKeep = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P'];  // Add any other tags you want to preserve
-
-                    // Skip cleaning styles if the tag is in the 'tagsToKeep' list
-                    if (!tagsToKeep.includes(element.tagName)) {
-                        if (element.style) {
-                            element.removeAttribute('style');  // Safely remove inline styles instead of resetting the style object
-                        }
-                    }
-
-                    // Recursively clean the children
-                    for (let i = 0; i < element.children.length; i++) {
-                        cleanStyles(element.children[i]);
-                    }
-                }
-
-
-                // Function to remove classes from elements
-                function removeClasses(element) {
-                    if (element.classList) {
-                        element.className = ''; // For regular HTML elements
-                    }
-                    for (let i = 0; i < element.children.length; i++) {
-                        removeClasses(element.children[i]);
-                    }
-                }
-
-                // Function to remove ids from elements
-                function removeIds(element) {
-                    if (element.id) {
-                        element.removeAttribute('id'); // Remove id attribute
-                    }
-                    for (let i = 0; i < element.children.length; i++) {
-                        removeIds(element.children[i]);
-                    }
-                }
-
-                // Function to remove disallowed elements
-                function removeDisallowedElements(element) {
-                    const disallowedTags = [
-                        'input', 'nav', 'select', 'script', 'footer', 'iframe', 'button',
-                        'textarea', 'form', 'style', 'link', 'label', 'header', 'aside',
-                        'article', 'embed', 'object', 'svg', 'canvas', 'video', 'audio', 'img',
-                    ];
-                    if (disallowedTags.includes(element.tagName.toLowerCase())) {
-                        element.remove();
-                        return;
-                    }
-                    for (let i = 0; i < element.children.length; i++) {
-                        removeDisallowedElements(element.children[i]);
-                    }
-                }
-
-                // Clean styles, remove classes, remove ids, and remove disallowed elements
-                function cleanElement(element) {
-                    cleanStyles(element);
-                    removeClasses(element);
-                    removeIds(element);
-                    removeDisallowedElements(element);
-                }
-
-                // Recursively clean all elements within the tempDiv
-                function cleanAllElements(element) {
-                    cleanElement(element);
-                    for (let i = 0; i < element.children.length; i++) {
-                        cleanAllElements(element.children[i]);
-                    }
-                }
+                tempDiv.innerHTML = htmlData || plainText;
 
                 cleanAllElements(tempDiv);
 
-                // Insert the cleaned HTML into the editable div at the current cursor position
                 const cleanedHtml = tempDiv.innerHTML;
                 document.execCommand('insertHTML', false, cleanedHtml);
-
-                console.log('Cleaned HTML pasted:', cleanedHtml);
                 editText();
             });
 
-
-            field.addEventListener('dragover', function (event) {
-                event.preventDefault();
-            });
-
-            field.addEventListener('drop', function (event) {
-                event.preventDefault();
-            });
-
-            field.addEventListener('dragenter', function (event) {
-                event.preventDefault();
-            });
+            field.addEventListener('dragover', e => e.preventDefault());
+            field.addEventListener('drop', e => e.preventDefault());
         });
 
         if (addComments) {
             addComments.forEach(function (addCommentButton) {
                 addCommentButton.addEventListener('click', function () {
-                    // Find the parent element of the button
                     const parentElement = addCommentButton.closest('.content');
-                    console.log('Parent element:', parentElement);
-
-                    // Find the form within the parent element
                     const form = parentElement.querySelector('.comment-form');
-                    if (form) {
-                        form.classList.toggle('show-form'); // Define a CSS class to control the visibility
-                    } else {
-                        console.error('Form not found');
-                    }
+                    if (form) form.classList.toggle('show-form');
                 });
             });
         }
-
 
         if (commentForms) {
             commentForms.forEach(function (form) {
-                const textInput = form.querySelector('.text-input');
-                const contentInput = form.querySelector('.content-input');
-
-                textInput.addEventListener('input', function () {
-                    contentInput.value = textInput.textContent;
+                const ti = form.querySelector('.text-input');
+                const ci = form.querySelector('.content-input');
+                ti.addEventListener('input', function () {
+                    ci.value = ti.innerHTML;
                 });
             });
         }
-
-        document.addEventListener('selectionchange', function (event) {
-            const activeElement = document.activeElement;
-
-            if (activeElement === textInput || textInput.contains(activeElement)) {
-                // Update format buttons (bold, italic, etc.)
-                formatButtons.forEach(button => {
-                    const command = button.id;
-                    updateButtonState(button, command);
-                });
-
-                // Update alignment buttons (left, right, etc.)
-                alignButtons.forEach(button => {
-                    const command = button.id;
-                    updateButtonState(button, command);
-                });
-
-                updateButtonState(orderedListButton, 'insertOrderedList');
-                updateButtonState(unorderedListButton, 'insertUnorderedList');
-            }
-        });
-
     })
 }
 
+// --- HELPER FUNCTIONS FOR SELECTION ---
+function saveSelection() {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        // Only save if the range is actually inside our editor
+        if (textInput.contains(range.commonAncestorContainer)) {
+            savedRange = range.cloneRange();
+        }
+    }
+}
+
+function restoreSelection() {
+    textInput.focus();
+    if (savedRange) {
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+    }
+}
+
+// --- COLOR PICKER LOGIC ---
+// Helper to convert rgb(r, g, b) to #hex
+function rgbToHex(rgb) {
+    if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#000000';
+    if (rgb.startsWith('#')) return rgb;
+
+    const sep = rgb.indexOf(",") > -1 ? "," : " ";
+    const rgbArr = rgb.substr(4).split(")")[0].split(sep);
+
+    let r = (+rgbArr[0]).toString(16),
+        g = (+rgbArr[1]).toString(16),
+        b = (+rgbArr[2]).toString(16);
+
+    if (r.length == 1) r = "0" + r;
+    if (g.length == 1) g = "0" + g;
+    if (b.length == 1) b = "0" + b;
+
+    return "#" + r + g + b;
+}
+
+function initColorPickers() {
+    const foreColorInput = document.getElementById('foreColor');
+    const foreColorIcon = document.getElementById('foreColorIcon');
+    const backColorInput = document.getElementById('backColor');
+    const backColorIcon = document.getElementById('backColorIcon');
+
+    // Text Color
+    foreColorInput.addEventListener('input', (e) => {
+        let color = e.target.value;
+        restoreSelection(); // Restore BEFORE applying
+        document.execCommand('foreColor', false, color);
+        // Save again immediately so subsequent edits are correct
+        saveSelection();
+        editText();
+        // Update UI immediately
+        foreColorIcon.style.color = color;
+    });
+
+    // Background Color
+    backColorInput.addEventListener('input', (e) => {
+        let color = e.target.value;
+        restoreSelection();
+        document.execCommand('hiliteColor', false, color);
+        saveSelection();
+        editText();
+        backColorIcon.style.color = color;
+    });
+}
+
+// --- UI STATE MANAGEMENT (Colors, Format, Buttons) ---
+function updateToolbarState() {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const activeElement = document.activeElement;
+
+    // Only update if selection is inside our editor
+    if (textInput.contains(activeElement) || textInput.contains(range.commonAncestorContainer)) {
+
+        // 1. Update Block Format (H1, P, etc)
+        let selectedElement = range.commonAncestorContainer;
+        if (selectedElement.nodeType === 3) selectedElement = selectedElement.parentElement; // Text node to Element
+
+        while (selectedElement && selectedElement !== textInput && !selectedElement.tagName.match(/^H[1-6]$/) && selectedElement.tagName !== 'P') {
+            selectedElement = selectedElement.parentElement;
+        }
+        if (selectedElement && selectedElement.tagName.match(/^H[1-6]$/)) {
+            formatBlock.value = selectedElement.tagName;
+        } else {
+            formatBlock.value = 'p';
+        }
+
+        // 2. Update Toggle Buttons (Bold, Italic, Align)
+        formatButtons.forEach(button => updateButtonState(button, button.id));
+        alignButtons.forEach(button => updateButtonState(button, button.id));
+        updateButtonState(orderedListButton, 'insertOrderedList');
+        updateButtonState(unorderedListButton, 'insertUnorderedList');
+
+        // 3. Update Color Icons based on current selection
+        // We use queryCommandValue to get the computed style at the cursor
+        let currentForeColor = document.queryCommandValue('foreColor');
+        let currentBackColor = document.queryCommandValue('hiliteColor');
+
+        // Update Text Color Icon
+        const foreColorIcon = document.getElementById('foreColorIcon');
+        const foreColorInput = document.getElementById('foreColor');
+        if(foreColorIcon && foreColorInput) {
+            // Browsers return RGB, input needs Hex
+            const hexColor = rgbToHex(currentForeColor);
+            foreColorIcon.style.color = currentForeColor;
+            foreColorInput.value = hexColor;
+        }
+
+        // Update Background Color Icon
+        const backColorIcon = document.getElementById('backColorIcon');
+        const backColorInput = document.getElementById('backColor');
+        if(backColorIcon && backColorInput) {
+            // Background is often 'transparent' by default
+            const hexBack = rgbToHex(currentBackColor);
+            // If transparent, show black or grey, else show color
+            if(currentBackColor === 'transparent' || currentBackColor === 'rgba(0, 0, 0, 0)') {
+                backColorIcon.style.color = '#000000';
+                backColorInput.value = '#ffffff';
+            } else {
+                backColorIcon.style.color = currentBackColor;
+                backColorInput.value = hexBack;
+            }
+        }
+    }
+}
+
 function updateButtonState(button, command) {
-    const isActive = document.queryCommandState(command);
-    if (isActive) {
-        button.classList.add('active-button');
-    } else {
+    if(!button) return;
+    try {
+        const isActive = document.queryCommandState(command);
+        if (isActive) {
+            button.classList.add('active-button');
+        } else {
+            button.classList.remove('active-button');
+        }
+    } catch(e) {
+        // Some commands might throw errors in certain contexts
         button.classList.remove('active-button');
     }
 }
 
-const likeButton = (button) => {
-
-    button.innerHTML = `<span class="material-symbols-rounded rotating">progress_activity</span>`
-
-    let likeType = button.dataset.postType
-    let postId = button.dataset.postId;
-
-
-    // Send the AJAX request with the CSRF token
-    fetch(`/posts/${postId}/${likeType}/toggle-like`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken // Include the CSRF token in the request headers
-        },
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Handle response data
-            console.log(data);
-            button.innerHTML = `${data.likeCount} <span
-                                                class="material-symbols-rounded">favorite</span>`
-
-            if (data.isLiked === true) {
-                button.classList.add('liked')
-                button.classList.add('user-liked')
-            } else {
-                button.classList.remove('liked')
-                button.classList.remove('user-liked')
-            }
-        })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-        });
-};
+document.getElementById('formatBlock').addEventListener('change', function() {
+    restoreSelection();
+    document.execCommand('formatBlock', false, this.value);
+    editText();
+});
 
 
+// --- MEDIA FUNCTIONS ---
 function addImage() {
-    // Open file upload dialog
     let input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = function (event) {
         let file = event.target.files[0];
+        if(!file) return;
 
-        // Create FormData object to upload file
         let formData = new FormData();
         formData.append('image', file);
-
-        // Add CSRF token to FormData
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        formData.append('_token', csrfToken);
 
         imageUpload.innerHTML = '<span class="save-button material-symbols-rounded rotating">progress_activity</span>';
 
-        // Send AJAX request to upload image
         let xhr = new XMLHttpRequest();
         xhr.open('POST', '/upload-image', true);
         xhr.onload = () => {
+            imageUpload.innerHTML = '<span class="material-symbols-rounded">image</span>';
             if (xhr.status === 200) {
-                // Log the response from the server
-                console.log(xhr.responseText);
-                // Image uploaded successfully
                 let imageUrl = xhr.responseText;
                 insertImageIntoEditor(imageUrl);
             } else {
-                // Handle error
                 invalidImage();
-                console.error('Image upload failed');
             }
         };
         xhr.onerror = () => {
-            // Handle network errors
-            console.error('Network error during image upload');
+            imageUpload.innerHTML = '<span class="material-symbols-rounded">image</span>';
         };
         xhr.send(formData);
     };
     input.click();
 }
 
-function invalidImage() {
-    imageUpload.classList.add('invalid')
-    imageUpload.innerHTML = '<span class="material-symbols-rounded">image</span>';
-
-    setTimeout(function () {
-        imageUpload.classList.remove('invalid');
-    }, 500);
-}
-
-
 function insertImageIntoEditor(imageUrl) {
-    console.log(imageUrl)
-    imageUpload.innerHTML = '<span class="material-symbols-rounded">image</span>';
-    let image = document.createElement('img')
-    let url = JSON.parse(imageUrl);
-    image.src = url.imageUrl
-    image.alt = 'Afbeelding'
-    image.classList.add('forum-image')
-    textInput.appendChild(image)
-    editText()
+    let urlObj = JSON.parse(imageUrl);
+    let src = urlObj.imageUrl;
+    restoreSelection();
+    const htmlToInsert = `<img src="${src}" alt="Afbeelding" class="forum-image"><br>`;
+    document.execCommand('insertHTML', false, htmlToInsert);
+    editText();
 }
 
 function addPdf() {
-    // Open file upload dialog
     let input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/pdf';
     input.onchange = function (event) {
         let file = event.target.files[0];
+        if(!file) return;
 
-        // Create FormData object to upload file
         let formData = new FormData();
         formData.append('pdf', file);
-
-        // Add CSRF token to FormData
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        formData.append('_token', csrfToken);
 
         pdfUpload.innerHTML = '<span class="save-button material-symbols-rounded rotating">progress_activity</span>';
 
-        // Send AJAX request to upload image
         let xhr = new XMLHttpRequest();
         xhr.open('POST', '/upload-pdf', true);
         xhr.onload = () => {
+            pdfUpload.innerHTML = '<span class="material-symbols-rounded">picture_as_pdf</span>';
             if (xhr.status === 200) {
-                // Log the response from the server
-                console.log(xhr.responseText);
-                // Image uploaded successfully
                 let pdfUrl = xhr.responseText;
                 insertPdfIntoEditor(pdfUrl);
             } else {
-                // Handle error
                 invalidPdf();
-                console.error('Pdf upload failed');
             }
         };
         xhr.onerror = () => {
-            // Handle network errors
-            console.error('Network error during image upload');
+            pdfUpload.innerHTML = '<span class="material-symbols-rounded">picture_as_pdf</span>';
         };
         xhr.send(formData);
     };
     input.click();
 }
 
-function invalidPdf() {
-    pdfUpload.classList.add('invalid')
-    pdfUpload.innerHTML = '<span class="material-symbols-rounded">picture_as_pdf</span>';
+function insertPdfIntoEditor(pdfResponse) {
+    let urlObj = JSON.parse(pdfResponse);
+    let url = urlObj.pdfUrl;
 
-    setTimeout(function () {
-        pdfUpload.classList.remove('invalid');
-    }, 500);
-}
+    let filenameWithNumber = url.substring(url.lastIndexOf('/') + 1);
+    let filename = filenameWithNumber.replace(/^\d+-/, '').replace(/-/g, ' ');
 
-
-function insertPdfIntoEditor(pdfUrl) {
-    console.log(pdfUrl)
-    pdfUpload.innerHTML = '<span class="material-symbols-rounded">picture_as_pdf</span>';
-    let pdf = document.createElement('a')
-    let url = JSON.parse(pdfUrl);
-    pdf.href = url.pdfUrl
-
-    let filenameWithNumber = url.pdfUrl.substring(url.pdfUrl.lastIndexOf('/') + 1);
-    let filename = filenameWithNumber.replace(/^\d+-/, '');
-    filename = filename.replace(/-/g, ' ');
-
-    pdf.innerText = `${filename}`
-    pdf.classList.add('forum-pdf')
-    pdf.target = '_blank';
-    textInput.appendChild(pdf)
-    editText()
+    restoreSelection();
+    const htmlToInsert = `<a href="${url}" target="_blank" class="forum-pdf">${filename}</a>&nbsp;`;
+    document.execCommand('insertHTML', false, htmlToInsert);
+    editText();
 }
 
 function addYouTubeVideo() {
@@ -515,57 +446,59 @@ function addYouTubeVideo() {
     html.classList.add('no-scroll');
     window.scrollTo(0, scrollPosition);
 
-
-    // Prompt the user to input the YouTube video ID
     popUp = document.createElement('div');
-    popUp.classList.add('popup')
-    body.appendChild(popUp)
+    popUp.classList.add('popup');
+    body.appendChild(popUp);
 
-    let popUpBody = document.createElement('div')
-    popUpBody.classList.add('popup-body')
-    popUp.appendChild(popUpBody)
+    let popUpBody = document.createElement('div');
+    popUpBody.classList.add('popup-body');
+    popUp.appendChild(popUpBody);
 
-    let popUpTitle = document.createElement('h2')
+    let popUpTitle = document.createElement('h2');
     popUpTitle.innerText = `Geef de url naar de YouTube video`;
-    popUpBody.appendChild(popUpTitle)
+    popUpBody.appendChild(popUpTitle);
 
-    let inputLabel = document.createElement('label')
-    inputLabel.classList.add('form-label')
-    inputLabel.htmlFor = 'youtube-input'
-    inputLabel.innerText = 'Video'
-    popUpBody.appendChild(inputLabel)
+    let inputLabel = document.createElement('label');
+    inputLabel.classList.add('form-label');
+    inputLabel.htmlFor = 'youtube-input';
+    inputLabel.innerText = 'Video';
+    popUpBody.appendChild(inputLabel);
 
-    let inputField = document.createElement('input')
-    inputField.classList.add('form-control')
+    let inputField = document.createElement('input');
+    inputField.classList.add('form-control');
     inputField.id = 'youtube-input';
-    popUpBody.appendChild(inputField)
+    popUpBody.appendChild(inputField);
 
-    let buttonContainer = document.createElement('div')
-    buttonContainer.classList.add('button-container')
-    popUpBody.appendChild(buttonContainer)
+    let buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('button-container');
+    popUpBody.appendChild(buttonContainer);
 
+    let continueButton = document.createElement('a');
+    continueButton.classList.add('btn');
+    continueButton.classList.add('btn-success');
+    continueButton.innerText = 'Toevoegen';
+    buttonContainer.appendChild(continueButton);
 
-    let continueButton = document.createElement('a')
-    continueButton.classList.add('btn')
-    continueButton.classList.add('btn-success')
-    continueButton.innerText = 'Toevoegen'
-    buttonContainer.appendChild(continueButton)
+    let cancelButton = document.createElement('a');
+    cancelButton.classList.add('btn');
+    cancelButton.classList.add('btn-outline-danger');
+    cancelButton.innerText = 'Annuleren';
+    buttonContainer.appendChild(cancelButton);
 
-    let cancelButton = document.createElement('a')
-    cancelButton.classList.add('btn')
-    cancelButton.classList.add('btn-outline-danger')
-    cancelButton.innerText = 'Annuleren'
-    buttonContainer.appendChild(cancelButton)
+    inputField.focus();
 
-    continueButton.addEventListener('click', () => {
-        addYouTubeVideoToDiv(inputField.value)
-        popUp.remove()
-        html.classList.remove('no-scroll')
+    continueButton.addEventListener('click', (e) => {
+        e.preventDefault(); // Stop button from changing selection
+        addYouTubeVideoToDiv(inputField.value);
+        popUp.remove();
+        html.classList.remove('no-scroll');
     });
 
-    cancelButton.addEventListener('click', () => {
+    cancelButton.addEventListener('click', (e) => {
+        e.preventDefault();
         popUp.remove();
-        html.classList.remove('no-scroll')
+        html.classList.remove('no-scroll');
+        restoreSelection();
     });
 }
 
@@ -579,224 +512,185 @@ function addYouTubeVideoToDiv(videoURL) {
         videoId = videoURL.split('youtu.be/')[1];
     }
 
-    if (videoId === '') {
+    if (!videoId) {
         invalidVideo();
-        console.error('No YouTube video detected.')
+        return;
     }
 
-    if (videoId) {
-        // Construct the embeddable YouTube video URL
-        let videoUrl = 'https://www.youtube.com/embed/' + videoId;
+    let embedUrl = 'https://www.youtube.com/embed/' + videoId;
+    restoreSelection();
+    const htmlToInsert = `
+        <iframe width="560" height="315" src="${embedUrl}"
+        class="forum-image" frameborder="0" allowfullscreen></iframe><br>
+    `;
+    document.execCommand('insertHTML', false, htmlToInsert);
+    editText();
+}
 
-        // Create an iframe element
-        let iframe = document.createElement('iframe');
-        iframe.width = '560'; // Set iframe width (optional)
-        iframe.height = '315'; // Set iframe height (optional)
-        iframe.src = videoUrl;
-        iframe.classList.add('forum-image')
-        iframe.setAttribute('allowfullscreen', ''); // Allow fullscreen mode
-        iframe.setAttribute('frameborder', '0'); // Remove iframe border
+function invalidImage() {
+    imageUpload.classList.add('invalid');
+    setTimeout(() => imageUpload.classList.remove('invalid'), 500);
+}
 
-        // Append the iframe to the container
-        textInput.appendChild(iframe);
-        editText();
-    }
+function invalidPdf() {
+    pdfUpload.classList.add('invalid');
+    setTimeout(() => pdfUpload.classList.remove('invalid'), 500);
 }
 
 function invalidVideo() {
-    videoUpload.classList.add('invalid')
-
-    setTimeout(function () {
-        videoUpload.classList.remove('invalid');
-    }, 500);
+    videoUpload.classList.add('invalid');
+    setTimeout(() => videoUpload.classList.remove('invalid'), 500);
 }
 
-//main logic
+// --- BASIC OPERATIONS ---
 const modifyText = (command, defaultUi, value) => {
-    //execCommand executes command on selected text
+    restoreSelection();
     document.execCommand(command, defaultUi, value);
+    editText();
 };
 
-//For basic operations which don't need value parameter
 optionsButtons.forEach((button) => {
-    if (button.id !== 'insertImage' && button.id !== 'createLink') {
+    // Exclude special buttons handled separately
+    if (!['insertImage', 'insertPdf', 'insertYouTube', 'createLink', 'textColorButton', 'highlightColorButton'].includes(button.id)) {
         button.addEventListener("click", () => {
             modifyText(button.id, false, null);
         });
     }
 });
 
-//options that require value parameter (e.g colors, fonts)
 advancedOptionButton.forEach((button) => {
-    button.addEventListener("change", () => {
-        modifyText(button.id, false, button.value);
-    });
+    if(!button.classList.contains('color-picker')) {
+        button.addEventListener("change", () => {
+            modifyText(button.id, false, button.value);
+        });
+    }
 });
 
-//link
+
+// --- LINK LOGIC ---
 if (linkButton) {
     linkButton.addEventListener("click", () => {
+        // We do NOT save selection here because the click itself might have moved focus.
+        // We rely on the selection saved from the last keyup/mouseup in the editor.
+        if (!savedRange) {
+            // Fallback: If no range saved, try to get current if in editor
+            saveSelection();
+        }
+
         const scrollPosition = window.scrollY;
         html.classList.add('no-scroll');
         window.scrollTo(0, scrollPosition);
 
-        // Prompt the user to input the YouTube video ID
         popUp = document.createElement('div');
-        popUp.classList.add('popup')
-        body.appendChild(popUp)
+        popUp.classList.add('popup');
+        body.appendChild(popUp);
 
-        let popUpBody = document.createElement('div')
-        popUpBody.classList.add('popup-body')
-        popUp.appendChild(popUpBody)
+        let popUpBody = document.createElement('div');
+        popUpBody.classList.add('popup-body');
+        popUp.appendChild(popUpBody);
 
-        let popUpTitle = document.createElement('h2')
+        let popUpTitle = document.createElement('h2');
         popUpTitle.innerText = `Voeg een hyperlink toe`;
-        popUpBody.appendChild(popUpTitle)
+        popUpBody.appendChild(popUpTitle);
 
-        let inputLabelName = document.createElement('label')
-        inputLabelName.classList.add('form-label')
-        inputLabelName.htmlFor = 'link-display'
-        inputLabelName.innerText = 'Tekst om weer te geven'
-        popUpBody.appendChild(inputLabelName)
+        let inputLabelName = document.createElement('label');
+        inputLabelName.classList.add('form-label');
+        inputLabelName.htmlFor = 'link-display';
+        inputLabelName.innerText = 'Tekst om weer te geven';
+        popUpBody.appendChild(inputLabelName);
 
-        let inputFieldName = document.createElement('input')
-        inputFieldName.classList.add('form-control')
+        let inputFieldName = document.createElement('input');
+        inputFieldName.classList.add('form-control');
         inputFieldName.id = 'link-display';
-        let selection = window.getSelection()
-        inputFieldName.value = selection.toString();
-        document.execCommand("delete", false, null);
-        popUpBody.appendChild(inputFieldName)
 
-        let inputLabel = document.createElement('label')
-        inputLabel.classList.add('form-label')
-        inputLabel.htmlFor = 'link-input'
-        inputLabel.innerText = 'Hyperlink'
-        popUpBody.appendChild(inputLabel)
+        // Use savedRange to get the text, not window.getSelection()
+        // because focus is already shifting to buttons
+        let currentSelection = "";
+        if(savedRange) {
+            currentSelection = savedRange.toString();
+        }
+        inputFieldName.value = currentSelection;
 
-        let inputField = document.createElement('input')
-        inputField.classList.add('form-control')
+        popUpBody.appendChild(inputFieldName);
+
+        let inputLabel = document.createElement('label');
+        inputLabel.classList.add('form-label');
+        inputLabel.htmlFor = 'link-input';
+        inputLabel.innerText = 'Hyperlink';
+        popUpBody.appendChild(inputLabel);
+
+        let inputField = document.createElement('input');
+        inputField.classList.add('form-control');
         inputField.id = 'link-input';
-        popUpBody.appendChild(inputField)
+        popUpBody.appendChild(inputField);
 
-        let buttonContainer = document.createElement('div')
-        buttonContainer.classList.add('button-container')
-        popUpBody.appendChild(buttonContainer)
+        let buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('button-container');
+        popUpBody.appendChild(buttonContainer);
 
+        let continueButton = document.createElement('a');
+        continueButton.classList.add('btn');
+        continueButton.classList.add('btn-success');
+        continueButton.innerText = 'Toevoegen';
+        buttonContainer.appendChild(continueButton);
 
-        let continueButton = document.createElement('a')
-        continueButton.classList.add('btn')
-        continueButton.classList.add('btn-success')
-        continueButton.innerText = 'Toevoegen'
-        buttonContainer.appendChild(continueButton)
+        let cancelButton = document.createElement('a');
+        cancelButton.classList.add('btn');
+        cancelButton.classList.add('btn-outline-danger');
+        cancelButton.innerText = 'Annuleren';
+        buttonContainer.appendChild(cancelButton);
 
-        let cancelButton = document.createElement('a')
-        cancelButton.classList.add('btn')
-        cancelButton.classList.add('btn-outline-danger')
-        cancelButton.innerText = 'Annuleren'
-        buttonContainer.appendChild(cancelButton)
-
-        continueButton.addEventListener('click', () => {
-            addLink(inputFieldName.value, inputField.value)
-            popUp.remove()
-            html.classList.remove('no-scroll')
-        });
-
-        cancelButton.addEventListener('click', () => {
+        continueButton.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent focus loss
+            addLink(inputFieldName.value, inputField.value);
             popUp.remove();
-            document.execCommand("undo", false, null);
-            html.classList.remove('no-scroll')
+            html.classList.remove('no-scroll');
         });
 
+        cancelButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            popUp.remove();
+            html.classList.remove('no-scroll');
+            restoreSelection();
+        });
     });
 }
 
 function addLink(userText, userLink) {
-    if (userLink !== null && userLink !== '') {
-        if (!userLink.startsWith("https://")) {
+    restoreSelection();
+
+    if (userLink) {
+        if (!userLink.startsWith("https://") && !userLink.startsWith("http://")) {
             userLink = "https://" + userLink;
         }
 
-        if (userText !== null && userText !== '') {
-            let hyperlink = document.createElement('a');
-            hyperlink.href = userLink;
-            hyperlink.target = "_blank";
-            hyperlink.innerText = userText;
-            textInput.appendChild(hyperlink);
-        } else {
-            let hyperlink = document.createElement('a');
-            hyperlink.href = userLink;
-            hyperlink.target = "_blank";
-            hyperlink.innerText = userLink;
-            textInput.appendChild(hyperlink);
-        }
-    } else {
-        document.execCommand("undo", false, null);
+        let textToShow = userText || userLink;
+
+        // This command replaces whatever is currently selected (highlighted)
+        // with the new HTML. If savedRange was correct, it overwrites old text.
+        const htmlToInsert = `<a href="${userLink}" target="_blank">${textToShow}</a>`;
+        document.execCommand('insertHTML', false, htmlToInsert);
     }
     editText();
 }
 
+// --- UI UTILS ---
 
-//Highlight clicked button
 const highlighter = (className, needsRemoval) => {
     className.forEach((button) => {
         button.addEventListener("click", () => {
-            //needsRemoval = true means only one button should be highlight and other would be normal
             if (needsRemoval) {
-                let alreadyActive = false;
-
-                //If currently clicked button is already active
-                if (button.classList.contains("active-button")) {
-                    alreadyActive = true;
-                }
-
-                //Remove highlight from other buttons
+                let alreadyActive = button.classList.contains("active-button");
                 highlighterRemover(className);
                 if (!alreadyActive) {
-                    //highlight clicked button
                     button.classList.add("active-button");
                 }
             } else {
-                //if other buttons can be highlighted
                 button.classList.toggle("active-button");
             }
         });
     });
 };
-
-function updateFormatBlock() {
-    const selection = window.getSelection();
-
-    if (selection.rangeCount > 0) {
-        let selectedElement = selection.anchorNode.parentElement;
-
-        // Check if the selected element is within the editor
-        if (textInput.contains(selectedElement)) {
-            // Traverse up the DOM to find the first element that matches H1-H6 or P
-            while (selectedElement && !selectedElement.tagName.match(/^H[1-6]$/) && selectedElement.tagName !== 'P') {
-                selectedElement = selectedElement.parentElement; // Go up one level
-            }
-
-            // Detect and update the select value to reflect the current format
-            if (selectedElement && selectedElement.tagName.match(/^H[1-6]$/)) {
-                formatBlock.value = selectedElement.tagName;
-            } else {
-                formatBlock.value = 'p'; // Default to 'p' if no heading is found
-            }
-        }
-    }
-}
-
-// Function to apply the selected block format (e.g., H1, H2, or P)
-function applyFormatBlock() {
-    const selectedFormat = formatBlock.value;
-
-    // Apply the new format block to the selection
-    document.execCommand('formatBlock', false, selectedFormat);
-}
-
-// Add event listener to the select dropdown to apply the selected format
-document.getElementById('formatBlock').addEventListener('change', applyFormatBlock);
-
 
 const highlighterRemover = (className) => {
     className.forEach((button) => {
@@ -804,16 +698,85 @@ const highlighterRemover = (className) => {
     });
 };
 
-function editText() {
-    message.value = textInput.innerHTML.toString()
-
-    characters.innerHTML = `${textInput.innerHTML.toString().length}/60000`;
-
-    if (textInput.innerHTML.toString().length > 60000) {
-        characters.style.color = 'red';
-    } else {
-        characters.style.color = 'black';
+// --- CLEANING UTILS (For Paste) ---
+function cleanStyles(element) {
+    const tagsToKeep = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'B', 'I', 'U', 'A', 'IMG', 'IFRAME', 'UL', 'OL', 'LI'];
+    if (!tagsToKeep.includes(element.tagName)) {
+        if (element.style) element.removeAttribute('style');
+    }
+    for (let i = 0; i < element.children.length; i++) {
+        cleanStyles(element.children[i]);
     }
 }
+
+function removeClasses(element) {
+    if (!element.classList.contains('forum-image') && !element.classList.contains('forum-pdf')) {
+        element.className = '';
+    }
+    for (let i = 0; i < element.children.length; i++) {
+        removeClasses(element.children[i]);
+    }
+}
+
+function removeIds(element) {
+    element.removeAttribute('id');
+    for (let i = 0; i < element.children.length; i++) {
+        removeIds(element.children[i]);
+    }
+}
+
+function removeDisallowedElements(element) {
+    const disallowedTags = [
+        'input', 'nav', 'select', 'script', 'footer', 'button',
+        'textarea', 'form', 'style', 'link', 'label', 'header', 'aside',
+        'article', 'embed', 'object', 'svg', 'canvas', 'video', 'audio'
+    ];
+    if (disallowedTags.includes(element.tagName.toLowerCase())) {
+        element.remove();
+        return;
+    }
+    for (let i = 0; i < element.children.length; i++) {
+        removeDisallowedElements(element.children[i]);
+    }
+}
+
+function cleanAllElements(element) {
+    cleanStyles(element);
+    removeClasses(element);
+    removeIds(element);
+    removeDisallowedElements(element);
+}
+
+function editText() {
+    if(message && textInput) {
+        message.value = textInput.innerHTML;
+        characters.innerHTML = `${textInput.innerHTML.length}/60000`;
+        characters.style.color = textInput.innerHTML.length > 60000 ? 'red' : 'black';
+    }
+}
+
+const likeButton = (button) => {
+    button.innerHTML = `<span class="material-symbols-rounded rotating">progress_activity</span>`;
+    let likeType = button.dataset.postType;
+    let postId = button.dataset.postId;
+
+    fetch(`/posts/${postId}/${likeType}/toggle-like`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+    })
+        .then(response => response.ok ? response.json() : Promise.reject('Network response was not ok'))
+        .then(data => {
+            button.innerHTML = `${data.likeCount} <span class="material-symbols-rounded">favorite</span>`;
+            if (data.isLiked) {
+                button.classList.add('liked', 'user-liked');
+            } else {
+                button.classList.remove('liked', 'user-liked');
+            }
+        })
+        .catch(error => console.error('Fetch error:', error));
+};
 
 window.onload = initializer();

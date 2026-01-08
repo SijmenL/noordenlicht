@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccommodatieController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\HomeController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\NonLoggedInController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PriceController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,10 +50,9 @@ Route::get('/agenda/feed/{token}.ics', [AgendaController::class, 'exportFeed'])-
 Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact');
 
 Route::get('/accommodaties', [AccommodatieController::class, 'home'])->name('accommodaties');
+Route::get('/accommodaties/aanvraagformulier', [AccommodatieController::class, 'form'])->name('accommodaties.form');
+Route::get('/accommodaties/aanvraagformulier/success', [AccommodatieController::class, 'formSuccess'])->name('accommodaties.form.success');
 Route::get('/accommodaties/{id}', [AccommodatieController::class, 'details'])->name('accommodaties.details');
-
-Route::get('/accommodatie/{id}/boeken', [App\Http\Controllers\AccommodatieController::class, 'book'])->name('accommodatie.book');
-Route::post('/accommodatie/boeken', [App\Http\Controllers\AccommodatieController::class, 'storeBooking'])->name('accommodatie.store_booking');
 
 Route::get('/accommodatie/{id}/beschikbaarheid', [App\Http\Controllers\AccommodatieController::class, 'getMonthlyAvailability'])->name('accommodatie.availability');
 Route::post('/accommodatie/check-beschikbaarheid', [App\Http\Controllers\AccommodatieController::class, 'checkAvailability'])->name('accommodatie.check_availability');
@@ -65,6 +66,8 @@ Route::post('/winkelmandje/toevoegen/{id}', [CartController::class, 'add'])->nam
 Route::post('/winkelmandje/bewerken/{id}', [CartController::class, 'update'])->name('cart.update');
 Route::post('/winkelmandje/verwijderen/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
+Route::post('/winkelmandje/bulk-toevoegen', [OrderController::class, 'bulkAdd'])->name('cart.bulk_add');
+
 Route::get('/afrekenen', [OrderController::class, 'checkout'])->name('checkout');
 Route::post('/afrekenen', [OrderController::class, 'store'])->name('checkout.store');
 Route::get('/bestelling/success/{order_number}', [OrderController::class, 'success'])->name('order.success');
@@ -76,6 +79,33 @@ Route::get('/tickets/stream/{ticket_uuid}/', [TicketController::class, 'streamPd
 Route::post('/webhooks/mollie', [OrderController::class, 'handleWebhook'])->name('webhooks.mollie');
 
 Route::post('/user-search', [ForumController::class, 'searchUser'])->name('search-user');
+
+// Bookings
+
+Route::middleware(['checkAccepted',])->group(function () {
+    Route::post('/accommodatie/boeken/', [App\Http\Controllers\AccommodatieController::class, 'storeBooking'])->name('accommodatie.store_booking');
+    Route::get('/accommodatie/boeken/{id}', [App\Http\Controllers\AccommodatieController::class, 'book'])->name('accommodatie.book');
+});
+
+Route::middleware(['auth',])->group(function () {
+    Route::get('/instellingen', [SettingsController::class, 'account'])->name('user.settings');
+
+    Route::get('/instellingen/account/bewerk', [SettingsController::class, 'editAccount'])->name('user.settings.account.edit');
+    Route::post('/instellingen/account/bewerk', [SettingsController::class, 'editAccountSave'])->name('user.settings.account.store');
+
+    Route::get('/instellingen/verander-wachtwoord', [SettingsController::class, 'changePassword'])->name('user.settings.change-password');
+    Route::post('/instellingen/verander-wachtwoord', [SettingsController::class, 'updatePassword'])->name('user.settings.change-password.store');
+
+    Route::get('/instellingen/notificaties', [SettingsController::class, 'notifications'])->name('user.settings.edit-notifications');
+    Route::post('/instellingen/notificaties', [SettingsController::class, 'notificationsSave'])->name('user.settings.edit-notifications.store');
+
+
+    Route::get('/instellingen/bestellingen', [SettingsController::class, 'showOrders'])->name('user.orders');
+    Route::get('/instellingen/bestellingen/{id}', [SettingsController::class, 'orderDetails'])->name('user.orders.details');
+
+    Route::get('/instellingen/boekingen', [AgendaController::class, 'showBookings'])->name('user.bookings');
+    Route::get('/instellingen/boekingen/{id}', [SettingsController::class, 'bookingDetails'])->name('user.bookings.details');
+});
 
 
 //Admin
@@ -126,6 +156,18 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::get('/dashboard/bestellingen/{id}', [OrderController::class, 'details'])->name('admin.orders.details');
 
     Route::post('/dashboard/bestellingen/{id}', [OrderController::class, 'updateStatus'])->name('admin.orders.details.update');
+
+    // Bookings
+    Route::get('/dashboard/boekingen', [BookingController::class, 'list'])->name('admin.bookings');
+    Route::get('/dashboard/boekingen/{id}', [BookingController::class, 'details'])->name('admin.bookings.details');
+
+    Route::post('/dashboard/boekingen/{id}', [BookingController::class, 'updateStatus'])->name('admin.bookings.details.update');
+
+    Route::get('/dashboard/aanmeldingen', [AdminController::class, 'signup'])->name('admin.signup');
+    Route::get('/dashboard/aanmeldingen/details/{id}', [AdminController::class, 'signupAccountDetails'])->name('admin.signup.details');
+
+    Route::get('/dashboard/aanmeldingen/accepteer/{id}', [AdminController::class, 'signupAccept'])->name('admin.signup.accept');
+    Route::get('/dashboard/aanmeldingen/verwijder/{id}', [AdminController::class, 'signupDelete'])->name('admin.signup.delete');
 
 
     // Tickets

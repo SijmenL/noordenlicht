@@ -10,6 +10,8 @@ class Kernel extends HttpKernel
         'checkRole' => \App\Http\Middleware\CheckRole::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
+        'checkAccepted' => \App\Http\Middleware\CheckAccepted::class,
+
     ];
 
     /**

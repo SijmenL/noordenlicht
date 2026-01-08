@@ -19,7 +19,7 @@
            href="https://portal.waterscoutingmhg.nl/">Ga naar het ledenportaal</a>
         <br>
         <br>
-        <p>Mocht je vragen hebben, dan kun je deze altijd stellen door dit mailtje te beantwoorden, of door een mailtje te sturen naar <a href="mailto:administratie@waterscoutingmhg.nl">administratie@waterscoutingmhg.nl</a></p>
+        <p>Mocht je vragen hebben, dan kun je deze altijd stellen door dit mailtje te beantwoorden, of door een mailtje te sturen naar <a href="mailto:info@noordenlicht.nl">info@noordenlicht.nl</a></p>
 
     </div>
 @endsection

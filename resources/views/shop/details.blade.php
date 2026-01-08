@@ -6,7 +6,8 @@
             <div class="popup-body">
                 <div class="page">
                     <h2>Toegevoegd aan winkelwagen!</h2>
-                    <p>Dit product is aan de winkelwagen toegevoegd. Winkel verder of reken af via één van de onderstaande
+                    <p>Dit product is aan de winkelwagen toegevoegd. Winkel verder of reken af via één van de
+                        onderstaande
                         knoppen.</p>
                     <div class="d-grid gap-2">
                         <button id="close" class="btn btn-success">Verder winkelen</button>
@@ -180,9 +181,9 @@
 
                                 <div class="d-grid gap-3 mt-4">
 
-                                        <form action="{{ route('cart.add', $product->id) }}" method="POST">
-                                            @csrf
-                                @if($product->formElements->count() > 0)
+                                    <form action="{{ route('cart.add', $product->id) }}" method="POST">
+                                        @csrf
+                                        @if($product->formElements->count() > 0)
 
                                             @foreach ($product->formElements as $formElement)
                                                 @php
@@ -234,8 +235,9 @@
                                                                            class="form-check-input"
                                                                         {{ $oldValue == $option ? 'checked' : '' }}
                                                                         {{ $formElement->is_required ? 'required' : '' }}>
-                                                                    <label for="formElement{{ $formElement->id }}_{{ $loop->index }}"
-                                                                           class="form-check-label">
+                                                                    <label
+                                                                        for="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                                        class="form-check-label">
                                                                         {{ $option }}
                                                                     </label>
                                                                 </div>
@@ -253,8 +255,9 @@
                                                                            name="form_elements[{{ $formElement->id }}][]"
                                                                            value="{{ $option }}"
                                                                            class="form-check-input">
-                                                                    <label for="formElement{{ $formElement->id }}_{{ $loop->index }}"
-                                                                           class="form-check-label">{{ $option }}</label>
+                                                                    <label
+                                                                        for="formElement{{ $formElement->id }}_{{ $loop->index }}"
+                                                                        class="form-check-label">{{ $option }}</label>
                                                                 </div>
                                                             @endforeach
                                                             @break
@@ -267,9 +270,10 @@
                                                     @endif
                                                 </div>
                                             @endforeach
-                                                                   @endif
+                                        @endif
                                         {{-- Disable button if requirement not met --}}
-                                        <button type="submit" class="btn btn-primary mt-3 btn-lg rounded-pill shadow w-100"
+                                        <button type="submit"
+                                                class="btn btn-primary mt-3 btn-lg rounded-pill shadow w-100"
                                                 @if($product->type == '0' && !$hasAccommodation) disabled @endif>
                                             In winkelmandje
                                         </button>
@@ -292,7 +296,7 @@
                             <h3 class="fw-bold text-secondary m-0 h2">Maak je verblijf compleet</h3>
                         </div>
 
-                        <div class="d-flex flex-row-responsive gap-4 justify-content-center">
+                        <div class="d-flex flex-row flex-wrap gap-4 justify-content-center">
                             @foreach ($supplements as $supplement)
                                 <a href="{{ route('shop.details', $supplement->id) }}" class="text-decoration-none"
                                    style="min-width: 200px;">

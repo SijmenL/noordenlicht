@@ -23,7 +23,7 @@
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info2" class="col-form-label ">Email</label>
-                        <input id="info2" class="form-control" type="email" value="administratie@waterscoutingmhg.nl">
+                        <input id="info2" class="form-control" type="email" value="info@noordenlicht.nl">
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info3" class="col-form-label ">Nummer</label>
@@ -63,25 +63,25 @@
         </div>
     </div>
 
-    <div id="deleteModal" class="popup d-none" style="margin-top: -122px;">
+    <div id="deleteModal" class="popup d-none" style="z-index: 99999; top: 0; left: 0; position: fixed">
         <div class="popup-body">
             <div class="page">
                 <h2>Weet je het zeker?</h2>
-                <p>Kies hoe je de activiteit wilt verwijderen, deze actie kan hierna niet meer ongedaan gemaakt
+                <p>Kies hoe je het evenement wilt verwijderen, deze actie kan hierna niet meer ongedaan gemaakt
                     worden:</p>
                 <div class="d-grid gap-2">
-                    <button id="deleteSingle" class="btn btn-danger text-white">Alleen deze activiteit verwijderen
+                    <button id="deleteSingle" class="btn btn-danger text-white">Alleen dit evenement verwijderen
                     </button>
                     <button id="deleteFollowing" class="btn btn-outline-danger">Deze en alle volgende verwijderen
                     </button>
-                    <button id="deleteAll" class="btn btn-outline-danger">Alle activiteiten verwijderen</button>
+                    <button id="deleteAll" class="btn btn-outline-danger">Alle evenementen verwijderen</button>
                     <button id="cancelDelete" class="btn btn-success">Annuleren</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="saveModal" class="popup d-none" style="margin-top: -122px;">
+    <div id="saveModal" class="popup d-none" style="z-index: 99999; top: 0; left: 0; position: fixed">
         <div class="popup-body">
             <div class="page">
                 <h2>Wijziging toepassen op</h2>
@@ -99,7 +99,7 @@
                             }
                             handleButtonClick(this)"
                             class="btn btn-success flex flex-row align-items-center justify-content-center">
-                        <span class="button-text">Alleen deze activiteit</span>
+                        <span class="button-text">Alleen dit evenement</span>
                         <span style="display: none" class="loading-spinner spinner-border spinner-border-sm"
                               aria-hidden="true"></span>
                         <span style="display: none" class="loading-text" role="status">Laden...</span>
@@ -116,7 +116,7 @@
                             }
                             handleButtonClick(this)"
                             class="btn btn-outline-success flex flex-row align-items-center justify-content-center">
-                        <span class="button-text">Deze activiteit en alle volgende</span>
+                        <span class="button-text">Dit evenement en alle volgende</span>
                         <span style="display: none" class="loading-spinner spinner-border spinner-border-sm"
                               aria-hidden="true"></span>
                         <span style="display: none" class="loading-text" role="status">Laden...</span>
@@ -133,7 +133,7 @@
                             }
                             handleButtonClick(this)"
                             class="btn btn-outline-success flex flex-row align-items-center justify-content-center">
-                        <span class="button-text">Alle activiteiten</span>
+                        <span class="button-text">Alle evenementen</span>
                         <span style="display: none" class="loading-spinner spinner-border spinner-border-sm"
                               aria-hidden="true"></span>
                         <span style="display: none" class="loading-text" role="status">Laden...</span>
@@ -242,7 +242,7 @@
                         </div>
 
                         <div class="mt-4">
-                            <label for="text-input">De content van je activiteit</label>
+                            <label for="text-input">De content van je evenement</label>
                             <div class="editor-parent">
                                 @yield('editor')
                                 <div id="text-input" contenteditable="true" name="text-input"
@@ -290,7 +290,7 @@
                         </div>
                         <div class="w-100">
                             <label for="reoccurrence" class="col-form-label">
-                                Herhaal deze activiteit
+                                Herhaal dit evenement
                                 <span class="required-form">*</span>
                             </label>
                             <select id="reoccurrence" class="form-select @error('reoccurrence') is-invalid @enderror"
@@ -343,11 +343,8 @@
                                     <span class="material-symbols-rounded" style="font-size: xx-large">help</span>
                                 </a>
                             </div>
-                            <p>Bij sommige activiteiten is het nodig om een inschrijfformulier toe te voegen,
-                                bijvoorbeeld
-                                om bij te houden hoeveel teams meedoen met een pubquiz, of hoeveel kinderen mee willen
-                                lopen
-                                in een spooktocht. Als je niet zeker weet wat elk type veld doet, klik dan op <span
+                            <p>Bij sommige evenementen is het nodig om een inschrijfformulier toe te voegen,
+                                zoals bijvoorbeeld bij de aanmeldingen voor een bosklusdag. Klik op <span
                                     id="help-button2" class="material-symbols-rounded"
                                     style="transform: translateY(7px); cursor: pointer">help</span> voor meer
                                 informatie.

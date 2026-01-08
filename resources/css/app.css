@@ -1,7 +1,7 @@
 * {
-    font-family: "Figtree", sans-serif;
     scroll-margin-top: 100px;
     scroll-behavior: auto !important;
+    font-family: Georgia,Times,Times New Roman,serif;
 }
 
 .material-symbols-rounded {
@@ -90,6 +90,10 @@ h2 {
 h3 {
     font-family: Georgia,Times,Times New Roman,serif; ;
 }
+
+/*p, a, span, div {*/
+/*    font-family: "Figtree", sans-serif;*/
+/*}*/
 
 .quick-action-bar {
     display: flex;
@@ -493,7 +497,7 @@ table, th, td, label {
     justify-content: space-between;
     text-decoration: none;
     color: black;
-    background-color: #e8e9ed;
+    background-color: #f2f5e7;
     padding: 15px;
     transition: 0.1s;
     user-select: none;
@@ -507,11 +511,78 @@ table, th, td, label {
 }
 
 .setting:hover {
-    background-color: #dcdde0;
+    background-color: #f3f8da;
 }
 
 .setting:active {
-    background-color: #d0d0d0;
+    background-color: #eff4cf;
+}
+
+
+.custom-container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.setting-item:hover {
+    transform: translateY(-3px);
+    background-color: #fff;
+    border-color: #d1d5db;
+    color: inherit;
+}
+
+.setting-content h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.setting-content small {
+    color: #718096;
+    font-size: 0.9rem;
+    display: block;
+    line-height: 1.4;
+}
+
+.icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    aspect-ratio: 1/1;
+    margin-left: 10px;
+    border-radius: 50%;
+    background-color: #e2e8f0;
+    color: #4a5568;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.setting-item:hover .icon-box {
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .devider {

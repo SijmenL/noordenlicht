@@ -43,6 +43,7 @@
 
                     $carrousel_images = [];
                     foreach($accommodatie->images as $image) {
+                        $carrousel_images[] = asset('/files/accommodaties/images/'.$accommodatie->image);
                         $carrousel_images[] = '/files/accommodaties/carousel/'.$image->image;
                     }
                 @endphp
@@ -62,13 +63,13 @@
                 <div class="d-flex flex-column flex-md-row gap-5">
                     <!-- Left column (carousel) -->
                     <div class="w-100">
-                            <div class="sticky-top" style="top: 120px;"> <!-- adjust for navbar height -->
-                                <x-carousel :images="$carrousel_images"/>
-                            </div>
+                        <div class="sticky-top" style="top: 120px;"> <!-- adjust for navbar height -->
+                            <x-carousel :images="$carrousel_images"/>
+                        </div>
                     </div>
 
 
-                <!-- Description, Price, and Booking Column (Right on desktop) -->
+                    <!-- Description, Price, and Booking Column (Right on desktop) -->
                     <div class="w-100">
                         <!-- Price and Booking Card -->
                         <div class="card shadow-lg border-0 rounded-5 mb-4 p-4"
@@ -120,7 +121,30 @@
 
                                 <!-- Booking Actions -->
                                 <div class="d-grid gap-3 mt-4">
-                                    <a href="{{ route('accommodatie.book', $accommodatie->id) }}" class="btn btn-primary btn-lg rounded-pill shadow">Nu Boeken</a>
+                                    @guest()
+                                        <div class="alert alert-info">Meldt je bij de eerste keer aan middels het
+                                            aanvraag formulier. Je ontvangt een reactie of je praktijk
+                                            resoneert bij NoordenLicht. Na goedkeuring kun je via deze pagina de
+                                            gewenste ruimte en datum reserveren en met Ideal de reservering definitief
+                                            maken.
+                                        </div>
+                                        <a href="{{ route('accommodaties.form') }}"
+                                            class="btn btn-primary btn-lg rounded-pill shadow">Vul aanvraagformulier
+                                            in</a>
+                                    @else
+                                        @if($user->allow_booking == 1)
+                                            <a href="{{ route('accommodatie.book', $accommodatie->id) }}"
+                                               class="btn btn-primary btn-lg rounded-pill shadow">Nu Boeken</a>
+                                        @else
+                                            <div class="alert alert-info">Je boekingsaanvraag is nog niet geaccepteerd. We komen
+                                                zo snel mogelijk bij je terug.
+                                            </div>
+                                            <button disabled
+                                                    class="btn btn-primary btn-lg rounded-pill shadow">Je kunt nog geen
+                                                boekingen maken
+                                            </button>
+                                        @endif
+                                    @endguest
                                     <a class="btn btn-outline-primary rounded-pill">Bekijk Huisregels</a>
                                 </div>
                             </div>

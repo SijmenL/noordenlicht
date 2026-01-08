@@ -54,7 +54,7 @@
                         <div class="form-group">
                             <label for="address">Straat en huisnummer <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="address" name="address" required
-                                   value="{{ old('address', Auth::user()->address ?? '') }}">
+                                   value="{{ old('address', Auth::user()->street ?? '') }}">
                         </div>
 
                         <div style="display: flex; gap: 1rem;">
@@ -66,7 +66,7 @@
                             <div style="flex: 1;">
                                 <label for="zipcode">Postcode <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="zipcode" name="zipcode" required
-                                       value="{{ old('zipcode', Auth::user()->zipcode ?? '') }}">
+                                       value="{{ old('zipcode', Auth::user()->postal_code ?? '') }}">
                             </div>
                         </div>
 

@@ -8,11 +8,14 @@ use App\Models\AccommodatieImage;
 use App\Models\AccommodatiePrice;
 use App\Models\Booking;
 use App\Models\Price;
-use App\Models\Product; // Added for supplements
-use App\Models\Activity; // Added for agenda checks
-use App\Models\Order; // Added for order creation
-use App\Models\OrderItem; // Added for order items
+use App\Models\Product;
+use App\Models\Activity;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Log;
+use App\Models\ActivityFormResponses; // Added for saving form responses
+use App\Models\ActivityFormElement;   // Added for verifying form elements
+use http\Client\Curl\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,15 +45,27 @@ class AccommodatieController extends Controller
         return view('accommodaties.list', ['all_accommodaties' => $all_accommodatie, 'search' => $search]);
     }
 
+    public function form()
+    {
+        return view('accommodaties.form');
+    }
+
+    public function formSuccess()
+    {
+        return view('accommodaties.form_succes');
+    }
+
     public function details($id)
     {
+        $user = Auth::user();
+
         try {
             $accommodatie = Accommodatie::findOrFail($id);
         } catch (ModelNotFoundException $exception) {
             return redirect()->route('accommodaties')->with('error', 'Deze accommodatie bestaat niet.');
         }
 
-        return view('accommodaties.details', ['accommodatie' => $accommodatie]);
+        return view('accommodaties.details', ['accommodatie' => $accommodatie, 'user' => $user]);
     }
 
     // --- Booking Flow Methods ---
@@ -60,9 +75,10 @@ class AccommodatieController extends Controller
         try {
             // Eager load prices to avoid N+1 and ensure data is available
             $accommodatie = Accommodatie::with('prices.price')->findOrFail($id);
-            $supplements = Product::where('type', '0')->get();
+            // Eager load formElements for supplements to render them in the booking flow
+            $supplements = Product::where('type', '0')->with('formElements')->get();
 
-            // --- Price Calculation Logic (Moved from View) ---
+            // --- Price Calculation Logic ---
             $allPrices = $accommodatie->prices->map(fn($p) => $p->price);
 
             $basePrices = $allPrices->where('type', 0);
@@ -104,30 +120,23 @@ class AccommodatieController extends Controller
 
     public function getMonthlyAvailability(Request $request, $id)
     {
-        // 1. Retrieve the accommodation
         $accommodatie = Accommodatie::findOrFail($id);
-
-        // 2. Get input dates
         $month = $request->input('month');
         $year = $request->input('year');
 
-        // 3. Define the time window
         $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
-        // 4. Fetch bookings using the correct foreign key (accommodatie_id)
-        $bookings = Booking::where('accommodatie_id', $id) // FIXED: Changed 'id' to 'accommodatie_id'
-        ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-            $q->whereBetween('start', [$startOfMonth, $endOfMonth])
-                ->orWhereBetween('end', [$startOfMonth, $endOfMonth])
-                ->orWhere(function($sub) use ($startOfMonth, $endOfMonth) {
-                    $sub->where('start', '<', $startOfMonth)
-                        ->where('end', '>', $endOfMonth);
-                });
-        })
+        $bookings = Booking::where('accommodatie_id', $id)
+            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('start', [$startOfMonth, $endOfMonth])
+                    ->orWhereBetween('end', [$startOfMonth, $endOfMonth])
+                    ->orWhere(function($sub) use ($startOfMonth, $endOfMonth) {
+                        $sub->where('start', '<', $startOfMonth)
+                            ->where('end', '>', $endOfMonth);
+                    });
+            })
             ->get();
-
-        // Removed dd($bookings) so the code proceeds to return the response
 
         $events = [];
         foreach ($bookings as $b) {
@@ -191,6 +200,7 @@ class AccommodatieController extends Controller
             'address' => 'required|string',
             'zipcode' => 'required|string',
             'city' => 'required|string',
+            'comment' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -234,7 +244,7 @@ class AccommodatieController extends Controller
             $hours = $start->diffInMinutes($end) / 60;
             $accommodationTotal = $calculatedPrice * $hours;
 
-            // Add Order Item
+            // Add Order Item for Accommodation
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => null,
@@ -247,6 +257,8 @@ class AccommodatieController extends Controller
 
             // Process Supplements
             $supplementsData = json_decode($request->input('supplements_data', '[]'), true);
+            $supplementForms = $request->input('supplement_forms', []);
+
             if (is_array($supplementsData)) {
                 foreach ($supplementsData as $item) {
                     $product = Product::find($item['id']);
@@ -254,6 +266,7 @@ class AccommodatieController extends Controller
                         $price = $product->calculated_price ?? 0;
                         $lineTotal = $price * $item['qty'];
 
+                        // Create Order Item for Product
                         OrderItem::create([
                             'order_id' => $order->id,
                             'product_id' => $product->id,
@@ -263,20 +276,62 @@ class AccommodatieController extends Controller
                             'total_price' => $lineTotal,
                         ]);
                         $grandTotal += $lineTotal;
+
+                        // --- SAVE FORM DATA FOR PRODUCT ---
+                        // We use the submitted form data which is keyed by Product ID and then FormElement ID
+                        if (isset($supplementForms[$product->id])) {
+                            $formData = $supplementForms[$product->id];
+
+                            // Calculate next submitted_id for this product context
+                            $maxSubmittedId = ActivityFormResponses::where('product_id', $product->id)->max('submitted_id');
+                            $nextSubmittedId = $maxSubmittedId ? $maxSubmittedId + 1 : 1;
+
+                            foreach ($formData as $formElementId => $response) {
+                                // Although the key should be the ID from Blade, we can verify existence if needed
+                                // but we skip strict verification for performance similar to your other controller
+
+                                if (is_array($response)) {
+                                    foreach ($response as $checkboxValue) {
+                                        ActivityFormResponses::create([
+                                            'product_id' => $product->id,
+                                            'order_id' => $order->id, // Linked to Order
+                                            'location' => 'product',
+                                            'activity_form_element_id' => $formElementId,
+                                            'response' => $checkboxValue,
+                                            'submitted_id' => $nextSubmittedId,
+                                        ]);
+                                    }
+                                } else {
+                                    // Only save if not empty
+                                    if(!empty($response)) {
+                                        ActivityFormResponses::create([
+                                            'product_id' => $product->id,
+                                            'order_id' => $order->id, // Linked to Order
+                                            'location' => 'product',
+                                            'activity_form_element_id' => $formElementId,
+                                            'response' => $response,
+                                            'submitted_id' => $nextSubmittedId,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                        // --- END FORM DATA ---
                     }
                 }
             }
 
             $order->update(['total_amount' => $grandTotal]);
 
-            // Create the Booking record (The new model)
+            // Create the Booking record
             Booking::create([
                 'accommodatie_id' => $accommodatie->id,
                 'user_id' => Auth::id(),
                 'order_id' => $order->id,
                 'start' => $start,
                 'end' => $end,
-                'status' => 'confirmed', // Assuming pending payment keeps it reserved
+                'status' => 'confirmed',
+                'comment' => $request->comment,
             ]);
 
             if ($grandTotal == 0) {
@@ -377,7 +432,7 @@ class AccommodatieController extends Controller
             'icon_data' => 'nullable|string',
             'temp_image_ids' => 'nullable|string',
             'temp_icon_data' => 'nullable|string',
-            'temp_icon_ids' => 'nullable|string', // ADDED: Fallback for legacy ID list
+            'temp_icon_ids' => 'nullable|string',
             'prices_to_add' => 'nullable|string',
 
             'min_check_in' => 'nullable|date_format:H:i',
@@ -402,9 +457,9 @@ class AccommodatieController extends Controller
                 'description' => $request->input('description'),
                 'image' => $mainImageName,
                 'user_id' => Auth::id(),
-                'min_check_in' => $request->input('min_check_in', '00:00'),
-                'max_check_in' => $request->input('max_check_in', '23:59'),
-                'min_duration_minutes' => $request->input('min_duration_minutes', 60),
+                'min_check_in' => $request->input('min_check_in', '08:00'),
+                'max_check_in' => $request->input('max_check_in', '23:00'),
+                'min_duration_minutes' => $request->input('min_duration_minutes', 120),
             ]);
 
             // 1. Process Prices (Create Price model first, then link)
@@ -444,7 +499,6 @@ class AccommodatieController extends Controller
             }
 
             // 3. Move and link temporary icons
-            // Primary Method: JSON Data (includes text edits)
             if ($request->input('temp_icon_data')) {
                 $iconDataList = json_decode($request->input('temp_icon_data'), true);
 
@@ -475,7 +529,6 @@ class AccommodatieController extends Controller
                     }
                 }
             }
-            // Fallback Method: ID List (if JS sends the old format)
             elseif ($request->input('temp_icon_ids')) {
                 $tempIconIds = array_filter(explode(',', $request->input('temp_icon_ids', '')));
                 if (!empty($tempIconIds)) {
@@ -557,7 +610,6 @@ class AccommodatieController extends Controller
                 $accommodatie->save();
             }
 
-            // Update existing icon texts
             if ($request->input('updated_icon_data')) {
                 $updatedIcons = json_decode($request->input('updated_icon_data'), true);
                 if (is_array($updatedIcons)) {
@@ -571,7 +623,6 @@ class AccommodatieController extends Controller
                 }
             }
 
-            // Process removals
             $imagesToRemoveIds = array_filter(explode(',', $request->input('images_to_remove', '')));
             if (!empty($imagesToRemoveIds)) {
                 $imagesToRemove = AccommodatieImage::where('accommodatie_id', $accommodatie->id)->whereIn('id', $imagesToRemoveIds)->get();
@@ -589,7 +640,6 @@ class AccommodatieController extends Controller
                 }
             }
 
-            // Process new images
             $tempImageIds = array_filter(explode(',', $request->input('temp_image_ids', '')));
             if (!empty($tempImageIds)) {
                 $tempImages = AccommodatieImage::whereIn('id', $tempImageIds)->whereNull('accommodatie_id')->get();
@@ -607,7 +657,6 @@ class AccommodatieController extends Controller
                 }
             }
 
-            // Process new icons
             if ($request->input('temp_icon_data')) {
                 $newIconsData = json_decode($request->input('temp_icon_data'), true);
                 if (is_array($newIconsData) && !empty($newIconsData)) {
@@ -659,22 +708,18 @@ class AccommodatieController extends Controller
 
         DB::beginTransaction();
         try {
-            // Delete associated carousel images
             foreach ($accommodatie->images as $image) {
                 File::delete(public_path('files/accommodaties/carousel/' . $image->image));
             }
             $accommodatie->images()->delete();
 
-            // Delete associated icons
             foreach ($accommodatie->icons as $icon) {
                 File::delete(public_path('files/accommodaties/icons/' . $icon->icon));
             }
             $accommodatie->icons()->delete();
 
-            // Delete main image
             File::delete(public_path('files/accommodaties/images/' . $accommodatie->image));
 
-            // Delete accommodation record
             $accommodatie->delete();
 
             DB::commit();

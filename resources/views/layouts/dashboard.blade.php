@@ -179,10 +179,16 @@
                                 ],
                             ],
                             [
-                                'name' => 'Events',
-                                'uri' => '/agenda/maand',
+                                'name' => 'Agenda',
+                                'uri' => '/dashboard/agenda/maand',
                                 'fontSize' => '18px',
                                 'icon-name' => 'calendar_month',
+                                ],
+                            [
+                                'name' => 'Evenementen',
+                                'uri' => '/agenda/maand',
+                                'fontSize' => '18px',
+                                'icon-name' => 'campaign',
                                 'sub-pages' => [
                                     [
                                         'name' => 'Overzicht',
@@ -215,19 +221,24 @@
                                 'notificationsCount' => Contact::where('done', false)->count(),
                             ],
                             [
-                                'name' => 'Accommodaties',
+                                'name' => 'Boekingen',
                                 'uri' => '',
                                 'fontSize' => '18px',
                                 'icon-name' => 'door_open',
 
                                 'sub-pages' => [
                                     [
-                                        'name' => 'Boekingen',
-                                        'uri' => '',
+                                        'name' => 'Overzicht boekingen',
+                                        'uri' => '/dashboard/boekingen',
                                         'fontSize' => '14px',
                                     ],
                                     [
-                                        'name' => 'Beheer',
+                                        'name' => 'Aanvragen',
+                                        'uri' => '/dashboard/aanmeldingen',
+                                        'fontSize' => '14px',
+                                    ],
+                                    [
+                                        'name' => 'Beheer accomodaties',
                                         'uri' => '/dashboard/accommodaties',
                                         'fontSize' => '14px',
                                     ],

@@ -21,7 +21,7 @@
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info2" class="col-form-label ">Email</label>
-                        <input id="info2" class="form-control" type="email" value="administratie@waterscoutingmhg.nl">
+                        <input id="info2" class="form-control" type="email" value="info@noordenlicht.nl">
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info3" class="col-form-label ">Nummer</label>
@@ -476,8 +476,8 @@
     </style>
     <script>
         // --- Configuration (Adapted for Products) ---
-        const TEMP_IMAGE_UPLOAD_URL = '/dashboard/products/temp/image';
-        const TEMP_IMAGE_DELETE_URL = '/dashboard/products/temp/image/';
+        const TEMP_IMAGE_UPLOAD_URL = '/dashboard/producten/temp/image';
+        const TEMP_IMAGE_DELETE_URL = '/dashboard/producten/temp/image/';
         // ------------------------------------------------------------------
 
         const PHP_TEMP_IMAGES = @json($tempImages ?? []);

@@ -13,6 +13,7 @@ class Booking extends Model
         'start',
         'end',
         'status',
+        'comment',
     ];
 
     protected $casts = [

@@ -19,7 +19,7 @@
             <div class="container justify-content-center align-items-center d-flex flex-column gap-5">
                 <div style="backdrop-filter: blur(2px);">
                     <h1 class="text-center fw-bold display-5">Webshop</h1>
-                    <h2 class="text-center fs-4 text-secondary fw-light">Ontdek onze tickets en overnachtingen</h2>
+                    <h2 class="text-center fs-4 text-secondary fw-light">Ontdek onze producten</h2>
                 </div>
 
 

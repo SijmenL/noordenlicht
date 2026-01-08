@@ -2,7 +2,6 @@
 
     <div class="options flex-row-responsive">
         <div class="options-container">
-            <!-- Headings -->
             <select id="formatBlock" class="form-select" style="max-width: 100px; width: unset">
                 <option value="H1" class="h1">Titel</option>
                 <option value="H2" class="h2">Kop 2</option>
@@ -11,26 +10,6 @@
                 <option value="H5" class="h5">Kop 5</option>
                 <option value="p" selected>Tekst</option>
             </select>
-
-            {{--    <div class="wysiwyg-button">--}}
-            {{--        <div class="input-wrapper">--}}
-            {{--            <input type="color" id="foreColor" class="adv-option-button color-picker"/>--}}
-            {{--            <button type="button" title="tekst kleur" id="textColorButton"--}}
-            {{--                    class="option-button color d-flex justify-content-center">--}}
-            {{--                <label for="foreColor"><span--}}
-            {{--                        class="material-symbols-rounded">format_color_text</span></label>--}}
-            {{--            </button>--}}
-            {{--        </div>--}}
-            {{--        <div class="input-wrapper">--}}
-            {{--            <input type="color" id="backColor" class="adv-option-button color-picker"/>--}}
-            {{--            <button type="button" title="markeer kleur" id="highlightColorButton"--}}
-            {{--                    class="option-button color d-flex justify-content-center overflow-hidden">--}}
-            {{--                <label for="backColor"><span--}}
-            {{--                        class="material-symbols-rounded">format_color_fill</span></label>--}}
-            {{--            </button>--}}
-            {{--        </div>--}}
-            {{--    </div>--}}
-            <!-- Text Format -->
 
             <div class="wysiwyg-button">
                 <button type="button" id="bold"
@@ -61,24 +40,25 @@
 
             <div class="wysiwyg-button">
                 <div class="input-wrapper">
-                    <input type="color" id="foreColor" class="adv-option-button color-picker"/>
+                    <input type="color" id="foreColor" class="adv-option-button color-picker" value="#000000"/>
                     <button type="button" title="tekst kleur" id="textColorButton"
                             class="option-button color d-flex justify-content-center">
-                        <label for="foreColor"><span
-                                class="material-symbols-rounded">format_color_text</span></label>
+                        <label for="foreColor" class="d-flex align-items-center justify-content-center w-100 h-100 color-label" style="cursor: pointer;">
+                            <span id="foreColorIcon" class="material-symbols-rounded">format_color_text</span>
+                        </label>
                     </button>
                 </div>
                 <div class="input-wrapper">
-                    <input type="color" id="backColor" class="adv-option-button color-picker"/>
+                    <input type="color" id="backColor" class="adv-option-button color-picker" value="#ffffff"/>
                     <button type="button" title="markeer kleur" id="highlightColorButton"
                             class="option-button color d-flex justify-content-center overflow-hidden">
-                        <label for="backColor"><span
-                                class="material-symbols-rounded">format_ink_highlighter</span></label>
+                        <label for="backColor" class="d-flex align-items-center justify-content-center w-100 h-100 color-label" style="cursor: pointer;">
+                            <span id="backColorIcon" class="material-symbols-rounded">format_ink_highlighter</span>
+                        </label>
                     </button>
                 </div>
             </div>
 
-            <!-- List -->
             <div class="wysiwyg-button">
                 <button type="button" title="nummering" id="insertOrderedList"
                         class="option-button d-flex justify-content-center insertOrderedList">
@@ -90,7 +70,6 @@
                 </button>
             </div>
 
-            <!-- Alignment -->
             <div class="wysiwyg-button">
                 <button type="button" title="links uitlijnen" id="justifyLeft"
                         class="option-button align justify-content-center justifyLeft active-button">
@@ -118,14 +97,12 @@
                 </button>
             </div>
 
-            <!-- Clear format -->
             <div class="wysiwyg-button">
                 <button type="button" title="verwijder stijling" id="clear"
                         class="option-button d-flex justify-content-center bold">
                     <span class="material-symbols-rounded">format_clear</span>
                 </button>
             </div>
-            <!--Media -->
             <div class="wysiwyg-button">
                 <button type="button" title="afbeelding" id="insertImage"
                         class="option-button d-flex justify-content-center insertImage">
@@ -140,7 +117,6 @@
                     <span class="material-symbols-rounded">youtube_activity</span>
                 </button>
             </div>
-            <!-- Link -->
             <div class="wysiwyg-button">
                 <button type="button" title="hyperlink" id="createLink"
                         class="option-button d-flex justify-content-center createLink">

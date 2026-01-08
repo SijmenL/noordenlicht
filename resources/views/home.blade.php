@@ -34,7 +34,7 @@
                         grootsheid, je licht en je kracht.</p>
 
                     <div class="d-flex align-items-center justify-content-center">
-{{--                        <a class="btn btn-secondary text-white">Ontdek Meer</a> drie stippels--}}
+                        {{--                        <a class="btn btn-secondary text-white">Ontdek Meer</a> drie stippels--}}
                     </div>
                 </div>
             </div>
@@ -59,44 +59,48 @@
                 </div>
 
 
-                        <div class="marquee overflow-hidden">
-                            <div class="location-marquee-track d-flex gap-3">
-                                @foreach ($locations as $location)
-                                    <div class="location-card flex-shrink-0">
-                                        <a href="{{ route('accommodaties.details', $location->id) }}">
-                                            <div class="location-img-wrapper">
-                                                <img src="{{ asset('/files/accommodaties/images/'.$location->image) }}" class="img-fluid"
-                                                     alt="{{ $location->name }}">
-                                                <div class="location-title">{{ $location->name }}</div>
-                                            </div>
-                                        </a>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                <script>
-                    document.addEventListener('DOMContentLoaded', () => {
-                        const marqueeTrack = document.querySelector('.location-marquee-track');
-                        const marqueeContainer = document.querySelector('.marquee');
+                <div class="marquee overflow-hidden">
+                    <div class="location-marquee-track d-flex gap-3">
+                        @if(count($locations) > 0)
 
-                        const cards = Array.from(marqueeTrack.children);
-                        const containerWidth = marqueeContainer.offsetWidth;
+                            @foreach ($locations as $location)
+                                <div class="location-card flex-shrink-0">
+                                    <a href="{{ route('accommodaties.details', $location->id) }}">
+                                        <div class="location-img-wrapper">
+                                            <img src="{{ asset('/files/accommodaties/images/'.$location->image) }}"
+                                                 class="img-fluid"
+                                                 alt="{{ $location->name }}">
+                                            <div class="location-title">{{ $location->name }}</div>
+                                        </div>
+                                    </a>
+                                </div>
+                            @endforeach
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', () => {
+                                        const marqueeTrack = document.querySelector('.location-marquee-track');
+                                        const marqueeContainer = document.querySelector('.marquee');
 
-                        let totalWidth = cards.reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
+                                        const cards = Array.from(marqueeTrack.children);
+                                        const containerWidth = marqueeContainer.offsetWidth;
 
-                        // duplicate only if totalWidth < containerWidth
-                        let clones = [];
-                        while (totalWidth < containerWidth * 2) { // duplicate enough to cover 2x container for smooth scroll
-                            cards.forEach(card => {
-                                const clone = card.cloneNode(true);
-                                marqueeTrack.appendChild(clone);
-                                clones.push(clone);
-                            });
-                            totalWidth = Array.from(marqueeTrack.children).reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
-                        }
-                    });
+                                        let totalWidth = cards.reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
 
-                </script>
+                                        // duplicate only if totalWidth < containerWidth
+                                        let clones = [];
+                                        while (totalWidth < containerWidth * 2) { // duplicate enough to cover 2x container for smooth scroll
+                                            cards.forEach(card => {
+                                                const clone = card.cloneNode(true);
+                                                marqueeTrack.appendChild(clone);
+                                                clones.push(clone);
+                                            });
+                                            totalWidth = Array.from(marqueeTrack.children).reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
+                                        }
+                                    });
+
+                                </script>
+                        @endif
+                    </div>
+                </div>
 
                 <a href="{{ route('accommodaties') }}" class="btn btn-secondary text-white">Bekijk Alles</a>
             </div>

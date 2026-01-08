@@ -21,7 +21,7 @@
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info2" class="col-form-label ">Email</label>
-                        <input id="info2" class="form-control" type="email" value="administratie@waterscoutingmhg.nl">
+                        <input id="info2" class="form-control" type="email" value="info@noordenlicht.nl">
                     </div>
                     <div class="d-flex flex-row gap-4 justify-content-between">
                         <label for="info3" class="col-form-label ">Nummer</label>
@@ -499,8 +499,8 @@
         const LINK_PRICE_URL = '{{ route('admin.prices.link') }}';
         const UNLINK_PRICE_URL_BASE = '{{ route('admin.prices.unlink', ['priceLink' => 'PLACEHOLDER']) }}';
 
-        const TEMP_IMAGE_UPLOAD_URL = '/dashboard/products/temp/image';
-        const TEMP_IMAGE_DELETE_URL = '/dashboard/products/temp/image/';
+        const TEMP_IMAGE_UPLOAD_URL = '/dashboard/producten/temp/image';
+        const TEMP_IMAGE_DELETE_URL = '/dashboard/producten/temp/image/';
         const CSRF_TOKEN = document.querySelector('input[name="_token"]').value;
 
         // --- Data passed from the Controller for EXISTING items ---

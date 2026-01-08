@@ -43,7 +43,8 @@
 
         <div class="bg-light rounded-2 p-3">
             <div class="container">
-                <form method="POST" action="{{ route('admin.accommodaties.new.save') }}" enctype="multipart/form-data" id="accommodation-form">
+                <form method="POST" action="{{ route('admin.accommodaties.new.save') }}" enctype="multipart/form-data"
+                      id="accommodation-form">
                     @csrf
 
                     {{-- Hidden fields for structured data --}}
@@ -58,7 +59,8 @@
 
                     <div class="d-flex flex-column mb-3">
                         <label for="name" class="col-md-4 col-form-label ">Naam van de accommodatie</label>
-                        <input name="name" type="text" class="form-control @error('name') is-invalid @enderror" id="name" value="{{ old('name') }}">
+                        <input name="name" type="text" class="form-control @error('name') is-invalid @enderror"
+                               id="name" value="{{ old('name') }}">
                         @error('name')
                         <span class="text-danger small">{{ $message }}</span>
                         @enderror
@@ -66,15 +68,19 @@
 
                     <div class="d-flex flex-column mb-3">
                         <label for="type_input" class="col-md-4 col-form-label ">Type accommodatie</label>
-                        <input placeholder="e.g. Kleine groepsruimte" name="type" type="text" class="form-control @error('type') is-invalid @enderror" id="type_input" value="{{ old('type') }}">
+                        <input placeholder="e.g. Kleine groepsruimte" name="type" type="text"
+                               class="form-control @error('type') is-invalid @enderror" id="type_input"
+                               value="{{ old('type') }}">
                         @error('type')
                         <span class="text-danger small">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <div class="mb-4">
-                        <label for="image" class="col-md-4 col-form-label ">Hoofdafbeelding (wordt vertoond op alle pagina's)</label>
-                        <input class="form-control mt-2 @error('image') is-invalid @enderror" id="image" type="file" name="image" accept="image/*">
+                        <label for="image" class="col-md-4 col-form-label ">Hoofdafbeelding (wordt vertoond op alle
+                            pagina's)</label>
+                        <input class="form-control mt-2 @error('image') is-invalid @enderror" id="image" type="file"
+                               name="image" accept="image/*">
                         @error('image')
                         <span class="text-danger small">{{ $message }}</span>
                         @enderror
@@ -99,20 +105,67 @@
                         @enderror
                     </div>
 
+                    <div class="mt-4">
+                        <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">date_range</span>Openingstijden
+                        </h2>
+                        <div class="d-flex flex-row-responsive gap-2 justify-content-between align-items-center">
+                            <div class="w-100">
+                                <label for="min_check_in" class="col-md-4 col-form-label ">Openingstijd <span
+                                        class="required-form">*</span></label>
+                                <input id="min_check_in" value="{{ old('min_check_in', '08:00') }}" type="time"
+                                       class="form-control @error('date_start') is-invalid @enderror" name="date_start">
+                                @error('min_check_in')
+                                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                                @enderror
+                            </div>
+
+                            <div class="w-100">
+                                <label for="max_check_in" class="col-md-4 col-form-label ">Sluitingstijd <span
+                                        class="required-form">*</span></label>
+                                <input id="max_check_in" value="{{ old('max_check_in', '23:00') }}" type="time"
+                                       class="form-control @error('max_check_in') is-invalid @enderror" name="date_end">
+                                @error('max_check_in')
+                                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                                @enderror
+                            </div>
+
+                        </div>
+                        <div class="w-100">
+                            <label for="min_duration_minutes" class="col-md-4 col-form-label ">Minimale duur van een
+                                boeking (in minuten) <span
+                                    class="required-form">*</span></label>
+                            <input id="min_duration_minutes" value="{{ old('min_duration_minutes', 120) }}"
+                                   type="number"
+                                   class="form-control @error('min_duration_minutes') is-invalid @enderror"
+                                   name="date_end">
+                            @error('min_duration_minutes')
+                            <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                            @enderror
+                        </div>
+                    </div>
+
                     {{-- PRICE EDITOR --}}
-                    <div class="mb-5 p-3 border rounded-3 bg-white">
-                         <h2 class="flex-row gap-3"><span
+                    <div class="mb-5 mt-5 p-3 border rounded-3 bg-white">
+                        <h2 class="flex-row gap-3"><span
                                 class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
                         </h2>
 
                         <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
                             <div class="flex-grow-1">
                                 <label for="new_price_name" class="form-label mb-1">Naam (bv. "Standaardtarief")</label>
-                                <input type="text" id="new_price_name" class="form-control" placeholder="Naam van prijscomponent">
+                                <input type="text" id="new_price_name" class="form-control"
+                                       placeholder="Naam van prijscomponent">
                             </div>
                             <div style="max-width: 150px;">
                                 <label for="new_price_amount" class="form-label mb-1">Bedrag / %</label>
-                                <input type="number" step="0.01" id="new_price_amount" class="form-control" placeholder="0.00">
+                                <input type="number" step="0.01" id="new_price_amount" class="form-control"
+                                       placeholder="0.00">
                             </div>
                             <div class="flex-grow-1">
                                 <label for="new_price_type" class="form-label mb-1">Type</label>
@@ -141,17 +194,17 @@
                         </p>
                     </div>
 
-                    <hr>
-
                     {{-- IMAGE CAROUSEL EDITOR --}}
                     <div class="mb-5 p-3 border rounded-3 bg-white">
                         <h2 class="flex-row gap-3"><span
-                                class="material-symbols-rounded me-2">image</span>Afbeeldingencarousel bewerken
+                                class="material-symbols-rounded me-2">image</span>Afbeeldingencarousel
                         </h2>
 
                         <div class="d-flex align-items-center gap-3 mb-4">
-                            <label for="carousel_images_input" class="form-label mb-0">Nieuwe afbeeldingen uploaden:</label>
-                            <input class="form-control" type="file" id="carousel_images_input" multiple accept="image/*">
+                            <label for="carousel_images_input" class="form-label mb-0">Nieuwe afbeeldingen
+                                uploaden:</label>
+                            <input class="form-control" type="file" id="carousel_images_input" multiple
+                                   accept="image/*">
                         </div>
                         @error('temp_image_ids')
                         <span class="text-danger small mb-3 d-block">{{ $message }}</span>
@@ -164,16 +217,19 @@
                         </div>
                     </div>
 
-                    <hr>
 
                     {{-- ICON/FEATURE EDITOR --}}
                     <div class="mb-5 p-3 border rounded-3 bg-white">
-                        <h2 class="h5 mb-3">Iconen en kenmerken bewerken</h2>
+                        <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">chess_bishop_2</span>Iconen en kenmerken
+                        </h2>
 
                         <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
                             <div class="flex-grow-1">
-                                <label for="new_icon_text" class="form-label mb-1">Tekst (bv. "Thee en water inclusief")</label>
-                                <input type="text" id="new_icon_text" class="form-control" placeholder="Tekst voor het kenmerk">
+                                <label for="new_icon_text" class="form-label mb-1">Tekst (bv. "Thee en water
+                                    inclusief")</label>
+                                <input type="text" id="new_icon_text" class="form-control"
+                                       placeholder="Tekst voor het kenmerk">
                             </div>
                             <div class="flex-grow-1">
                                 <label for="new_icon_file" class="form-label mb-1">Icoontje (.svg)</label>
@@ -200,7 +256,8 @@
                         id="save-button"
                         class="btn btn-success mt-3 d-flex align-items-center justify-content-center">
                         <span class="button-text">Opslaan</span>
-                        <span style="display: none" class="loading-spinner spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        <span style="display: none" class="loading-spinner spinner-border spinner-border-sm"
+                              aria-hidden="true"></span>
                         <span style="display: none" class="loading-text" role="status">Laden...</span>
                     </button>
                 </form>
@@ -214,6 +271,7 @@
             overflow: hidden;
             border-radius: 0.375rem;
         }
+
         .image-card-container .remove-btn {
             position: absolute;
             top: 0.5rem;
@@ -230,6 +288,7 @@
             font-size: 1.2rem;
             line-height: 1;
         }
+
         .image-card-container:hover .remove-btn {
             opacity: 1;
         }
@@ -290,24 +349,39 @@
             },
 
             getTypeText(type) {
-                switch(parseInt(type, 10)) {
-                    case 0: return 'Standaard Prijs (€)';
-                    case 1: return 'Percentage Toeslag (%)';
-                    case 2: return 'Vaste Korting (€)';
-                    case 3: return 'Extra Kosten (excl.)';
-                    case 4: return 'Percentage Korting (%)';
-                    default: return 'Onbekend';
+                switch (parseInt(type, 10)) {
+                    case 0:
+                        return 'Standaard Prijs (€)';
+                    case 1:
+                        return 'Percentage Toeslag (%)';
+                    case 2:
+                        return 'Vaste Korting (€)';
+                    case 3:
+                        return 'Extra Kosten (excl.)';
+                    case 4:
+                        return 'Percentage Korting (%)';
+                    default:
+                        return 'Onbekend';
                 }
             },
 
             createPriceRow(price, index) {
-                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded' });
-                const nameEl = createElement('div', { className: 'flex-grow-1' }, `<strong>${price.name}</strong>`);
+                const wrapper = createElement('div', {className: 'd-flex align-items-center gap-3 p-2 border rounded'});
+                const nameEl = createElement('div', {className: 'flex-grow-1'}, `<strong>${price.name}</strong>`);
                 const amountText = `${(parseInt(price.type, 10) === 1 || parseInt(price.type, 10) === 4) ? '' : '€ '}${parseFloat(price.amount).toFixed(2)}${(parseInt(price.type, 10) === 1 || parseInt(price.type, 10) === 4) ? '%' : ''}`;
-                const amountEl = createElement('div', { className: 'fw-bold', style: 'min-width: 80px; text-align: right;'}, amountText);
-                const typeEl = createElement('div', { className: 'text-muted small', style: 'min-width: 150px;' }, this.getTypeText(price.type));
+                const amountEl = createElement('div', {
+                    className: 'fw-bold',
+                    style: 'min-width: 80px; text-align: right;'
+                }, amountText);
+                const typeEl = createElement('div', {
+                    className: 'text-muted small',
+                    style: 'min-width: 150px;'
+                }, this.getTypeText(price.type));
                 const removeBtn = createElement('button', {
-                    type: 'button', className: 'btn btn-sm btn-outline-danger', title: 'Verwijder prijs', onclick: () => this.removePrice(index)
+                    type: 'button',
+                    className: 'btn btn-sm btn-outline-danger',
+                    title: 'Verwijder prijs',
+                    onclick: () => this.removePrice(index)
                 }, '&times;');
 
                 wrapper.appendChild(nameEl);
@@ -329,7 +403,7 @@
                     return;
                 }
 
-                const newPrice = { name, amount, type };
+                const newPrice = {name, amount, type};
                 this.prices.push(newPrice);
                 this.render();
 
@@ -393,8 +467,8 @@
             },
 
             createImageCard(image, index) {
-                const card = createElement('div', { className: 'card', style: 'width: 200px;' });
-                const container = createElement('div', { className: 'image-card-container' });
+                const card = createElement('div', {className: 'card', style: 'width: 200px;'});
+                const container = createElement('div', {className: 'image-card-container'});
 
                 const img = createElement('img', {
                     src: image.preview,
@@ -441,7 +515,7 @@
                 formData.append('unique_id', imageObj.temp_id);
                 formData.append('_token', CSRF_TOKEN);
 
-                fetch(TEMP_IMAGE_UPLOAD_URL, { method: 'POST', body: formData, })
+                fetch(TEMP_IMAGE_UPLOAD_URL, {method: 'POST', body: formData,})
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
@@ -476,7 +550,7 @@
             deleteFile(dbId) {
                 fetch(TEMP_IMAGE_DELETE_URL + dbId, {
                     method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+                    headers: {'X-CSRF-TOKEN': CSRF_TOKEN}
                 }).catch(err => console.error("Failed to delete temp image", err));
             }
         };
@@ -529,7 +603,7 @@
                 // Prepare primary JSON data
                 const data = this.icons
                     .filter(icon => icon.db_id !== null)
-                    .map(icon => ({ id: icon.db_id, text: icon.text }));
+                    .map(icon => ({id: icon.db_id, text: icon.text}));
 
                 const json = JSON.stringify(data);
                 document.getElementById('temp_icon_data').value = json;
@@ -539,16 +613,20 @@
                 document.getElementById('temp_icon_ids').value = ids;
 
                 // Update repopulation specific field
-                const repopData = this.icons.map(ic => ({ temp_id: ic.temp_id, text: ic.text }));
+                const repopData = this.icons.map(ic => ({temp_id: ic.temp_id, text: ic.text}));
                 document.getElementById('icon_data').value = JSON.stringify(repopData);
 
                 console.log('Icon Data Updated:', json);
             },
 
             createIconRow(icon, index) {
-                const col = createElement('div', { className: 'col' });
-                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded' });
-                const img = createElement('img', { src: icon.preview, alt: `Icoon`, style: 'width:32px;height:32px;object-fit:contain;' });
+                const col = createElement('div', {className: 'col'});
+                const wrapper = createElement('div', {className: 'd-flex align-items-center gap-3 p-2 border rounded'});
+                const img = createElement('img', {
+                    src: icon.preview,
+                    alt: `Icoon`,
+                    style: 'width:32px;height:32px;object-fit:contain;'
+                });
 
                 const textInput = createElement('input', {
                     type: 'text',
@@ -561,7 +639,10 @@
                 });
 
                 const removeBtn = createElement('button', {
-                    type: 'button', className: 'btn btn-sm btn-danger', title: 'Verwijder kenmerk', onclick: () => this.removeIcon(index)
+                    type: 'button',
+                    className: 'btn btn-sm btn-danger',
+                    title: 'Verwijder kenmerk',
+                    onclick: () => this.removeIcon(index)
                 }, '&times;');
 
                 wrapper.appendChild(img);
@@ -603,7 +684,7 @@
                 formData.append('text', iconObj.text);
                 formData.append('_token', CSRF_TOKEN);
 
-                fetch(TEMP_ICON_UPLOAD_URL, { method: 'POST', body: formData, })
+                fetch(TEMP_ICON_UPLOAD_URL, {method: 'POST', body: formData,})
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
@@ -638,7 +719,7 @@
             deleteFile(dbId) {
                 fetch(TEMP_ICON_DELETE_URL + dbId, {
                     method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+                    headers: {'X-CSRF-TOKEN': CSRF_TOKEN}
                 }).catch(err => console.error("Failed to delete temp icon", err));
             }
         };

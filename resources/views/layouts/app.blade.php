@@ -53,7 +53,8 @@
                 </div>
 
                 <!-- Navbar links gecentreerd -->
-                <div class="collapse navbar-collapse justify-content-center rounded-bottom-5 navbar-info" id="navbarContent">
+                <div class="collapse navbar-collapse justify-content-center rounded-bottom-5 navbar-info"
+                     id="navbarContent">
                     <ul class="navbar-nav text-center align-items-center">
                         <li class="nav-item">
                             <a class="nav-link white-text" href="{{ route('home') }}">Home</a>
@@ -74,21 +75,27 @@
                             <a class="nav-link white-text" href="{{ route('contact') }}">Contact</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link white-text" href="{{ route('checkout') }}"><span class="material-symbols-rounded">shopping_cart</span></a>
+                            <a class="nav-link white-text" href="{{ route('checkout') }}"><span
+                                    class="material-symbols-rounded">shopping_cart</span></a>
                         </li>
 
                         @guest
-                            @if (Route::has('login'))
+                            <li class="nav-item">
+                                <a class="nav-link white-text" href="{{ route('login') }}">
+                                    <span class="material-symbols-rounded">login</span>
+                                </a>
+                            </li>
+                        @else
+                            @if(auth()->user()->roles->contains('role', 'Administratie'))
                                 <li class="nav-item">
-                                    <a class="nav-link white-text" href="{{ route('login') }}">
-                                        <span class="material-symbols-rounded">login</span>
-                                    </a>
+                                    <a class="nav-link white-text" href="{{ route('admin') }}"><span
+                                            class="material-symbols-rounded">dashboard</span></a>
                                 </li>
                             @endif
-                        @else
-                            <li class="nav-item">
-                                <a class="nav-link white-text" href="{{ route('admin') }}"><span class="material-symbols-rounded">dashboard</span></a>
-                            </li>
+                                <li class="nav-item">
+                                    <a class="nav-link white-text" href="{{ route('user.settings') }}"><span
+                                            class="material-symbols-rounded">person</span></a>
+                                </li>
                         @endguest
                     </ul>
                 </div>

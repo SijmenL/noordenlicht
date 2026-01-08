@@ -29,106 +29,132 @@
 
             {{-- Tickets / Activities Table --}}
 
-                <div class="bg-white w-100 p-4 rounded mt-3">
-                    <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">local_activity</span>Producten, Boekingen & Tickets
-                    </h2>
+            <div class="bg-white w-100 p-4 rounded mt-3">
+                <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">local_activity</span>Producten, Boekingen & Tickets
+                </h2>
 
-                    <div class="w-100">
-                        <div class="card-body p-0">
-                            <table class="table table-striped mb-0">
-                                <thead>
+                <div class="w-100">
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                            <tr>
+                                <th scope="col" style="width: 50%;">Product / Beschrijving</th>
+                                <th scope="col">Aantal</th>
+                                <th scope="col">Stukprijs</th>
+                                <th scope="col">Totaal</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @php
+                                // Track how many response sets have been consumed per product/activity context
+                                // This ensures sequential distribution: Item 1 gets Set 1, Item 2 gets Set 2, etc.
+                                $consumedCounts = [];
+                            @endphp
+                            @foreach($order->items as $item)
                                 <tr>
-                                    <th scope="col" style="width: 50%;">Product / Beschrijving</th>
-                                    <th scope="col">Aantal</th>
-                                    <th scope="col">Stukprijs</th>
-                                    <th scope="col">Totaal</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($order->items as $item)
-                                    <tr>
-                                        <td>
-                                            {{-- 1. Product / Item Name --}}
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="fw-bold">{{ $item->product_name }}</span>
+                                    <td>
+                                        {{-- 1. Product / Item Name --}}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold">{{ $item->product_name }}</span>
 
-                                                {{-- Link to shop if product exists, otherwise warning --}}
-                                                @if($item->product_id)
-                                                    @if($item->product)
-                                                        <a href="{{ route('admin.products.details', $item->product_id) }}" target="_blank"
-                                                           class="text-muted small" title="Bekijk in shop">
-                                                            <span class="material-symbols-rounded fs-6 align-middle">open_in_new</span>
-                                                        </a>
-                                                    @else
-                                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger p-1 ms-2">Verwijderd</span>
-                                                    @endif
+                                            {{-- Link to shop if product exists, otherwise warning --}}
+                                            @if($item->product_id)
+                                                @if($item->product)
+                                                    <a href="{{ route('admin.products.details', $item->product_id) }}" target="_blank"
+                                                       class="text-muted small" title="Bekijk in shop">
+                                                        <span class="material-symbols-rounded fs-6 align-middle">open_in_new</span>
+                                                    </a>
+                                                @else
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger p-1 ms-2">Verwijderd</span>
                                                 @endif
-                                            </div>
-
-                                            {{-- 2. Form Data Logic --}}
-                                            @php
-                                                $itemResponses = collect();
-
-                                                if ($item->product_id) {
-                                                    // Match responses by Product ID
-                                                    $itemResponses = $formResponses->where('product_id', $item->product_id);
-                                                } else {
-                                                    // Match responses by Activity: Check if the Item Name contains the Activity Title
-                                                    // This links the specific Ticket-line to the correct Form Responses
-                                                    $activityResponses = $formResponses->where('location', 'activity');
-                                                    foreach($activityResponses->groupBy('activity_id') as $actId => $responses) {
-                                                         $activity = $responses->first()->activity ?? null;
-                                                         if($activity && str_contains($item->product_name, $activity->title)) {
-                                                             $itemResponses = $responses;
-                                                             break;
-                                                         }
-                                                    }
-                                                }
-                                            @endphp
-
-                                            {{-- 3. Display Form Data (if found) --}}
-                                            @if($itemResponses->isNotEmpty())
-                                                <div class="mt-3">
-                                                    <table class="table table-sm table-bordered bg-white small mb-0" style="max-width: 90%;">
-                                                        @foreach($itemResponses->groupBy('submitted_id') as $index => $group)
-                                                            {{-- Header for multiple sets (e.g. 2 tickets = 2 entries) --}}
-                                                            @if($itemResponses->groupBy('submitted_id')->count() > 1)
-                                                                <thead class="table-light">
-                                                                <tr>
-                                                                    <th colspan="2" class="text-muted">Inschrijving {{ $loop->iteration }}</th>
-                                                                </tr>
-                                                                </thead>
-                                                            @endif
-
-                                                            <tbody>
-                                                            @foreach($group as $response)
-                                                                <tr>
-                                                                    <td class="text-muted bg-light" style="width: 35%;">
-                                                                        {{ $response->formElement->label ?? 'Veld' }}
-                                                                    </td>
-                                                                    <td>
-                                                                        {{ $response->response }}
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                            </tbody>
-                                                        @endforeach
-                                                    </table>
-                                                </div>
                                             @endif
-                                        </td>
+                                        </div>
 
-                                        {{-- Standard Order Fields --}}
-                                        <td class="align-top">{{ $item->quantity }}</td>
-                                        <td class="align-top">&#8364;{{ number_format($item->unit_price, 2, ',', '.') }}</td>
-                                        <td class="align-top fw-bold">&#8364;{{ number_format($item->total_price, 2, ',', '.') }}</td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                        {{-- 2. Form Data Logic --}}
+                                        @php
+                                            $itemResponses = collect();
+                                            $candidates = collect();
+                                            $contextKey = '';
+
+                                            if ($item->product_id) {
+                                                // Match responses by Product ID
+                                                $candidates = $formResponses->where('product_id', $item->product_id);
+                                                $contextKey = 'prod_' . $item->product_id;
+                                            } else {
+                                                // Match responses by Activity: Check if the Item Name contains the Activity Title
+                                                $activityResponses = $formResponses->where('location', 'activity');
+                                                foreach($activityResponses->groupBy('activity_id') as $actId => $responses) {
+                                                     $activity = $responses->first()->activity ?? null;
+                                                     if($activity && str_contains($item->product_name, $activity->title)) {
+                                                         $candidates = $responses;
+                                                         $contextKey = 'act_' . $actId;
+                                                         break;
+                                                     }
+                                                }
+                                            }
+
+                                            if($candidates->isNotEmpty() && $contextKey) {
+                                                // Group by submission ID to keep sets together
+                                                // Sort by key (submitted_id) to ensure chronological order
+                                                $groupedSets = $candidates->groupBy('submitted_id')->sortKeys();
+
+                                                $currentOffset = $consumedCounts[$contextKey] ?? 0;
+                                                $setsNeeded = $item->quantity;
+
+                                                // Slice the next batch of response sets for this specific item instance
+                                                $selectedSets = $groupedSets->slice($currentOffset, $setsNeeded);
+
+                                                // Collapse back to a single collection so the view logic below works as expected
+                                                $itemResponses = $selectedSets->collapse();
+
+                                                // Update the counter for the next item of this type
+                                                $consumedCounts[$contextKey] = $currentOffset + $setsNeeded;
+                                            }
+                                        @endphp
+
+                                        {{-- 3. Display Form Data (if found) --}}
+                                        @if($itemResponses->isNotEmpty())
+                                            <div class="mt-3">
+                                                <table class="table table-sm table-bordered bg-white small mb-0" style="max-width: 90%;">
+                                                    @foreach($itemResponses->groupBy('submitted_id') as $index => $group)
+                                                        {{-- Header for multiple sets (e.g. 2 tickets = 2 entries) --}}
+                                                        @if($itemResponses->groupBy('submitted_id')->count() > 1)
+                                                            <thead class="table-light">
+                                                            <tr>
+                                                                <th colspan="2" class="text-muted">Inschrijving {{ $loop->iteration }}</th>
+                                                            </tr>
+                                                            </thead>
+                                                        @endif
+
+                                                        <tbody>
+                                                        @foreach($group as $response)
+                                                            <tr>
+                                                                <td class="text-muted bg-light" style="width: 35%;">
+                                                                    {{ $response->formElement->label ?? 'Veld' }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ $response->response }}
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                        </tbody>
+                                                    @endforeach
+                                                </table>
+                                            </div>
+                                        @endif
+                                    </td>
+
+                                    {{-- Standard Order Fields --}}
+                                    <td class="align-top">{{ $item->quantity }}</td>
+                                    <td class="align-top">&#8364;{{ number_format($item->unit_price, 2, ',', '.') }}</td>
+                                    <td class="align-top fw-bold">&#8364;{{ number_format($item->total_price, 2, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+            </div>
 
             {{-- Status Management Section --}}
             <div class="bg-white w-100 p-4 rounded mt-3">
@@ -147,13 +173,13 @@
                     @endphp
                     <span class="badge bg-{{ $statusClass }}">
                            @if($order->status == 'pending') In afwachting @endif
-                                   @if($order->status == 'open') Niet betaald @endif
+                        @if($order->status == 'open') Niet betaald @endif
                         @if($order->status == 'paid') Betaald @endif
                         @if($order->status == 'shipped') Verzonden @endif
                         @if($order->status == 'completed') Afgerond @endif
                         @if($order->status == 'cancelled') Geannuleerd @endif
-                               @if($order->status == 'failed') Misgegaan @endif
-                               @if($order->status == 'expired') Verlopen @endif
+                        @if($order->status == 'failed') Misgegaan @endif
+                        @if($order->status == 'expired') Verlopen @endif
                                 </span>
                 </div>
                 <div class="w-100">
@@ -229,7 +255,10 @@
                 </h2>
                 <div class="-body">
                     <p class="mb-1"><strong>Order Datum:</strong> {{ $order->created_at->format('d-m-Y H:i') }}</p>
-                    <p class="mb-1"><strong>Totaal Artikelen:</strong> {{ $order->items->sum('quantity') }}</p>
+                    @if($order->created_at !== $order->updated_at)
+                    <p class="mb-1"><strong>Order Bewerkt:</strong> {{ $order->updated_at->format('d-m-Y H:i') }}</p>
+                    @endif
+                        <p class="mb-1"><strong>Totaal Artikelen:</strong> {{ $order->items->sum('quantity') }}</p>
                     <p class="mb-1"><strong>Totaal
                             Betaald: </strong>&#8364;{{ number_format($order->total_amount, 2, ',', '.') }}</p>
                 </div>

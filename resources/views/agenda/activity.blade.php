@@ -119,10 +119,11 @@
         @else
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
+                    <li class="breadcrumb-item" aria-current="page"><a href="{{route('admin')}}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a
                             @if($view === 'month') href="{{ route('agenda.month', ['month' => $month, 'all' => $wantViewAll ? 1 : 0]) }}"
                             @else href="{{ route('agenda.schedule', ['month' => $month, 'all' => $wantViewAll ? 1 : 0]) }}" @endif>
-                            Agenda</a></li>
+                            @if($view === 'month') Agenda @else Evenementen @endif</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ $activity->title }}</li>
                 </ol>
             </nav>

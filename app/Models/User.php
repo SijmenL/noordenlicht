@@ -13,18 +13,19 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * @var \Illuminate\Support\HigherOrderCollectionProxy|mixed|true
+     */
+
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_role');
     }
 
-
-
     public function notificationSettings()
     {
         return $this->hasMany(UserNotificationSettings::class);
     }
-
 
 
 // Custom method to get notification preference by type
@@ -58,7 +59,10 @@ class User extends Authenticatable
         'member_date_end',
         'dolfijnen_name',
         'calendar_token',
-        'is_associate'
+        'is_associate',
+        'praktijknaam',
+        'allow_booking',
+        'website'
     ];
 
     /**

@@ -99,7 +99,8 @@
                                 </span>
                             </td>
                             <td>&#8364;{{ number_format($order->total_amount, 2, ',', '.') }}</td>
-                            <td>{{ $order->created_at->format('d-m-Y H:i') }}</td>
+
+                            <td>{{ $order->created_at->format('d-m-Y H:i') }} @if($order->created_at !== $order->updated_at) ({{ $order->updated_at->format('d-m-Y H:i') }}) @endif</td>
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -703,9 +703,10 @@ class AgendaController extends Controller
         foreach ($fetchedBookings as $booking) {
             // Duck-typing booking as an activity for the view
             $fakeActivity = new Activity();
-            $fakeActivity->id = 'booking-' . $booking->id; // Unique string ID
+            $fakeActivity->id = $booking->id;
+            $fakeActivity->isBooking = true;
             $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
-            $fakeActivity->content = "Geboekt door " . ($booking->order->first_name ?? 'Onbekend');
+            $fakeActivity->content = "Geboekt door " . ($booking->order->first_name.' '.$booking->order->last_name ?? 'Onbekend');
             $fakeActivity->date_start = $booking->start;
             $fakeActivity->date_end = $booking->end;
             $fakeActivity->image = null; // Or accommodation image
@@ -1625,7 +1626,7 @@ class AgendaController extends Controller
         $user = User::where('calendar_token', $token)->firstOrFail();
         $roles = $user->roles()->orderBy('role', 'asc')->get();
         $rolesIDList = $roles->pluck('id')->toArray();
-        $canViewAll = false;
+        $canViewAll = true;
 
         $monthOffset = 0;
 
@@ -1651,6 +1652,12 @@ class AgendaController extends Controller
             ->orderBy('date_start')
             ->get();
 
+        $fetchedBookings = Booking::with('accommodatie')
+            ->where('status', '!=', 'cancelled')
+            ->where(function ($query) use ($rangeStart, $rangeEnd) {
+                $query->whereBetween('start', [$rangeStart, $rangeEnd])
+                    ->orWhereBetween('end', [$rangeStart, $rangeEnd]);
+            })->get();
 
         // Load exceptions for single-instance deletions
         $exceptionsByActivity = ActivityException::whereIn('activity_id', $fetchedActivities->pluck('id'))
@@ -1689,6 +1696,25 @@ class AgendaController extends Controller
             }
         }
 
+        foreach ($fetchedBookings as $booking) {
+            // Duck-typing booking as an activity for the view
+            $fakeActivity = new Activity();
+            $fakeActivity->id = $booking->id;
+            $fakeActivity->isBooking = true;
+            $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
+            $fakeActivity->content = "Geboekt door " . ($booking->order->first_name.' '.$booking->order->last_name ?? 'Onbekend');
+            $fakeActivity->date_start = $booking->start;
+            $fakeActivity->date_end = $booking->end;
+            $fakeActivity->image = null; // Or accommodation image
+            $fakeActivity->should_highlight = false; // Styling
+            $fakeActivity->lesson_id = null; // Not a lesson
+
+            // Allow admin access
+            $fakeActivity->should_highlight = false; // Or true if you want to highlight rentals
+
+            $activities->push($fakeActivity);
+        }
+
         $activities = $activities->filter(function ($activity) use ($user, $rolesIDList, $canViewAll) {
             $activityRoleIds = !empty($activity->roles)
                 ? array_map('trim', explode(',', $activity->roles))
@@ -1716,8 +1742,8 @@ class AgendaController extends Controller
         $activities = $activities->sortBy('date_start')->values();
 
         $calendar = Calendar::create()
-            ->name("MHG Agenda van ".$user->name)
-            ->description('Jouw persoonlijke MHG Agenda')
+            ->name("NoordenLicht Agenda")
+            ->description('Alle evenementen en boekingen.')
             ->appendProperty(TextProperty::create('CALSCALE', 'GREGORIAN'))
             ->appendProperty(TextProperty::create('METHOD', 'PUBLISH'))
             ->refreshInterval(30);
@@ -1743,9 +1769,109 @@ class AgendaController extends Controller
 
         return response($calendar->get(), 200, [
             'Content-Type' => 'text/calendar; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="mhg-calender.ics"',
+            'Content-Disposition' => 'attachment; filename="noordenlicht-calender.ics"',
         ]);
     }
 
+    public function showBookings(Request $request)
+    {
+        $user = Auth::user();
+        $roles = $user->roles()->orderBy('role', 'asc')->get();
 
+        $monthOffset = $request->query('month', 0);
+        $dayOffset = $request->query('day', 0);
+
+        Carbon::setLocale('nl');
+        $baseDate = Carbon::now();
+        $calculatedDate = $baseDate->copy()->addMonthsNoOverflow($monthOffset);
+        $calculatedDay = $calculatedDate->day;
+        $calculatedMonth = $calculatedDate->month;
+        $calculatedYear = $calculatedDate->year;
+
+        $firstDayOfMonth = Carbon::create($calculatedYear, $calculatedMonth, 1);
+        $daysInMonth = $firstDayOfMonth->daysInMonth;
+        $firstDayOfWeek = ($firstDayOfMonth->dayOfWeek + 6) % 7;
+
+        $monthName = $calculatedDate->translatedFormat('F');
+
+        // For the month view, set the display period for the whole month.
+        $rangeStart = Carbon::create($calculatedYear, $calculatedMonth, 1)->startOfDay();
+        $rangeEnd = Carbon::create($calculatedYear, $calculatedMonth, 1)->endOfMonth()->endOfDay();
+
+        $fetchedBookings = Booking::with('accommodatie')
+            ->where('status', '!=', 'cancelled')
+            ->where('user_id', $user->id)
+            ->where(function ($query) use ($rangeStart, $rangeEnd) {
+                $query->whereBetween('start', [$rangeStart, $rangeEnd])
+                    ->orWhereBetween('end', [$rangeStart, $rangeEnd]);
+            })->get();
+
+        // Expand recurring events—even if the original date is far in the past.
+        $activities = collect();
+
+        foreach ($fetchedBookings as $booking) {
+            // Duck-typing booking as an activity for the view
+            $fakeActivity = new Activity();
+            $fakeActivity->id = $booking->id;
+            $fakeActivity->isBooking = true;
+            $fakeActivity->title = 'Boeking: ' . $booking->accommodatie->name;
+            $fakeActivity->date_start = $booking->start;
+            $fakeActivity->date_end = $booking->end;
+            $fakeActivity->image = null; // Or accommodation image
+            $fakeActivity->should_highlight = false; // Styling
+            $fakeActivity->lesson_id = null; // Not a lesson
+
+            // Allow admin access
+            $fakeActivity->should_highlight = false; // Or true if you want to highlight rentals
+
+            $activities->push($fakeActivity);
+        }
+
+        // After expanding and filtering events…
+        $activities = $activities->sortBy('date_start')->values();
+
+
+        $globalRowTracker = [];
+        $activityPositions = [];
+        foreach ($activities as $activity) {
+            // Get the occurrence start and end (normalized to start/end of day)
+            $startDate = Carbon::parse($activity->date_start)->startOfDay();
+            $endDate = Carbon::parse($activity->date_end)->endOfDay();
+
+            // Build a composite key using the event id and the occurrence date
+            // Using the occurrence date (here formatted as Y-m-d) allows repeated events on different days
+            $compositeKey = $activity->id . '-' . $startDate->format('Y-m-d');
+
+            $position = 0;
+            $conflictFound = true;
+            while ($conflictFound) {
+                // Instead of passing $activity->id, we pass the composite key.
+                $conflictFound = !$this->trackEventPosition($compositeKey, $startDate, $endDate, $position, $globalRowTracker);
+                if ($conflictFound) {
+                    $position++;
+                }
+            }
+            // Use the composite key for storing the calculated position
+            $activityPositions[$compositeKey] = $position;
+        }
+
+
+        return view('settings.bookings.list', [
+            'user' => $user,
+            'roles' => $roles,
+            'day' => $calculatedDay,
+            'month' => $calculatedMonth,
+            'year' => $calculatedYear,
+            'daysInMonth' => $daysInMonth,
+            'firstDayOfWeek' => $firstDayOfWeek,
+            'currentDay' => now()->day,
+            'currentMonth' => now()->month,
+            'currentYear' => now()->year,
+            'monthOffset' => $monthOffset,
+            'dayOffset' => $dayOffset,
+            'monthName' => $monthName,
+            'activities' => $activities,
+            'activityPositions' => $activityPositions,
+        ]);
+    }
 }

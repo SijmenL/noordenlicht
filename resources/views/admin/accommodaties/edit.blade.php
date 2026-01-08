@@ -105,11 +105,54 @@
                         <span class="text-danger small">{{ $message }}</span>
                         @enderror
                     </div>
+                    <div class="mt-4">
+                        <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">date_range</span>Openingstijden
+                        </h2>
+                        <div class="d-flex flex-row-responsive gap-2 justify-content-between align-items-center">
+                            <div class="w-100">
+                                <label for="min_check_in" class="col-md-4 col-form-label ">Openingstijd <span
+                                        class="required-form">*</span></label>
+                                <input id="min_check_in" value="{{ old('min_check_in', $accommodatie->min_check_in) }}" type="time"
+                                       class="form-control @error('date_start') is-invalid @enderror" name="date_start">
+                                @error('min_check_in')
+                                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                                @enderror
+                            </div>
 
-                    <hr>
+                            <div class="w-100">
+                                <label for="max_check_in" class="col-md-4 col-form-label ">Sluitingstijd <span
+                                        class="required-form">*</span></label>
+                                <input id="max_check_in" value="{{ old('max_check_in', $accommodatie->max_check_in) }}" type="time"
+                                       class="form-control @error('max_check_in') is-invalid @enderror" name="date_end">
+                                @error('max_check_in')
+                                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                                @enderror
+                            </div>
+
+                        </div>
+                        <div class="w-100">
+                            <label for="min_duration_minutes" class="col-md-4 col-form-label ">Minimale duur van een
+                                boeking (in minuten) <span
+                                    class="required-form">*</span></label>
+                            <input id="min_duration_minutes" value="{{ old('min_duration_minutes', $accommodatie->min_duration_minutes) }}"
+                                   type="number"
+                                   class="form-control @error('min_duration_minutes') is-invalid @enderror"
+                                   name="date_end">
+                            @error('min_duration_minutes')
+                            <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                            @enderror
+                        </div>
+                    </div>
+
 
                     {{-- PRICE EDITOR --}}
-                    <div class="mb-5 p-3 border rounded-3 bg-white">
+                    <div class="mb-5 mt-5 p-3 border rounded-3 bg-white">
                          <h2 class="flex-row gap-3"><span
                                 class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
                         </h2>
@@ -147,12 +190,12 @@
                         </p>
                     </div>
 
-                    <hr>
+
 
                     {{-- IMAGE CAROUSEL EDITOR --}}
                     <div class="mb-5 p-3 border rounded-3 bg-white">
                         <h2 class="flex-row gap-3"><span
-                                class="material-symbols-rounded me-2">image</span>Afbeeldingencarousel bewerken
+                                class="material-symbols-rounded me-2">image</span>Afbeeldingencarousel
                         </h2>
                         <div class="d-flex align-items-center gap-3 mb-4">
                             <label for="carousel_images_input" class="form-label mb-0">Nieuwe afbeeldingen toevoegen:</label>
@@ -169,11 +212,13 @@
                         </div>
                     </div>
 
-                    <hr>
+
 
                     {{-- ICON/FEATURE EDITOR --}}
                     <div class="mb-5 p-3 border rounded-3 bg-white">
-                        <h2 class="h5 mb-3">Iconen en kenmerken bewerken</h2>
+                        <h2 class="flex-row gap-3"><span
+                                class="material-symbols-rounded me-2">chess_bishop_2</span>Iconen en kenmerken
+                        </h2>
 
                         <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 p-3 border rounded">
                             <div class="flex-grow-1">

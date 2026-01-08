@@ -1,6 +1,15 @@
 @extends('layouts.dashboard')
 
 @section('content')
+
+    @php
+        $categoryNames = [
+            '0' => 'Supplementen bij accommodatie',
+            '1' => 'Evenement ticket',
+            '2' => 'Overnachting',
+        ];
+    @endphp
+
     <div class="container col-md-11">
         <h1>Producten</h1>
 
@@ -54,7 +63,7 @@
                         <tr id="{{ $product->id }}">
                             <th>{{ $product->id }}</th>
                             <th>{{ $product->name }}</th>
-                            <th>{{ $product->type }}</th>
+                            <th>{{ $categoryNames[$product->type] ?? 'Overige' }}</th>
                             <th>
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

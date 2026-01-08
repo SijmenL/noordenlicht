@@ -6,9 +6,15 @@
         <div class="shadow-sm w-100 border-0">
             <div class=" text-center p-5">
                 <span class="material-symbols-rounded text-success" style="font-size: 64px;">check_circle</span>
+                @if($order->created_at !== $order->updated_at)
+                <h1 class="mt-3">Bedankt voor je nabestelling!</h1>
+                @else
                 <h1 class="mt-3">Bedankt voor je bestelling!</h1>
-                <p class="lead text-muted">Je bestelling #{{ $order->order_number }} is succesvol afgerond.</p>
+                @endif
 
+                @if($order->created_at !== $order->updated_at)
+                <p class="lead text-muted">De nabestelling van #{{ $order->order_number }} is succesvol afgerond. We hebben de producten toegevoegd aan je bestelling.</p>
+                @endif
                 <hr class="my-4">
 
                 <div class="row text-start justify-content-center">

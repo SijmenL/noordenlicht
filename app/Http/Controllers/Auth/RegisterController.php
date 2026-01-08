@@ -28,7 +28,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/accommodaties/aanvraagformulier/success';
 
     /**
      * Create a new controller instance.
@@ -52,6 +52,14 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'sex' => 'string|nullable',
+            'birth_date' => 'date|nullable',
+            'street' => 'string',
+            'postal_code' => 'string',
+            'city' => 'string',
+            'phone' => 'string',
+            'website' => 'string',
+            'praktijknaam' => 'string',
         ]);
     }
 
@@ -67,6 +75,14 @@ class RegisterController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'sex' => $data['sex'],
+            'birth_date' => $data['birth_date'],
+            'street' => $data['street'],
+            'postal_code' => $data['postal_code'],
+            'city' => $data['city'],
+            'phone' => $data['phone'],
+            'website' => $data['website'],
+            'praktijknaam' => $data['praktijknaam'],
         ]);
     }
 }

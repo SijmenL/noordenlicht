@@ -74,10 +74,7 @@
                                 <span style="display: none" class="loading-text" role="status">Laden...</span>
                             </button>
 
-                            <a href="{{ route('register') }}" class="btn btn-secondary text-white">
-                                Registreren
-                            </a>
-                            <a href="{{ route('home') }}" class="btn btn-outline-dark">
+                            <a href="{{ route('home') }}" class="btn btn-light">
                                 Annuleren
                             </a>
                         </div>
