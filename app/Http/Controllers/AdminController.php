@@ -28,10 +28,11 @@ class AdminController extends Controller
 
         $contact = Contact::where('done', false)->count();
         $orders = Order::where('status', 'paid')->count();
+        $signup = User::where('allow_booking', false)->count();
 
-        $totalNotifications = $contact + $orders;
+        $totalNotifications = $contact + $orders + $signup;
 
-        return view('admin.admin', ['user' => $user, 'roles' => $roles, 'totalNotifications' => $totalNotifications, 'contact' => $contact, 'orders' => $orders]);
+        return view('admin.admin', ['user' => $user, 'roles' => $roles, 'totalNotifications' => $totalNotifications, 'contact' => $contact, 'orders' => $orders, 'signup' => $signup]);
     }
 
     public function notifications()

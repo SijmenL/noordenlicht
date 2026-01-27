@@ -827,6 +827,14 @@ class AgendaController extends Controller
             ->where('public', "0")
             ->get();
 
+        $fetchedBookings = Booking::with('accommodatie')
+            ->where('status', '!=', 'cancelled')
+            ->where('public', '=', '1')
+            ->where(function ($query) use ($rangeStart, $rangeEnd) {
+                $query->whereBetween('start', [$rangeStart, $rangeEnd])
+                    ->orWhereBetween('end', [$rangeStart, $rangeEnd]);
+            })->get();
+
         // Load exceptions for single-instance deletions
         $exceptionsByActivity = ActivityException::whereIn('activity_id', $fetchedActivities->pluck('id'))
             ->get()
@@ -862,6 +870,26 @@ class AgendaController extends Controller
 
                 $activities->push($occurrence);
             }
+        }
+
+        foreach ($fetchedBookings as $booking) {
+                     // Duck-typing booking as an activity for the view
+            $fakeActivity = new Activity();
+            $fakeActivity->id = $booking->id;
+            $fakeActivity->isBooking = true;
+            $fakeActivity->title = "Activiteit door " . $booking->user->praktijknaam;
+            $fakeActivity->content = $booking->activity_description;
+            $fakeActivity->date_start = $booking->start;
+            $fakeActivity->date_end = $booking->end;
+            $fakeActivity->image = null; // Or accommodation image
+            $fakeActivity->should_highlight = false; // Styling
+            $fakeActivity->lesson_id = null; // Not a lesson
+            $fakeActivity->booking = true; // Not a lesson
+
+            // Allow admin access
+            $fakeActivity->should_highlight = false; // Or true if you want to highlight rentals
+
+            $activities->push($fakeActivity);
         }
 
         $globalRowTracker = [];
@@ -1048,6 +1076,7 @@ class AgendaController extends Controller
         $limit = $request->query('limit', null);
         $activities = $this->fetchAndProcessActivities($monthOffset, $limit, $request->query('dateStart'));
         $agendaViewData = $this->getAgendaViewData($monthOffset, $limit);
+
 
         return view('agenda.public.schedule', ['activities' => $activities] + $agendaViewData);
     }
@@ -1341,7 +1370,7 @@ class AgendaController extends Controller
 
         $dateStart = $request->query('startDate');
 
-        if (!$dateStart || !$activity->recurrence_rule) {
+        if (!$dateStart) {
             return redirect()->route('agenda.public.schedule')->with('error', 'Activiteit niet gevonden.');
         }
 
@@ -1401,6 +1430,31 @@ class AgendaController extends Controller
         }
 
         return view('agenda.public.event', [
+            'activity' => $activity,
+            'month' => $month,
+            'view' => $view
+        ]);
+    }
+
+    public function agendaBookingPublic(Request $request, $id)
+    {
+        $month = $request->query('month', '0');
+        $view = $request->query('view', 'month');
+
+        // Fetch the public activity by id
+        $activity = Booking::where('id', $id)
+            ->where('public', "1")
+            ->first();
+
+        if (!$activity) {
+            return view('agenda.public.booking', [
+                'activity' => null,
+                'month' => $month,
+                'view' => $view
+            ]);
+        }
+
+        return view('agenda.public.booking', [
             'activity' => $activity,
             'month' => $month,
             'view' => $view

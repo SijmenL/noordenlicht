@@ -60,7 +60,7 @@
                 </div>
 
 
-                <div class="d-flex flex-column flex-md-row gap-5">
+                <div class="d-flex flex-row-responsive gap-5">
                     <!-- Left column (carousel) -->
                     <div class="w-100">
                         <div class="sticky-top" style="top: 120px;"> <!-- adjust for navbar height -->

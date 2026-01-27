@@ -94,8 +94,10 @@
                                     <div
                                         class="rounded-3 bg-light d-flex align-items-center justify-content-center ms-2 overflow-hidden"
                                         style="width: 50px; height: 50px;">
+                                        @if($item->image !== "files/products/images/")
                                         <img src="{{ asset($item->image) }}" alt="{{ $item->name }}"
                                              style="width: 100%; height: 100%; object-fit: cover;">
+                                        @endif
                                     </div>
                                     <div>
                                         <h6 class="my-0 fw-bold text-dark">{{ $item->name }}</h6>

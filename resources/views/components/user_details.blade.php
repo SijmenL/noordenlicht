@@ -33,14 +33,18 @@
         @if(!in_array('parktijknaam', $hide))
             <tr>
                 <th>Website</th>
-                <td><a href="{{ $user->website }}" target="_blank">{{ $user->website }}</a></td>
+                <td>
+                    <a href="{{ Str::startsWith($user->website, ['http://', 'https://']) ? $user->website : 'https://' . $user->website }}" target="_blank">
+                        {{ $user->website }}
+                    </a>
+                </td>
             </tr>
         @endif
 
         @if(!in_array('sex', $hide))
-            @if(!isset($user->birth_date))
+            @if(!isset($user->sex))
                 <tr>
-                    <th>Geboortedatum</th>
+                    <th>Geslacht</th>
                     <td>
                         <div class="alert alert-warning d-flex align-items-center" role="alert">
                             <span class="material-symbols-rounded me-2">frame_person_off</span>Geen geslacht gevonden...

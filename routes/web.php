@@ -14,6 +14,7 @@ use App\Http\Controllers\PriceController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\LapostaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +40,7 @@ Route::get('/nieuws/', [NewsController::class, 'viewNewsPage'])->name('news.list
 Route::get('/agenda/maand', [AgendaController::class, 'agendaMonthPublic'])->name('agenda.public.month');
 Route::get('/agenda/overzicht', [AgendaController::class, 'agendaSchedulePublic'])->name('agenda.public.schedule');
 Route::get('/agenda/activiteit/{id}', [AgendaController::class, 'agendaActivityPublic'])->name('agenda.public.activity');
+Route::get('/agenda/boeking/{id}', [AgendaController::class, 'agendaBookingPublic'])->name('agenda.public.booking');
 
 Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact');
 Route::post('/contact', [NonLoggedInController::class, 'contactSubmit'])->name('contact.submit');
@@ -79,6 +81,10 @@ Route::get('/tickets/stream/{ticket_uuid}/', [TicketController::class, 'streamPd
 Route::post('/webhooks/mollie', [OrderController::class, 'handleWebhook'])->name('webhooks.mollie');
 
 Route::post('/user-search', [ForumController::class, 'searchUser'])->name('search-user');
+
+// Public Newsletter Archive
+Route::get('/nieuwsbrieven', [App\Http\Controllers\LapostaController::class, 'publicList'])->name('newsletters');
+Route::post('/nieuwsbrieven/abonneer', [App\Http\Controllers\LapostaController::class, 'subscribe'])->name('newsletters.subscribe');
 
 // Bookings
 
@@ -130,6 +136,11 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
 
     Route::get('/dashboard/nieuws/nieuw-nieuwtje', [AdminController::class, 'newNews'])->name('admin.news.new');
     Route::post('/dashboard/nieuws/nieuw-nieuwtje', [AdminController::class, 'newsCreate'])->name('admin.news.new.create');
+
+    // Laposta
+
+    Route::get('/dashboard/nieuwsbrieven/refresh', [LapostaController::class, 'refresh'])->name('admin.laposta.refresh');
+    Route::get('/dashboard/nieuwsbrieven', [LapostaController::class, 'campaigns'])->name('admin.laposta.campaigns');
 
     Route::get('/dashboard/mail', [AdminController::class, 'notifications'])->name('admin.notifications');
     Route::post('/dashboard/mail', [AdminController::class, 'notificationsSend'])->name('admin.notifications.send');

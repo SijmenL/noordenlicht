@@ -9,7 +9,8 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item" aria-current="page"><a href="{{route('admin')}}">Dashboard</a></li>
-                    <li class="breadcrumb-item" aria-current="page"><a href="{{route('admin.bookings')}}">Boekingen</a></li>
+                    <li class="breadcrumb-item" aria-current="page"><a href="{{route('admin.bookings')}}">Boekingen</a>
+                    </li>
                     <li class="breadcrumb-item active" aria-current="page">#{{ $booking->id }}</li>
                 </ol>
             </nav>
@@ -62,7 +63,22 @@
                             <span class="fw-bold">Opmerkingen:</span>
                             <span>{{ $booking->comment }}</span>
                         </div>
+
                     </div>
+                        @if($booking->public == "1")
+                            <div class="p-2 bg-light rounded-2 m-1">
+                                <div class="d-flex  flex-column border-bottom py-2">
+                                    <span class="fw-bold">Openbare beschrijving:</span>
+                                    <div>{!! $booking->activity_description !!}</div>
+                                </div>
+                                <div class="d-flex flex-column border-bottom py-2">
+                                    <span class="fw-bold">Openbare link:</span>
+                                    <a href="{{ Str::startsWith($booking->external_link, ['http://', 'https://']) ? $booking->external_link : 'https://' . $booking->external_link }}" target="_blank">
+                                        {{ $booking->external_link }}
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
 
                     @if($booking->order->items->count() > 1)
                         <div class="mt-3">
@@ -171,7 +187,8 @@
                     <p class="mb-1"><strong>Postcode /
                             Stad:</strong> {{ $booking->user->zipcode ?? ($booking->order->zipcode ?? '-') }} {{ $booking->user->city ?? ($booking->order->city ?? '') }}
                     </p>
-                    <a class="btn btn-outline-primary" href="{{ route('admin.orders.details', $booking->order_id) }}">Bekijk bestelling</a>
+                    <a class="btn btn-outline-primary" href="{{ route('admin.orders.details', $booking->order_id) }}">Bekijk
+                        bestelling</a>
                 </div>
             </div>
 

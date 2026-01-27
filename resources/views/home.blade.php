@@ -75,34 +75,34 @@
                                     </a>
                                 </div>
                             @endforeach
-                                <script>
-                                    document.addEventListener('DOMContentLoaded', () => {
-                                        const marqueeTrack = document.querySelector('.location-marquee-track');
-                                        const marqueeContainer = document.querySelector('.marquee');
+                            <script>
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    const marqueeTrack = document.querySelector('.location-marquee-track');
+                                    const marqueeContainer = document.querySelector('.marquee');
 
-                                        const cards = Array.from(marqueeTrack.children);
-                                        const containerWidth = marqueeContainer.offsetWidth;
+                                    const cards = Array.from(marqueeTrack.children);
+                                    const containerWidth = marqueeContainer.offsetWidth;
 
-                                        let totalWidth = cards.reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
+                                    let totalWidth = cards.reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
 
-                                        // duplicate only if totalWidth < containerWidth
-                                        let clones = [];
-                                        while (totalWidth < containerWidth * 2) { // duplicate enough to cover 2x container for smooth scroll
-                                            cards.forEach(card => {
-                                                const clone = card.cloneNode(true);
-                                                marqueeTrack.appendChild(clone);
-                                                clones.push(clone);
-                                            });
-                                            totalWidth = Array.from(marqueeTrack.children).reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
-                                        }
-                                    });
+                                    // duplicate only if totalWidth < containerWidth
+                                    let clones = [];
+                                    while (totalWidth < containerWidth * 2) { // duplicate enough to cover 2x container for smooth scroll
+                                        cards.forEach(card => {
+                                            const clone = card.cloneNode(true);
+                                            marqueeTrack.appendChild(clone);
+                                            clones.push(clone);
+                                        });
+                                        totalWidth = Array.from(marqueeTrack.children).reduce((sum, card) => sum + card.offsetWidth + parseInt(getComputedStyle(card).marginRight), 0);
+                                    }
+                                });
 
-                                </script>
+                            </script>
                         @endif
                     </div>
                 </div>
 
-                <a href="{{ route('accommodaties') }}" class="btn btn-secondary text-white">Bekijk Alles</a>
+                <a href="{{ route('accommodaties') }}" class="btn btn-secondary text-white btn-lg rounded-pill shadow">Bekijk Alles</a>
             </div>
         </div>
 
@@ -114,7 +114,7 @@
                     <h1 class="text-center">Nieuwtjes</h1>
 
                     <div class="d-flex flex-column gap-4">
-                        <a href=""
+                        <a href="{{ route('newsletters') }}"
                            class="text-decoration-none news-anchor p-3 rounded-5 d-flex flex-row justify-content-between align-items-center"
                            style="background-image: url('{{ asset('img/logo/doodles/Treewoman2a.webp') }}'); background-repeat: no-repeat; background-size: cover; background-position: top">
                             <div class="d-flex flex-row gap-4 align-items-center">
@@ -204,7 +204,11 @@
                         @endif
 
                         <a
-                            href="{{ route('agenda.public.activity', $linkParams) }}"
+                            @if($activity->booking)
+                                href="{{ route('agenda.public.booking', $linkParams) }}"
+                            @else
+                                href="{{ route('agenda.public.activity', $linkParams) }}"
+                            @endif
                             class="text-decoration-none"
                             style="color: unset; cursor: pointer">
                             <div class="d-flex flex-row">
@@ -255,6 +259,9 @@
 
             </div>
 
+            <a href="{{ route('agenda.public.month') }}" class="mt-4 btn btn-primary btn-lg rounded-pill shadow">Bekijk Alles</a>
+
+
         </div>
 
 
@@ -295,7 +302,8 @@
                         directe
                         aanspreekpunt en helpt je graag waar nodig..</p>
                     <div class="d-flex align-items-center justify-content-center">
-                        <a class="btn btn-secondary text-white">Lees Verder</a>
+                        <a class="btn btn-secondary text-white btn-lg rounded-pill shadow">Lees Verder</a>
+
                     </div>
                 </div>
 
@@ -349,7 +357,8 @@
                         </ul>
                     </strong>
                     <div class="d-flex align-items-center justify-content-center">
-                        <a class="btn btn-secondary text-white">Bekijk Alles</a>
+                        <a class="btn btn-secondary btn-lg text-white rounded-pill shadow">Bekijk Alles</a>
+
                     </div>
                 </div>
             </div>
@@ -399,9 +408,140 @@
                     <span class="material-symbols-rounded me-2">unsubscribe</span>Geen nieuws gevonden...
                 </div>
             @endif
-
-            <a href="{{ route('news.list') }}" class="btn btn-primary">Lees het hele Blog</a>
+            <a href="{{ route('news.list') }}" class="btn btn-primary btn-lg rounded-pill shadow">Lees het hele Blog</a>
         </div>
     </div>
 
+    <!-- Custom Newsletter Popup -->
+    <div id="newsletterPopup" class="popup" style="display: none; z-index: 99999; top: 0; left: 0; position: fixed; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); align-items: center; justify-content: center;">
+        <div class="popup-body" style="position: relative; width: clamp(300px, 90%, 800px); max-height: 90vh; margin: 0; background: white; border-radius: 12px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);">
+
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom w-100">
+                <h5 class="mb-0 fw-bold">Blijf op de hoogte!</h5>
+                <button type="button" class="btn btn-outline-danger d-flex align-items-center" id="closePopupBtn">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-4 d-flex flex-column flex-md-row gap-4 align-items-center justify-content-center" style="flex-grow: 1;">
+
+                <!-- Optional Image (visible on md+) -->
+                <div class="d-none d-md-block" style="flex: 1; text-align: center;">
+                    <img src="{{ asset('img/logo/logo zonder tekst.webp') }}" style="width: 100%; max-width: 300px; height: auto; object-fit: contain;" alt="Nieuwsbrief">
+                </div>
+
+                <!-- Form -->
+                <div style="flex: 1; width: 100%;">
+                    <div class="text-center">
+                        <span class="material-symbols-rounded text-primary mb-2" style="font-size: 4rem;">mail</span>
+                        <p class="mb-4 text-muted">Meld je aan voor onze nieuwsbrief en mis geen enkel evenement of update van NoordenLicht.</p>
+                    </div>
+
+                    <form id="newsletter-form">
+                        <div class="mb-3">
+                            <input type="email" class="form-control form-control-lg text-center" id="newsletter-email" name="email" placeholder="Jouw e-mailadres" required>
+                        </div>
+                        <div id="newsletter-message" class="mb-3 d-none text-center"></div>
+                        <button type="submit" class="btn btn-primary rounded-pill w-100 btn-lg">Aanmelden</button>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted" style="cursor: pointer;" id="dismissPopupLink">Nee bedankt, ik kijk liever gewoon rond.</small>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Popup Elements
+            const popup = document.getElementById('newsletterPopup');
+            const closeBtn = document.getElementById('closePopupBtn');
+            const dismissLink = document.getElementById('dismissPopupLink');
+
+            // Form Elements
+            const form = document.getElementById('newsletter-form');
+            const messageDiv = document.getElementById('newsletter-message');
+            const emailInput = document.getElementById('newsletter-email');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            function showPopup() {
+                popup.style.display = 'flex'; // Use flex to enable centering
+            }
+
+            function closePopup() {
+                popup.style.display = 'none';
+                localStorage.setItem('newsletter_popup_seen', 'true');
+            }
+
+            // Check if user has already seen or subscribed
+            const hasSeenPopup = localStorage.getItem('newsletter_popup_seen');
+            const hasSubscribed = localStorage.getItem('newsletter_subscribed');
+
+            if (!hasSeenPopup && !hasSubscribed) {
+                setTimeout(showPopup, 10000); // 10 seconds
+            }
+
+            // Close listeners
+            closeBtn.addEventListener('click', closePopup);
+            dismissLink.addEventListener('click', closePopup);
+
+            // Close on click outside (optional)
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    closePopup();
+                }
+            });
+
+            // Handle Form Submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Disable button
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Even geduld...';
+                messageDiv.classList.add('d-none');
+                messageDiv.className = 'mb-3 d-none text-center'; // reset classes
+
+                const email = emailInput.value;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch("{{ route('newsletters.subscribe') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ email: email })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        messageDiv.classList.remove('d-none');
+                        if (data.success) {
+                            messageDiv.classList.add('text-success');
+                            messageDiv.innerText = data.message;
+                            localStorage.setItem('newsletter_subscribed', 'true');
+                            form.reset();
+                            setTimeout(closePopup, 3000);
+                        } else {
+                            messageDiv.classList.add('text-danger');
+                            messageDiv.innerText = data.message || 'Er ging iets mis.';
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = 'Aanmelden';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        messageDiv.classList.remove('d-none');
+                        messageDiv.classList.add('text-danger');
+                        messageDiv.innerText = 'Er is een fout opgetreden. Probeer het later opnieuw.';
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Aanmelden';
+                    });
+            });
+        });
+    </script>
 @endsection

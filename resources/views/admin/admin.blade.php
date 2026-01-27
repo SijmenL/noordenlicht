@@ -34,6 +34,9 @@
                 @if($orders > 0)
                     <li>{{$orders}} @if($orders !== 1) openstaande bestellingen @else openstaande bestelling @endif</li>
                 @endif
+                    @if($signup > 0)
+                        <li>{{$signup}} @if($signup !== 1) nieuwe aanmeldingen om een accommodate te huren @else nieuwe aanmelding om een accommodate te huren @endif</li>
+                    @endif
             </ul>
         </div>
         @endif

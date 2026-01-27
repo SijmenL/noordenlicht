@@ -166,7 +166,11 @@
                                 @endphp
 
                                 <a
-                                    href="{{ route('agenda.public.activity', $linkParams) }}"
+                                    @if($activity->booking)
+                                        href="{{ route('agenda.public.booking', $linkParams) }}"
+                                    @else
+                                        href="{{ route('agenda.public.activity', $linkParams) }}"
+                                    @endif
                                    style="top: {{ 40 + ($activityPositions[$activity->id] ?? 0) * 35 }}px;"
 
                                    data-event-id="{{ $activity->id }}"

@@ -8,7 +8,7 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin') }}">Dashboard</a></li>
                 <li class="breadcrumb-item" aria-current="page"><a
-                        href="{{route('admin.signup')}}">Aanmeldingen</a></li>
+                        href="{{route('admin.signup')}}">Aanvragen</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Details @if($account !== null) {{$account->name}} {{$account->infix}} {{$account->last_name}}@endif</li>
             </ol>
         </nav>

@@ -21,6 +21,11 @@ return [
         'scheme' => 'https',
     ],
 
+    'laposta' => [
+        'key' => env('LAPOSTA_API_KEY'),
+        'list' => env('LAPOSTA_LIST_ID'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

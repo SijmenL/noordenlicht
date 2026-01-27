@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@include('partials.editor')
+@vite(['resources/js/texteditor.js', 'resources/js/search-user.js', 'resources/css/texteditor.css'])
 
 @section('content')
 
@@ -6,21 +8,40 @@
          style="position: relative; margin-top: 0 !important; padding-top: 50px; padding-bottom: 50px; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
 
         <div class="container">
+
+
             <h1 class="fw-bold mb-4 text-center">Boek je verblijf: {{ $accommodatie->name }}</h1>
+            @if(Session::has('error'))
+                <div class="alert alert-danger" role="alert">
+                    {{ session('error') }}
+                </div>
+            @endif
+            @if(Session::has('success'))
+                <div class="alert alert-success" role="alert">
+                    {{ session('success') }}
+                </div>
+            @endif
 
             <div class="row justify-content-center mb-5">
                 <div class="col-md-10 col-lg-8">
                     <div class="position-relative d-flex justify-content-between align-items-center">
-                        <div class="position-absolute w-100 start-0 translate-middle-y bg-secondary-subtle" style="height: 4px; top: 30%; z-index: 0;"></div>
-                        <div class="position-absolute start-0 translate-middle-y bg-primary transition-width" style="height: 4px; top: 30%; z-index: 0; width: 0%;" id="progress-line"></div>
+                        <div class="position-absolute w-100 start-0 translate-middle-y bg-secondary-subtle"
+                             style="height: 4px; top: 30%; z-index: 0;"></div>
+                        <div class="position-absolute start-0 translate-middle-y bg-primary transition-width"
+                             style="height: 4px; top: 30%; z-index: 0; width: 0%;" id="progress-line"></div>
 
                         @foreach(['Datum', 'Tijd', 'Extra\'s', 'Details', 'Overzicht', 'Betalen'] as $index => $label)
                             {{-- Hide 'Details' (form step) circle initially, show via JS if needed, or keep all valid --}}
                             {{-- Adjusted the step count to include the new potential form step --}}
-                            <div class="d-flex flex-column align-items-center position-relative z-1 {{ $label == 'Details' ? 'step-indicator-details d-none' : '' }}" id="step-indicator-container-{{ $index+1 }}">
-                                <div class="step-circle bg-{{ $index == 0 ? 'primary' : 'white' }} text-{{ $index == 0 ? 'white' : 'secondary' }} d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-sm"
-                                     style="width: 40px; height: 40px;" id="step-circle-{{ $index+1 }}">{{ $index+1 }}</div>
-                                <span class="small mt-2 bg-light px-2 {{ $index == 0 ? 'fw-bold' : 'text-muted' }}">{{ $label }}</span>
+                            <div
+                                class="d-flex flex-column align-items-center position-relative z-1 {{ $label == 'Details' ? 'step-indicator-details d-none' : '' }}"
+                                id="step-indicator-container-{{ $index+1 }}">
+                                <div
+                                    class="step-circle bg-{{ $index == 0 ? 'primary' : 'white' }} text-{{ $index == 0 ? 'white' : 'secondary' }} d-flex justify-content-center align-items-center rounded-circle fw-bold shadow-sm"
+                                    style="width: 40px; height: 40px;"
+                                    id="step-circle-{{ $index+1 }}">{{ $index+1 }}</div>
+                                <span
+                                    class="small mt-2 bg-light px-2 {{ $index == 0 ? 'fw-bold' : 'text-muted' }}">{{ $label }}</span>
                             </div>
                         @endforeach
                     </div>
@@ -44,18 +65,31 @@
                             <h3 class="h4 fw-bold mb-4 text-primary">Kies een datum</h3>
 
                             <div class="calendar-wrapper position-relative">
-                                <div id="calendar-loading" class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex justify-content-center align-items-center" style="z-index: 50; display: none; pointer-events: none">
+                                <div id="calendar-loading"
+                                     class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex justify-content-center align-items-center"
+                                     style="z-index: 50; display: none; pointer-events: none">
                                     <div class="spinner-border text-primary" role="status"></div>
                                 </div>
 
                                 <div id="calendar-view">
-                                    <div class="d-flex justify-content-between align-items-center mb-4 bg-light p-3 rounded">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="prevMonth()">Vorige</button>
+                                    <div
+                                        class="d-flex justify-content-between align-items-center mb-4 bg-light p-3 rounded">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                onclick="prevMonth()">Vorige
+                                        </button>
                                         <h4 class="mb-0 fw-bold text-uppercase" id="calendar-month-year"></h4>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="nextMonth()">Volgende</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                onclick="nextMonth()">Volgende
+                                        </button>
                                     </div>
                                     <div class="d-grid grid-cols-7 gap-2 mb-2 text-center fw-bold text-muted small">
-                                        <div>MA</div><div>DI</div><div>WO</div><div>DO</div><div>VR</div><div>ZA</div><div>ZO</div>
+                                        <div>MA</div>
+                                        <div>DI</div>
+                                        <div>WO</div>
+                                        <div>DO</div>
+                                        <div>VR</div>
+                                        <div>ZA</div>
+                                        <div>ZO</div>
                                     </div>
                                     <div id="calendar-grid" class="d-grid grid-cols-7 gap-2"></div>
                                 </div>
@@ -69,22 +103,36 @@
                             </div>
 
                             <div class="d-flex align-items-center justify-content-between mb-3">
-                                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> Sleep om te selecteren.</p>
+                                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> Sleep om te
+                                    selecteren.</p>
                                 <span class="badge bg-light text-secondary border d-md-none">Scroll rechts &rarr;</span>
                             </div>
 
-                            <div class="timeline-wrapper bg-light border rounded position-relative" style="height: 400px; overflow: hidden; display: flex; flex-direction: column;">
-                                <div class="timeline-scroll-area flex-grow-1 position-relative" id="timeline-container" style="overflow-y: auto; user-select: none; background: white; -webkit-overflow-scrolling: touch;">
-                                    <div class="timeline-labels position-absolute top-0 start-0 border-end bg-white" style="width: 60px; z-index: 10;"></div>
-                                    <div class="timeline-grid position-absolute top-0 start-0 w-100 ps-5" id="timeline-grid" style="padding-left: 60px !important;">
-                                        <div id="timeline-lines-layer" class="position-absolute top-0 start-0 w-100 h-100"></div>
-                                        <div id="timeline-events-layer" class="position-absolute top-0 start-0 w-100 pointer-events-none"></div>
-                                        <div id="timeline-selection" class="timeline-selection position-absolute bg-primary bg-opacity-25 border border-primary text-center text-primary fw-bold d-flex align-items-center justify-content-center" style="display: none !important; left: 60px; right: 0; pointer-events: none; z-index: 20;">
+                            <div class="timeline-wrapper bg-light border rounded position-relative"
+                                 style="height: 400px; overflow: hidden; display: flex; flex-direction: column;">
+                                <div class="timeline-scroll-area flex-grow-1 position-relative" id="timeline-container"
+                                     style="overflow-y: auto; user-select: none; background: white; -webkit-overflow-scrolling: touch;">
+                                    <div class="timeline-labels position-absolute top-0 start-0 border-end bg-white"
+                                         style="width: 60px; z-index: 10;"></div>
+                                    <div class="timeline-grid position-absolute top-0 start-0 w-100 ps-5"
+                                         id="timeline-grid" style="padding-left: 60px !important;">
+                                        <div id="timeline-lines-layer"
+                                             class="position-absolute top-0 start-0 w-100 h-100"></div>
+                                        <div id="timeline-events-layer"
+                                             class="position-absolute top-0 start-0 w-100 pointer-events-none"></div>
+                                        <div id="timeline-selection"
+                                             class="timeline-selection position-absolute bg-primary bg-opacity-25 border border-primary text-center text-primary fw-bold d-flex align-items-center justify-content-center"
+                                             style="display: none !important; left: 60px; right: 0; pointer-events: none; z-index: 20;">
                                             <span class="small bg-white px-2 rounded shadow-sm">Selectie</span>
                                         </div>
-                                        <div id="timeline-interaction-layer" class="position-absolute top-0 start-0" style="left: 60px; width: calc(85% - 60px); cursor: crosshair; z-index: 30; touch-action: none;"></div>
-                                        <div class="position-absolute top-0 end-0 h-100 bg-secondary bg-opacity-10 border-start d-flex justify-content-center d-md-none" style="width: 15%; z-index: 25;">
-                                            <div class="mt-4 text-muted opacity-50 small" style="writing-mode: vertical-rl; text-orientation: mixed;">SCROLL</div>
+                                        <div id="timeline-interaction-layer" class="position-absolute top-0 start-0"
+                                             style="left: 60px; width: calc(85% - 60px); cursor: crosshair; z-index: 30; touch-action: none;"></div>
+                                        <div
+                                            class="position-absolute top-0 end-0 h-100 bg-secondary bg-opacity-10 border-start d-flex justify-content-center d-md-none"
+                                            style="width: 15%; z-index: 25;">
+                                            <div class="mt-4 text-muted opacity-50 small"
+                                                 style="writing-mode: vertical-rl; text-orientation: mixed;">SCROLL
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -93,7 +141,8 @@
                             <div class="row g-4 mt-3">
                                 <div class="col-6">
                                     <label class="form-label fw-bold">Start</label>
-                                    <input type="time" class="form-control" id="time-start" onchange="manualTimeChange()">
+                                    <input type="time" class="form-control" id="time-start"
+                                           onchange="manualTimeChange()">
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label fw-bold">Eind</label>
@@ -102,8 +151,11 @@
                             </div>
 
                             <div class="d-flex justify-content-between mt-5">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(1)">Vorige</button>
-                                <button type="button" class="btn btn-primary rounded-pill px-5" id="btn-confirm-date" disabled onclick="confirmDate()">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                                        onclick="goToStep(1)">Vorige
+                                </button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5" id="btn-confirm-date"
+                                        disabled onclick="confirmDate()">
                                     Bevestig Periode
                                 </button>
                             </div>
@@ -115,31 +167,49 @@
                             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                                 @foreach($supplements as $supplement)
                                     <div class="col">
-                                        <div class="shop-tile h-100 d-flex flex-column bg-white overflow-hidden border rounded-4 position-relative group-hover-trigger">
+                                        <div
+                                            class="shop-tile h-100 d-flex flex-column bg-white overflow-hidden border rounded-4 position-relative group-hover-trigger">
                                             @if($supplement->image)
-                                                <div class="tile-image-wrapper" style="height: 180px; cursor: pointer;" onclick="showProductDetails({{ $supplement->id }})">
-                                                    <img src="{{ asset('/files/products/images/'.$supplement->image) }}" class="w-100 h-100 object-fit-cover">
+                                                <div class="tile-image-wrapper" style="height: 180px; cursor: pointer;"
+                                                     onclick="showProductDetails({{ $supplement->id }})">
+                                                    <img src="{{ asset('/files/products/images/'.$supplement->image) }}"
+                                                         class="w-100 h-100 object-fit-cover">
                                                 </div>
                                             @endif
 
                                             <div class="p-4 d-flex flex-column flex-grow-1">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <h5 class="fw-bold mb-0" style="cursor: pointer;" onclick="showProductDetails({{ $supplement->id }})">{{ $supplement->name }}</h5>
-                                                    <button type="button" class="btn btn-sm text-muted p-0 ms-2" onclick="showProductDetails({{ $supplement->id }})" title="Meer informatie">
+                                                    <h5 class="fw-bold mb-0" style="cursor: pointer;"
+                                                        onclick="showProductDetails({{ $supplement->id }})">{{ $supplement->name }}</h5>
+                                                    <button type="button" class="btn btn-sm text-muted p-0 ms-2"
+                                                            onclick="showProductDetails({{ $supplement->id }})"
+                                                            title="Meer informatie">
                                                         <span class="material-symbols-rounded">info</span>
                                                     </button>
                                                 </div>
 
-                                                <p class="small text-muted mb-4" onclick="showProductDetails({{ $supplement->id }})" style="cursor: pointer;">
+                                                <p class="small text-muted mb-4"
+                                                   onclick="showProductDetails({{ $supplement->id }})"
+                                                   style="cursor: pointer;">
                                                     {{ \Illuminate\Support\Str::limit(strip_tags($supplement->description), 60) }}
                                                 </p>
 
                                                 <div class="mt-auto d-flex justify-content-between align-items-center">
-                                                    <span class="fw-bold text-success">€ {{ number_format($supplement->calculated_price, 2, ',', '.') }}</span>
+                                                    <span
+                                                        class="fw-bold text-success">€ {{ number_format($supplement->calculated_price, 2, ',', '.') }}</span>
                                                     <div class="d-flex align-items-center gap-2">
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" style="width:32px;height:32px" onclick="changeQty({{ $supplement->id }}, -1)">-</button>
-                                                        <span class="fw-bold px-2" id="qty-{{ $supplement->id }}" data-price="{{ $supplement->calculated_price }}">0</span>
-                                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" style="width:32px;height:32px" onclick="changeQty({{ $supplement->id }}, 1)">+</button>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary rounded-circle"
+                                                                style="width:32px;height:32px"
+                                                                onclick="changeQty({{ $supplement->id }}, -1)">-
+                                                        </button>
+                                                        <span class="fw-bold px-2" id="qty-{{ $supplement->id }}"
+                                                              data-price="{{ $supplement->calculated_price }}">0</span>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-primary rounded-circle"
+                                                                style="width:32px;height:32px"
+                                                                onclick="changeQty({{ $supplement->id }}, 1)">+
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -148,23 +218,32 @@
                                 @endforeach
                             </div>
                             <div class="d-flex justify-content-between mt-5">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(2)">Vorige</button>
-                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="checkFormsAndProceed()">Volgende</button>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                                        onclick="goToStep(2)">Vorige
+                                </button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5"
+                                        onclick="checkFormsAndProceed()">Volgende
+                                </button>
                             </div>
                         </div>
 
                         {{-- Step 3.5: Dynamic Forms for Extras --}}
                         <div id="step-content-forms" class="step-content p-4 p-md-5 d-none">
                             <h3 class="h4 fw-bold mb-4 text-primary">Extra informatie</h3>
-                            <p class="text-muted mb-4">Voor enkele gekozen opties hebben we nog wat extra gegevens nodig.</p>
+                            <p class="text-muted mb-4">Voor enkele gekozen opties hebben we nog wat extra gegevens
+                                nodig.</p>
 
                             <div id="dynamic-forms-container">
                                 {{-- Forms will be injected here via JS --}}
                             </div>
 
                             <div class="d-flex justify-content-between mt-5">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(3)">Vorige</button>
-                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="validateFormsAndProceed()">Volgende</button>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                                        onclick="goToStep(3)">Vorige
+                                </button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5"
+                                        onclick="validateFormsAndProceed()">Volgende
+                                </button>
                             </div>
                         </div>
 
@@ -173,33 +252,84 @@
                             <h3 class="h4 fw-bold mb-4 text-primary">Overzicht</h3>
                             <div class="bg-light rounded-4 p-4 mb-4 border">
                                 <div class="d-flex justify-content-between mb-3 border-bottom pb-3">
-                                    <div><h5 class="fw-bold">{{ $accommodatie->name }}</h5><p class="text-muted small" id="overview-dates">...</p></div>
-                                    <div class="text-end"><div class="fw-bold fs-5" id="overview-acco-total">€ 0,00</div><div class="small text-muted" id="overview-hours"></div></div>
+                                    <div><h5 class="fw-bold">{{ $accommodatie->name }}</h5>
+                                        <p class="text-muted small" id="overview-dates">...</p></div>
+                                    <div class="text-end">
+                                        <div class="fw-bold fs-5" id="overview-acco-total">€ 0,00</div>
+                                        <div class="small text-muted" id="overview-hours"></div>
+                                    </div>
                                 </div>
                                 <div id="overview-supplements-list"></div>
-                                <div class="d-flex justify-content-between border-top pt-3 mt-2"><h4 class="fw-bold">Totaal</h4><h4 class="fw-bold text-primary" id="overview-grand-total">€ 0,00</h4></div>
+                                <div class="d-flex justify-content-between border-top pt-3 mt-2"><h4 class="fw-bold">
+                                        Totaal</h4><h4 class="fw-bold text-primary" id="overview-grand-total">€
+                                        0,00</h4></div>
                             </div>
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goBackFromOverview()">Vorige</button>
-                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="goToStep(5)">Naar betalen</button>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                                        onclick="goBackFromOverview()">Vorige
+                                </button>
+                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="goToStep(5)">
+                                    Naar betalen
+                                </button>
                             </div>
                         </div>
 
                         {{-- Step 5: User Details --}}
                         <div id="step-content-5" class="step-content p-4 p-md-5 d-none">
-                            <h3 class="h4 fw-bold mb-4 text-primary">Gegevens</h3>
-                            <div class="row g-3">
-                                <div class="col-md-6"><label class="form-label">Voornaam</label><input type="text" class="form-control" name="first_name" value="{{ Auth::user()->name ?? '' }}" required></div>
-                                <div class="col-md-6"><label class="form-label">Achternaam</label><input type="text" class="form-control" name="last_name" value="{{ Auth::user()->last_name ?? '' }}" required></div>
-                                <div class="col-12"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="{{ Auth::user()->email ?? '' }}" required></div>
-                                <div class="col-12"><label class="form-label">Adres</label><input type="text" class="form-control" name="address" required></div>
-                                <div class="col-4"><label class="form-label">Postcode</label><input type="text" class="form-control" name="zipcode" required></div>
-                                <div class="col-8"><label class="form-label">Woonplaats</label><input type="text" class="form-control" name="city" required></div>
-                                <div class="col-12"><label class="form-label">Opmerkingen</label><input type="text" class="form-control" name="comment"></div>
+                            <h3 class="h4 fw-bold mb-4 text-primary">Gegevens & Agenda</h3>
+
+                            <div class="d-flex flex-column gap-3 w-100">
+                                <div class="mb-2">
+                                    <div class="mb-4">
+                                        <label for="comment" class="form-label fw-bold">Opmerkingen & Speciale wensen</label>
+                                        <textarea class="form-control rounded-4" id="comment" name="comment" rows="4" placeholder="Heb je nog vragen of specifieke wensen voor ons?"></textarea>
+                                    </div>
+
+                                    <div class="bg-light border-0 rounded-4">
+                                        <div class="card-body p-4">
+                                            <div class="form-check form-switch">
+                                                {{-- Added onchange handler to the toggle --}}
+                                                <input class="form-check-input" type="checkbox" role="switch" id="public" name="public" value="1" onchange="togglePublicFields()">
+                                                <label class="form-check-label fw-bold" for="public">Zichtbaar in de NoordenLicht agenda</label>
+                                            </div>
+                                            <p class="small text-muted mb-0">Indien ingeschakeld, wordt jouw activiteit getoond op onze openbare website.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Container for public-only information --}}
+                                <div id="public-fields-container" class="d-none animate-fade-in">
+                                    <div class="mb-4">
+                                        <label for="external-link" class="form-label fw-bold">Directe aanmeld link</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0 rounded-start-4"><i class="material-symbols-rounded">web_traffic</i></span>
+                                            <input type="url" class="form-control border-start-0 rounded-end-4" id="external_link" name="external_link" placeholder="https://jouw-website.nl/aanmelden">
+                                        </div>
+                                        <div class="form-text">Link naar je eigen inschrijfformulier of ticketpagina.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Beschrijving voor de agenda</label>
+                                        <div class="editor-parent">
+                                            @yield('editor')
+                                            <div id="text-input" contenteditable="true" class="text-input p-3" style="min-height: 150px;">{!! old('activity_description') !!}</div>
+                                            <div class="bg-light px-3 py-1 border-top d-flex justify-content-between">
+                                                <small class="text-muted">Vertel deelnemers wat ze kunnen verwachten.</small>
+                                                <small id="characters" class="text-muted"></small>
+                                            </div>
+                                        </div>
+                                        <input id="content" name="activity_description" type="hidden" value="{{ old('activity_description') }}">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex justify-content-between mt-5">
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(4)">Vorige</button>
-                                <button type="submit" class="btn btn-success rounded-pill px-5 btn-lg">Boeken</button>
+
+                            <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(4)">
+                                    <i class="bi bi-arrow-left me-2"></i>Vorige
+                                </button>
+                                <button type="submit" class="btn btn-success rounded-pill px-5 btn-lg shadow-sm">
+                                    Bevestig & Boek Nu
+                                </button>
                             </div>
                         </div>
 
@@ -267,6 +397,22 @@
             initTouchHandlers();
         });
 
+        function togglePublicFields() {
+            const isPublic = document.getElementById('public').checked;
+            const container = document.getElementById('public-fields-container');
+
+            if (isPublic) {
+                container.classList.remove('d-none');
+                // Optional: ensure editor is focused or refreshed if needed
+            } else {
+                container.classList.add('d-none');
+                // Optional: Clear public fields if the user unchecks the box
+                document.getElementById('external_link').value = '';
+                document.getElementById('text-input').innerHTML = '';
+                document.getElementById('content').value = '';
+            }
+        }
+
         // --- Data Fetching ---
         function fetchAvailability() {
             const loading = document.getElementById('calendar-loading');
@@ -276,10 +422,10 @@
                 .then(res => res.json())
                 .then(data => {
                     bookings = data.events || [];
-                    if(data.settings) {
-                        if(data.settings.min_check_in) minCheckInStr = data.settings.min_check_in.substring(0,5);
-                        if(data.settings.max_check_in) maxCheckInStr = data.settings.max_check_in.substring(0,5);
-                        if(data.settings.min_duration) minDurationMins = parseInt(data.settings.min_duration);
+                    if (data.settings) {
+                        if (data.settings.min_check_in) minCheckInStr = data.settings.min_check_in.substring(0, 5);
+                        if (data.settings.max_check_in) maxCheckInStr = data.settings.max_check_in.substring(0, 5);
+                        if (data.settings.min_duration) minDurationMins = parseInt(data.settings.min_duration);
                     }
                     renderCalendar();
                 })
@@ -308,24 +454,27 @@
         // --- Render Calendar Month ---
         function renderCalendar() {
             const dt = new Date(currentYear, currentMonth - 1, 1);
-            document.getElementById('calendar-month-year').innerText = dt.toLocaleString('nl-NL', { month: 'long', year: 'numeric' });
+            document.getElementById('calendar-month-year').innerText = dt.toLocaleString('nl-NL', {
+                month: 'long',
+                year: 'numeric'
+            });
 
             const firstDayOfWeek = (dt.getDay() + 6) % 7;
             const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
 
-            for(let i=0; i<firstDayOfWeek; i++) {
+            for (let i = 0; i < firstDayOfWeek; i++) {
                 grid.appendChild(createCell('', 'bg-light border-0'));
             }
 
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
 
-            for(let i=1; i<=daysInMonth; i++) {
-                const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const cellDate = new Date(dateStr);
-                cellDate.setHours(0,0,0,0);
+                cellDate.setHours(0, 0, 0, 0);
 
                 const cell = document.createElement('div');
                 cell.className = 'calendar-day p-2 rounded border d-flex flex-column align-items-center justify-content-center';
@@ -345,7 +494,7 @@
                         cell.style.cursor = 'not-allowed';
                     } else {
                         cell.classList.add('bg-white', 'cursor-pointer', 'hover-shadow', 'border-secondary-subtle');
-                        if(status === 'partial') {
+                        if (status === 'partial') {
                             cell.innerHTML += `<div class="mt-2"><span class="badge bg-warning text-dark rounded-pill px-2 py-1" style="font-size:0.65rem"><span class="no-mobile">BEPERKT</span></span></div>`;
                             cell.onclick = () => openDayView(dateStr, i);
                         } else {
@@ -378,25 +527,25 @@
                     let s = parseNaiveDate(b.start);
                     let e = parseNaiveDate(b.end);
 
-                    if(s < new Date(dateStr + 'T00:00')) s = new Date(dateStr + 'T00:00');
-                    if(e > new Date(dateStr + 'T23:59:59')) e = new Date(dateStr + 'T23:59:59');
-                    const startM = s.getHours()*60 + s.getMinutes();
-                    const endM = e.getHours()*60 + e.getMinutes();
-                    return { start: Math.max(startM, openMins), end: Math.min(endM, closeMins) };
+                    if (s < new Date(dateStr + 'T00:00')) s = new Date(dateStr + 'T00:00');
+                    if (e > new Date(dateStr + 'T23:59:59')) e = new Date(dateStr + 'T23:59:59');
+                    const startM = s.getHours() * 60 + s.getMinutes();
+                    const endM = e.getHours() * 60 + e.getMinutes();
+                    return {start: Math.max(startM, openMins), end: Math.min(endM, closeMins)};
                 })
-                .sort((a,b) => a.start - b.start);
+                .sort((a, b) => a.start - b.start);
 
             let maxGap = 0;
             let cursor = openMins;
 
             dayBookings.forEach(b => {
-                if(b.start > cursor) maxGap = Math.max(maxGap, b.start - cursor);
+                if (b.start > cursor) maxGap = Math.max(maxGap, b.start - cursor);
                 cursor = Math.max(cursor, b.end);
             });
-            if(closeMins > cursor) maxGap = Math.max(maxGap, closeMins - cursor);
+            if (closeMins > cursor) maxGap = Math.max(maxGap, closeMins - cursor);
 
-            if(maxGap < minDurationMins) return 'full';
-            if(dayBookings.length > 0) return 'partial';
+            if (maxGap < minDurationMins) return 'full';
+            if (dayBookings.length > 0) return 'partial';
             return 'available';
         }
 
@@ -405,7 +554,11 @@
         function openDayView(dateStr, dayNum) {
             selectedDate = dateStr;
             const dt = new Date(dateStr);
-            document.getElementById('selected-date-display').innerText = dt.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+            document.getElementById('selected-date-display').innerText = dt.toLocaleDateString('nl-NL', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
             goToStep(2);
             renderTimeline(dateStr);
         }
@@ -423,7 +576,7 @@
 
             startHour = parseInt(minCheckInStr.split(':')[0]) || 0;
             let endH = parseInt(maxCheckInStr.split(':')[0]) || 24;
-            if(endH <= startHour) endH = 24;
+            if (endH <= startHour) endH = 24;
             endHour = endH;
 
             const totalHours = endHour - startHour;
@@ -435,7 +588,7 @@
             interactionLayer.style.height = containerHeight + 'px';
             linesLayer.style.height = containerHeight + 'px';
 
-            for(let h = 0; h <= totalHours; h++) {
+            for (let h = 0; h <= totalHours; h++) {
                 const top = h * pxPerHour;
                 const hourLabel = startHour + h;
                 const labelStr = (hourLabel < 10 ? '0' : '') + hourLabel + ':00';
@@ -448,7 +601,7 @@
                 lDiv.innerHTML = `<span style="position:relative; top:-10px; background:white; padding:0 2px;">${labelStr}</span>`;
                 labels.appendChild(lDiv);
 
-                if(h < totalHours) {
+                if (h < totalHours) {
                     const line = document.createElement('div');
                     line.className = 'position-absolute w-100 border-bottom border-light';
                     line.style.top = top + 'px';
@@ -467,8 +620,8 @@
                     let e = parseNaiveDate(b.end);
 
                     if (s <= selectedDayEnd && e >= selectedDayStart) {
-                        const startM = s.getHours()*60 + s.getMinutes();
-                        const endM = e.getHours()*60 + e.getMinutes();
+                        const startM = s.getHours() * 60 + s.getMinutes();
+                        const endM = e.getHours() * 60 + e.getMinutes();
                         let displayStartM = startM;
                         let displayEndM = endM;
                         if (s < selectedDayStart) displayStartM = dayStartMins;
@@ -476,7 +629,7 @@
                         const visibleStart = Math.max(displayStartM, dayStartMins);
                         const visibleEnd = Math.min(displayEndM, endHour * 60);
 
-                        if(visibleEnd > visibleStart) {
+                        if (visibleEnd > visibleStart) {
                             const top = (visibleStart - dayStartMins) * (pxPerHour / 60);
                             const height = (visibleEnd - visibleStart) * (pxPerHour / 60);
                             const evDiv = document.createElement('div');
@@ -556,7 +709,7 @@
                     updateVisualSelection(dragStartY, dragStartY);
                     document.getElementById('timeline-selection').style.display = 'block';
                 }
-            }, { passive: false });
+            }, {passive: false});
 
             layer.addEventListener('touchmove', (e) => {
                 if (isTouchDown && e.touches.length > 0) {
@@ -568,7 +721,7 @@
 
                     updateVisualSelection(dragStartY, currentY);
                 }
-            }, { passive: false });
+            }, {passive: false});
 
             layer.addEventListener('touchend', (e) => {
                 if (!isTouchDown) return;
@@ -597,8 +750,8 @@
             selection.style.display = 'block';
 
             const dayStartMins = startHour * 60;
-            const startMins = dayStartMins + (top / (pxPerHour/60));
-            const endMins = startMins + (h / (pxPerHour/60));
+            const startMins = dayStartMins + (top / (pxPerHour / 60));
+            const endMins = startMins + (h / (pxPerHour / 60));
 
             const rStart = Math.round(startMins / 15) * 15;
             const rEnd = Math.round(endMins / 15) * 15;
@@ -610,7 +763,7 @@
         function manualTimeChange() {
             const sVal = document.getElementById('time-start').value;
             const eVal = document.getElementById('time-end').value;
-            if(!sVal || !eVal) return;
+            if (!sVal || !eVal) return;
             const [sH, sM] = sVal.split(':').map(Number);
             const [eH, eM] = eVal.split(':').map(Number);
             selectionStartMins = sH * 60 + sM;
@@ -624,13 +777,13 @@
             const height = parseFloat(selection.style.height);
 
             const dayStartMins = startHour * 60;
-            const rawStart = dayStartMins + (top / (pxPerHour/60));
-            const rawEnd = dayStartMins + ((top + height) / (pxPerHour/60));
+            const rawStart = dayStartMins + (top / (pxPerHour / 60));
+            const rawEnd = dayStartMins + ((top + height) / (pxPerHour / 60));
 
             selectionStartMins = Math.round(rawStart / 15) * 15;
             selectionEndMins = Math.round(rawEnd / 15) * 15;
 
-            if(selectionEndMins - selectionStartMins < minDurationMins) {
+            if (selectionEndMins - selectionStartMins < minDurationMins) {
                 selectionEndMins = selectionStartMins + minDurationMins;
             }
 
@@ -647,10 +800,10 @@
                     let e = parseNaiveDate(b.end);
 
                     if (s <= selectedDayEnd && e >= selectedDayStart) {
-                        let checkStart = s.getHours()*60 + s.getMinutes();
-                        let checkEnd = e.getHours()*60 + e.getMinutes();
-                        if(s < selectedDayStart) checkStart = dayStartMins;
-                        if(e > selectedDayEnd) checkEnd = dayEndMins;
+                        let checkStart = s.getHours() * 60 + s.getMinutes();
+                        let checkEnd = e.getHours() * 60 + e.getMinutes();
+                        if (s < selectedDayStart) checkStart = dayStartMins;
+                        if (e > selectedDayEnd) checkEnd = dayEndMins;
                         if (selectionStartMins < checkEnd && selectionEndMins > checkStart) {
                             hasOverlap = true;
                         }
@@ -658,8 +811,8 @@
                 });
             }
 
-            const finalTop = (selectionStartMins - dayStartMins) * (pxPerHour/60);
-            const finalHeight = (selectionEndMins - selectionStartMins) * (pxPerHour/60);
+            const finalTop = (selectionStartMins - dayStartMins) * (pxPerHour / 60);
+            const finalHeight = (selectionEndMins - selectionStartMins) * (pxPerHour / 60);
 
             selection.style.top = finalTop + 'px';
             selection.style.height = finalHeight + 'px';
@@ -676,7 +829,7 @@
             selection.className = 'timeline-selection position-absolute bg-primary bg-opacity-25 border border-primary text-center text-primary fw-bold d-flex align-items-center justify-content-center';
             selection.style.zIndex = '20';
 
-            if(!skipInputUpdate) {
+            if (!skipInputUpdate) {
                 document.getElementById('time-start').value = minsToTime(selectionStartMins);
                 document.getElementById('time-end').value = minsToTime(selectionEndMins);
             }
@@ -687,16 +840,29 @@
         function minsToTime(mins) {
             const h = Math.floor(mins / 60);
             const m = Math.floor(mins % 60);
-            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
 
         function prevMonth() {
-            if(currentMonth === 1) { currentMonth = 12; currentYear--; } else { currentMonth--; }
-            renderCalendar(); fetchAvailability();
+            if (currentMonth === 1) {
+                currentMonth = 12;
+                currentYear--;
+            } else {
+                currentMonth--;
+            }
+            renderCalendar();
+            fetchAvailability();
         }
+
         function nextMonth() {
-            if(currentMonth === 12) { currentMonth = 1; currentYear++; } else { currentMonth++; }
-            renderCalendar(); fetchAvailability();
+            if (currentMonth === 12) {
+                currentMonth = 1;
+                currentYear++;
+            } else {
+                currentMonth++;
+            }
+            renderCalendar();
+            fetchAvailability();
         }
 
         function confirmDate() {
@@ -721,7 +887,7 @@
                 // The issue is step 3.5 doesn't map perfectly to 1,2,3,4,5 circles if we don't have a 6th circle.
                 // Let's activate "Details" indicator if we are in form step.
                 const detailsInd = document.querySelector('.step-indicator-details');
-                if(detailsInd) detailsInd.classList.remove('d-none');
+                if (detailsInd) detailsInd.classList.remove('d-none');
 
                 // Highlight up to 4 (Details)
                 updateIndicators(4);
@@ -729,13 +895,13 @@
                 hasFormsStep = true;
                 currentStep = 'forms';
             } else {
-                if(step === 4) {
+                if (step === 4) {
                     // Overview Step.
                     // Ensure details indicator is visible if we passed through forms, or hide it if we didn't?
                     // A cleaner UI: If forms exist, show 'Details' circle. If not, hide it.
                     const detailsInd = document.querySelector('.step-indicator-details');
-                    if(hasFormsStep && detailsInd) detailsInd.classList.remove('d-none');
-                    else if(!hasFormsStep && detailsInd) detailsInd.classList.add('d-none');
+                    if (hasFormsStep && detailsInd) detailsInd.classList.remove('d-none');
+                    else if (!hasFormsStep && detailsInd) detailsInd.classList.add('d-none');
 
                     calculateTotal();
                     updateIndicators(hasFormsStep ? 5 : 4);
@@ -750,7 +916,7 @@
                 document.getElementById(`step-content-${step}`).classList.remove('d-none');
             }
 
-            window.scrollTo(0,0);
+            window.scrollTo(0, 0);
         }
 
         function updateIndicators(activeIndex) {
@@ -824,7 +990,7 @@
             const currentVisStep = detailsVisible ? activeIndex : (activeIndex >= 4 ? activeIndex : activeIndex);
             // Rough progress
             let progress = 0;
-            if(detailsVisible) progress = ((activeIndex - 1) / 5) * 100;
+            if (detailsVisible) progress = ((activeIndex - 1) / 5) * 100;
             else progress = ((activeIndex - 1) / 4) * 100;
 
             document.getElementById('progress-line').style.width = Math.min(progress, 100) + '%';
@@ -832,9 +998,9 @@
 
         // --- Supplements Logic ---
         function changeQty(id, d) {
-            const el = document.getElementById('qty-'+id);
+            const el = document.getElementById('qty-' + id);
             let v = parseInt(el.innerText) + d;
-            if(v < 0) v = 0;
+            if (v < 0) v = 0;
             el.innerText = v;
             selectedSupplements[id] = v;
         }
@@ -853,21 +1019,21 @@
 
             if (product.image) {
                 imgEl.src = '/files/products/images/' + product.image;
-                if(imgContainer) imgContainer.classList.remove('d-none');
+                if (imgContainer) imgContainer.classList.remove('d-none');
             } else {
-                if(imgContainer) imgContainer.classList.add('d-none');
+                if (imgContainer) imgContainer.classList.add('d-none');
             }
 
             // Show Popup by toggling display directly
             const popup = document.getElementById('popUp');
-            if(popup) {
+            if (popup) {
                 popup.style.display = 'flex'; // Flex is used to center content
             }
         }
 
         function closePopup() {
             const popup = document.getElementById('popUp');
-            if(popup) popup.style.display = 'none';
+            if (popup) popup.style.display = 'none';
         }
 
         // --- Dynamic Forms Logic ---
@@ -877,17 +1043,17 @@
             const container = document.getElementById('dynamic-forms-container');
             container.innerHTML = ''; // Clear previous
 
-            for(const [id, qty] of Object.entries(selectedSupplements)) {
-                if(qty > 0) {
+            for (const [id, qty] of Object.entries(selectedSupplements)) {
+                if (qty > 0) {
                     const product = supplements.find(p => p.id == id);
-                    if(product && product.form_elements && product.form_elements.length > 0) {
+                    if (product && product.form_elements && product.form_elements.length > 0) {
                         formsNeeded = true;
                         renderProductForm(product, qty, container);
                     }
                 }
             }
 
-            if(formsNeeded) {
+            if (formsNeeded) {
                 goToStep('forms');
             } else {
                 hasFormsStep = false;
@@ -919,7 +1085,7 @@
 
                 let input;
 
-                switch(el.type) {
+                switch (el.type) {
                     case 'text':
                     case 'email':
                     case 'number':
@@ -928,19 +1094,19 @@
                         input.type = el.type;
                         input.className = 'form-control';
                         input.name = inputName;
-                        if(el.is_required) input.required = true;
+                        if (el.is_required) input.required = true;
                         break;
 
                     case 'select':
                         input = document.createElement('select');
                         input.className = 'form-select';
                         input.name = inputName;
-                        if(el.is_required) input.required = true;
+                        if (el.is_required) input.required = true;
                         const defOpt = document.createElement('option');
                         defOpt.value = '';
                         defOpt.innerText = 'Selecteer...';
                         input.appendChild(defOpt);
-                        if(el.option_value) {
+                        if (el.option_value) {
                             el.option_value.split(',').forEach(opt => {
                                 const o = document.createElement('option');
                                 o.value = opt.trim();
@@ -952,7 +1118,7 @@
 
                     case 'radio':
                         input = document.createElement('div');
-                        if(el.option_value) {
+                        if (el.option_value) {
                             el.option_value.split(',').forEach((opt, idx) => {
                                 const div = document.createElement('div');
                                 div.className = 'form-check';
@@ -962,7 +1128,7 @@
                                 r.name = inputName;
                                 r.value = opt.trim();
                                 r.id = `radio_${product.id}_${el.id}_${idx}`;
-                                if(el.is_required) r.required = true;
+                                if (el.is_required) r.required = true;
 
                                 const l = document.createElement('label');
                                 l.className = 'form-check-label';
@@ -978,7 +1144,7 @@
 
                     case 'checkbox':
                         input = document.createElement('div');
-                        if(el.option_value) {
+                        if (el.option_value) {
                             el.option_value.split(',').forEach((opt, idx) => {
                                 const div = document.createElement('div');
                                 div.className = 'form-check';
@@ -1002,7 +1168,7 @@
                         break;
                 }
 
-                if(input) group.appendChild(input);
+                if (input) group.appendChild(input);
                 wrapper.appendChild(group);
             });
 
@@ -1016,19 +1182,19 @@
             let valid = true;
 
             inputs.forEach(i => {
-                if(i.checkValidity && !i.checkValidity()) {
+                if (i.checkValidity && !i.checkValidity()) {
                     i.reportValidity();
                     valid = false;
                 }
             });
 
-            if(valid) {
+            if (valid) {
                 goToStep(4);
             }
         }
 
         function goBackFromOverview() {
-            if(hasFormsStep) {
+            if (hasFormsStep) {
                 goToStep('forms');
             } else {
                 goToStep(3);
@@ -1044,39 +1210,69 @@
 
             let suppTotal = 0;
             let suppList = '';
-            for(const [id, qty] of Object.entries(selectedSupplements)) {
-                if(qty > 0) {
-                    const el = document.getElementById('qty-'+id);
+            for (const [id, qty] of Object.entries(selectedSupplements)) {
+                if (qty > 0) {
+                    const el = document.getElementById('qty-' + id);
                     const p = parseFloat(el.dataset.price);
-                    suppTotal += p*qty;
+                    suppTotal += p * qty;
                     // Get name from supplements array to be safe
                     const prod = supplements.find(s => s.id == id);
                     const name = prod ? prod.name : 'Extra';
-                    suppList += `<div class="d-flex justify-content-between text-muted small"><span>${name} x${qty}</span><span>€ ${(p*qty).toFixed(2).replace('.',',')}</span></div>`;
+                    suppList += `<div class="d-flex justify-content-between text-muted small"><span>${name} x${qty}</span><span>€ ${(p * qty).toFixed(2).replace('.', ',')}</span></div>`;
                 }
             }
 
-            document.getElementById('overview-dates').innerText = `${start.toLocaleDateString()} ${start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+            document.getElementById('overview-dates').innerText = `${start.toLocaleDateString()} ${start.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            })} - ${end.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`;
             document.getElementById('overview-hours').innerText = `${hours.toFixed(1)} uur`;
-            document.getElementById('overview-acco-total').innerText = '€ ' + total.toLocaleString('nl-NL',{minimumFractionDigits:2});
+            document.getElementById('overview-acco-total').innerText = '€ ' + total.toLocaleString('nl-NL', {minimumFractionDigits: 2});
             document.getElementById('overview-supplements-list').innerHTML = suppList;
-            document.getElementById('overview-grand-total').innerText = '€ ' + (total+suppTotal).toLocaleString('nl-NL',{minimumFractionDigits:2});
+            document.getElementById('overview-grand-total').innerText = '€ ' + (total + suppTotal).toLocaleString('nl-NL', {minimumFractionDigits: 2});
 
             const arr = [];
-            for(const [id, qty] of Object.entries(selectedSupplements)) if(qty>0) arr.push({id, qty});
+            for (const [id, qty] of Object.entries(selectedSupplements)) if (qty > 0) arr.push({id, qty});
             document.getElementById('supplements_data_input').value = JSON.stringify(arr);
         }
     </script>
 
     <style>
-        .grid-cols-7 { grid-template-columns: repeat(7, 1fr); }
-        .hover-shadow:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; transform: translateY(-2px); }
-        .cursor-pointer { cursor: pointer; }
-        .step-circle { transition: all 0.3s; }
-        .transition-width { transition: width 0.3s; }
-        .timeline-grid::-webkit-scrollbar { width: 6px; }
-        .timeline-grid::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-        @media (max-width: 576px) { .no-mobile { display: none; } }
+        .grid-cols-7 {
+            grid-template-columns: repeat(7, 1fr);
+        }
+
+        .hover-shadow:hover {
+            box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+            transform: translateY(-2px);
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .step-circle {
+            transition: all 0.3s;
+        }
+
+        .transition-width {
+            transition: width 0.3s;
+        }
+
+        .timeline-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .timeline-grid::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 576px) {
+            .no-mobile {
+                display: none;
+            }
+        }
 
         .group-hover-trigger:hover .tile-image-wrapper img {
             transform: scale(1.05);

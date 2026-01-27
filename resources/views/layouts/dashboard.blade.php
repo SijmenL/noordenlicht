@@ -1,9 +1,9 @@
 @php
     use App\Models\Contact;
-    use App\Models\Order;
+    use App\Models\Order;use App\Models\User;
 
-    @endphp
-<!doctype html>
+@endphp
+    <!doctype html>
 <html lang="nl">
 <head>
     <meta charset="utf-8">
@@ -128,7 +128,8 @@
 <div id="app">
     <!-- Mobile Header (only visible on mobile) -->
     <div class="mobile-header">
-        <a href="{{ route('admin') }}"><img style="height: 40px" src="{{ asset('img/logo/logo_white.webp') }}" alt="Logo NoordenLicht"></a>
+        <a href="{{ route('admin') }}"><img style="height: 40px" src="{{ asset('img/logo/logo_white.webp') }}"
+                                            alt="Logo NoordenLicht"></a>
         <button class="hamburger-btn" id="hamburger-toggle">
             <span class="material-symbols-rounded">menu</span>
         </button>
@@ -141,8 +142,8 @@
         <div class="navbar-container d-flex flex-column justify-content-between p-2" id="sidebar">
             <div class="sticky-top">
                 <a href="{{ route('admin') }}">
-                <img style="width: clamp(50px, 100%, 250px)" src="{{ asset('img/logo/logo_white.webp') }}"
-                     alt="Logo NoordenLicht" class="d-none d-md-block">
+                    <img style="width: clamp(50px, 100%, 250px)" src="{{ asset('img/logo/logo_white.webp') }}"
+                         alt="Logo NoordenLicht" class="d-none d-md-block">
                 </a>
 
                 <div id="navbar-root" class="no-scrolbar navbar-root">
@@ -163,7 +164,7 @@
                                 'sub-pages' => [
                                     [
                                         'name' => 'Nieuwsbrieven',
-                                        'uri' => '/dashboard/nieuws',
+                                        'uri' => '/dashboard/nieuwsbrieven',
                                         'fontSize' => '14px',
                                     ],
                                     [
@@ -236,6 +237,7 @@
                                         'name' => 'Aanvragen',
                                         'uri' => '/dashboard/aanmeldingen',
                                         'fontSize' => '14px',
+                                        'notificationsCount' => User::where('allow_booking', false)->count(),
                                     ],
                                     [
                                         'name' => 'Beheer accomodaties',
@@ -319,7 +321,9 @@
                             $shouldShowSubmenu = $hasActiveSubItem;
                         @endphp
 
-                        <div class="main-menu-item {{ $isMainItemActive ? 'active' : '' }}" data-has-submenu="{{ !empty($item['sub-pages']) ? 'true' : 'false' }}" data-uri="{{ $item['uri'] ?? '' }}">
+                        <div class="main-menu-item {{ $isMainItemActive ? 'active' : '' }}"
+                             data-has-submenu="{{ !empty($item['sub-pages']) ? 'true' : 'false' }}"
+                             data-uri="{{ $item['uri'] ?? '' }}">
                             <div class="menu-content" style="font-size: {{ $item['fontSize'] }};">
                                 <span class="material-symbols-rounded">{{ $item['icon-name'] }}</span>
                                 <span class="menu-text">{{ $item['name'] }}</span>
@@ -328,7 +332,8 @@
                                 @endif
                             </div>
                             @if(!empty($item['sub-pages']))
-                                <span class="material-symbols-rounded arrow-icon {{ $shouldShowSubmenu ? 'rotated' : '' }}">arrow_drop_down</span>
+                                <span
+                                    class="material-symbols-rounded arrow-icon {{ $shouldShowSubmenu ? 'rotated' : '' }}">arrow_drop_down</span>
                             @endif
                         </div>
 
@@ -339,11 +344,13 @@
                                         $isSubItemActive = ($subPage['uri'] ?? '') === '/' . $currentPath;
                                     @endphp
                                     <li class="sub-menu-item {{ $isSubItemActive ? 'active' : '' }}">
-                                        <a class="d-flex flex-row gap-1 align-items-center" href="{{ $subPage['uri'] }}" style="font-size: {{ $subPage['fontSize'] }};">{{ $subPage['name'] }}
+                                        <a class="d-flex flex-row gap-1 align-items-center" href="{{ $subPage['uri'] }}"
+                                           style="font-size: {{ $subPage['fontSize'] }};">{{ $subPage['name'] }}
 
-                                        @if(!empty($subPage['notificationsCount']) && $subPage['notificationsCount'] > 0)
-                                            <span class="notification-badge">{{ $subPage['notificationsCount'] }}</span>
-                                        @endif
+                                            @if(!empty($subPage['notificationsCount']) && $subPage['notificationsCount'] > 0)
+                                                <span
+                                                    class="notification-badge">{{ $subPage['notificationsCount'] }}</span>
+                                            @endif
                                         </a>
                                     </li>
                                 @endforeach
@@ -354,12 +361,15 @@
             </div>
             <div>
                 <div class="main-menu-item">
-                    <a href="{{ route('home') }}" class="menu-content" style="font-size: 18px; text-decoration: none"><span
-                            class="material-symbols-rounded">captive_portal</span><span class="menu-text">Naar website</span>
+                    <a href="{{ route('home') }}" class="menu-content"
+                       style="font-size: 18px; text-decoration: none"><span
+                            class="material-symbols-rounded">captive_portal</span><span
+                            class="menu-text">Naar website</span>
                     </a>
                 </div>
                 <div class="main-menu-item">
-                    <div onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="menu-content" style="font-size: 18px;"><span
+                    <div onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                         class="menu-content" style="font-size: 18px;"><span
                             class="material-symbols-rounded">logout</span><span class="menu-text">Uitloggen</span>
                     </div>
                 </div>
@@ -409,8 +419,8 @@
             }
 
             // Handle menu item clicks
-            mainMenuItems.forEach(function(menuItem) {
-                menuItem.addEventListener('click', function(e) {
+            mainMenuItems.forEach(function (menuItem) {
+                menuItem.addEventListener('click', function (e) {
                     const hasSubmenu = this.getAttribute('data-has-submenu') === 'true';
                     const uri = this.getAttribute('data-uri');
 
@@ -434,12 +444,12 @@
 
             // Handle sub-menu item clicks (close mobile menu)
             const subMenuItems = document.querySelectorAll('.sub-menu-item a');
-            subMenuItems.forEach(function(link) {
+            subMenuItems.forEach(function (link) {
                 link.addEventListener('click', closeMobileMenuOnItemClick);
             });
 
             // Handle window resize
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 if (window.innerWidth > 768) {
                     // Reset mobile menu state on desktop
                     sidebar.classList.remove('visible');

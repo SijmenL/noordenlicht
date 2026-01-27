@@ -21,61 +21,70 @@ use Carbon\Carbon;
 
 class OrderController extends Controller
 {
-    // --- New Method for Bulk Adding Supplements ---
+    // OrderController.php
+
     public function bulkAdd(Request $request)
     {
-        // Expecting a JSON string in 'items' field: [{"id": 1, "qty": 2}, ...]
         $items = json_decode($request->input('items'), true);
-        $cart = Session::get('cart', []);
 
+        // 1. Prepare Cart session (standard logic)
+        $cart = [];
         if (is_array($items)) {
             foreach ($items as $item) {
                 $id = $item['id'];
                 $qty = (int)$item['qty'];
-
                 if ($qty > 0) {
-                    if (isset($cart[$id])) {
-                        $cart[$id] += $qty;
-                    } else {
-                        $cart[$id] = $qty;
-                    }
+                    $cart[$id] = $qty;
                 }
             }
         }
 
         Session::put('cart', $cart);
-        // Sync cart_mixed to ensure consistency
         Session::put('cart_mixed', [
             'products' => $cart,
-            'activities' => Session::get('cart_mixed')['activities'] ?? []
+            'activities' => []
         ]);
 
-        // --- Store existing_order_id in session to trigger update logic later ---
-        if ($request->has('existing_order_id') && !empty($request->input('existing_order_id'))) {
+        // 2. Target the existing order
+        if ($request->has('existing_order_id')) {
             Session::put('target_order_id', $request->input('existing_order_id'));
         }
 
-        // --- Process Form Data if present ---
+        // 3. Process Form Data
         if ($request->has('supplement_forms')) {
-            $submittedForms = $request->input('supplement_forms'); // array [productId => [elementId => value]]
-            $cartFormData = Session::get('cart_form_data', ['products' => [], 'activities' => []]);
-
+            $submittedForms = $request->input('supplement_forms');
+            $cartFormData = ['products' => [], 'activities' => []];
             foreach ($submittedForms as $productId => $forms) {
-                if (!isset($cartFormData['products'][$productId])) {
-                    $cartFormData['products'][$productId] = [];
-                }
-                // Merge answers into the session data
-                foreach ($forms as $elementId => $value) {
-                    $cartFormData['products'][$productId][$elementId] = $value;
-                }
+                $cartFormData['products'][$productId] = $forms;
             }
             Session::put('cart_form_data', $cartFormData);
         }
 
-        return redirect()->route('checkout')->with('success', 'Extra items toegevoegd aan je winkelwagen.');
+        // --- CHANGE HERE: Bypass Checkout View ---
+        // We redirect to a new method 'processImmediatePayment'
+        // or directly to 'store' if we bypass validation for existing orders.
+        return $this->processImmediateOrder($request->input('existing_order_id'));
     }
 
-    // ... checkout() function (unchanged) ...
+    protected function processImmediateOrder($orderId)
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+
+        // We simulate the Request data needed by the store() method
+        // so we don't have to rewrite the complex payment logic.
+        $request = new Request([
+            'email'      => $order->email,
+            'first_name' => $order->first_name,
+            'last_name'  => $order->last_name,
+            'address'    => $order->address,
+            'zipcode'    => $order->zipcode,
+            'city'       => $order->city,
+        ]);
+
+        // Call the existing store logic directly
+        return $this->store($request);
+    }
+
     public function checkout()
     {
         $cart = Session::get('cart_mixed', [
@@ -143,15 +152,19 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'address' => 'required|string',
-            'zipcode' => 'required|string',
-            'city' => 'required|string',
-            'create_account' => 'nullable|boolean',
-        ]);
+        $targetOrderId = Session::get('target_order_id');
+
+        if (!$targetOrderId) {
+            $request->validate([
+                'email' => 'required|email',
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'address' => 'required|string',
+                'zipcode' => 'required|string',
+                'city' => 'required|string',
+            ]);
+        }
+
 
         $cart = Session::get('cart_mixed', [
             'products' => Session::get('cart', []),

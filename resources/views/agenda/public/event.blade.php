@@ -80,7 +80,7 @@
             @endphp
 
             @if($view === 'month')
-                <a href="{{ route('agenda.public.schedule') }}"
+                <a href="{{ route('agenda.public.month') }}"
                    class="btn m-4 d-flex flex-row gap-4 align-items-center justify-content-center"
                    style="margin-left: 25%; margin-right: 25%"
                 ><span class="material-symbols-rounded me-2">arrow_back</span> <span>Terug naar het overzicht</span></a>
@@ -117,7 +117,7 @@
                                 <div class="d-flex flex-column align-items-center justify-content-center w-100">
                                     @if(isset($activity->image))
                                         <img class="rounded shadow-sm zoomable-image"
-                                             style="width: 100%; max-width: 800px; object-fit: cover; object-position: center;"
+                                             style="width: 100%; max-width: 400px; object-fit: cover; object-position: center;"
                                              alt="Activiteit Afbeelding"
                                              src="{{ asset('files/agenda/agenda_images/'.$activity->image) }}">
                                     @endif

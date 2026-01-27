@@ -4,33 +4,41 @@
 
 @section('content')
 
-    <div class="container col-md-11">
-        <h1>Het laatste nieuws</h1>
-        <p>Lees hier op ons blog onze nieuwsbrieven, nieuwtjes en andere leuke dingen die we gedeeld hebben!</p>
-        @if($news->count() > 0)
-            <form id="auto-submit" method="GET"
-                  class="user-select-forum-submit mt-5 w-100 d-flex justify-content-center">
-                <div class="d-flex w-75">
-                    <div class="d-flex flex-row-responsive gap-2 align-items-center mb-3 w-100">
-                        <div class="input-group">
-                            <label for="search" class="input-group-text" id="basic-addon1">
-                                <span class="material-symbols-rounded">search</span></label>
-                            <input id="search" name="search" type="text" class="form-control"
-                                   placeholder="Zoeken op nieuws."
-                                   aria-label="Zoeken" aria-describedby="basic-addon1" value="{{ $search }}"
+    <div class="rounded-bottom-5 bg-white d-flex flex-column container-block"
+         style="position: relative; z-index: 9; margin-top: -25px; background-position: center !important; background-image: url('{{ asset('img/logo/doodles/Wolf.webp') }}'); background-repeat: no-repeat; background-size: cover; min-height: 100vh;">
+
+        <div class="container py-5">
+            <div class="container justify-content-center align-items-center d-flex flex-column gap-5">
+                <div style="backdrop-filter: blur(2px);">
+                    <h1 class="text-center fw-bold display-5">Blog</h1>
+                    <h2 class="text-center fs-4 text-secondary fw-light">Lees hier op ons blog nieuwtjes en andere leuke dingen die we gedeeld hebben!</h2>
+                </div>
+
+                <div class="w-100" style="max-width: 900px;">
+                    <form id="auto-submit" method="GET" class="d-flex flex-column gap-4">
+
+                        {{-- 1. Prominent Search Bar --}}
+                        <div class="position-relative">
+                            <span class="material-symbols-rounded position-absolute text-muted"
+                                  style="top: 50%; left: 20px; transform: translateY(-50%); font-size: 24px;">search</span>
+                            <input id="search" name="search" type="text"
+                                   class="form-control form-control-lg border-0 shadow-sm ps-5 py-3 rounded-pill custom-search-input"
+                                   placeholder="Zoeken naar een blogpost"
+                                   value="{{ $search ?? '' }}"
+                                   autocomplete="off"
                                    onchange="this.form.submit();">
                         </div>
-                    </div>
+                    </form>
                 </div>
-            </form>
 
+                @if($news->count() > 0)
             <div class="d-flex flex-row-responsive flex-wrap gap-4 justify-content-center"
                  style="margin: 30px; padding: 5px">
                 @foreach($news as $news_item)
                     <a href="{{ route('news.item', $news_item->id) }}" class="text-black text-decoration-none d-flex justify-content-center align-items-center flex-column">
                         <div class="card bg-whited" style="cursor: pointer; margin: 0 auto">
                             <div class="card-img-top d-flex justify-content-center align-items-center">
-                                <img alt="Nieuws afbeelding" class="news-image"
+                                <img alt="Blog afbeelding" class="news-image"
                                      style="border-radius: 50%; aspect-ratio: 1/1; object-fit: cover"
                                      src="{{ asset('/files/news/news_images/'.$news_item->image.' ') }}">
                             </div>
@@ -62,9 +70,11 @@
                     {{ $news->appends(request()->query())->links() }}
                 </div>
         @else
-            <div class="alert alert-warning d-flex align-items-center mt-4" role="alert">
-                <span class="material-symbols-rounded me-2">unsubscribe</span>Geen nieuws gevonden...
-            </div>
+                    <div class="text-center py-5">
+                        <div class="display-1 text-muted"><i class="bi bi-mailbox"></i></div>
+                        <p class="h4 mt-3">Geen blogposts gevonden.</p>
+                        <a href="{{ route('news.list') }}" class="btn btn-link">Wis zoekopdracht</a>
+                    </div>
         @endif
     </div>
 @endsection

@@ -36,12 +36,12 @@
 
 
     <div class="container col-md-11">
-        <h1>Nieuwe inschrijvingen</h1>
+        <h1>Aanvragen</h1>
 
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item" aria-current="page"><a href="{{route('admin')}}">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Aanmeldingen</li>
+                <li class="breadcrumb-item active" aria-current="page">Aanvragen</li>
             </ol>
         </nav>
 

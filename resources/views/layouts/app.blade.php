@@ -30,7 +30,7 @@
     <div class="d-flex flex-column justify-content-between min-vh-100">
         @yield('above-nav')
         <nav class="navbar navbar-expand-md navbar-light bg-white sticky-top rounded-bottom-5"
-             style="margin-bottom: -30px; z-index: 99998;">
+             style="margin-bottom: 10px; z-index: 99998;">
             <div class="container d-flex flex-column">
                 <!-- Hamburger Menu rechtsboven -->
                 <div class="d-flex justify-content-end w-100">
@@ -92,10 +92,10 @@
                                             class="material-symbols-rounded">dashboard</span></a>
                                 </li>
                             @endif
-                                <li class="nav-item">
-                                    <a class="nav-link white-text" href="{{ route('user.settings') }}"><span
-                                            class="material-symbols-rounded">person</span></a>
-                                </li>
+                            <li class="nav-item">
+                                <a class="nav-link white-text" href="{{ route('user.settings') }}"><span
+                                        class="material-symbols-rounded">person</span></a>
+                            </li>
                         @endguest
                     </ul>
                 </div>
@@ -111,5 +111,78 @@
         </footer>
     </div>
 </div>
+
+<!-- Cookie Banner -->
+<div id="cookie-banner" class="fixed-bottom bg-white rounded-top-5 p-3 d-none shadow-lg" style="z-index: 99999;">
+    <div class="container d-flex flex-column justify-content-between align-items-center gap-2">
+        <h1>Wij gebruiken cookies</h1>
+        <div>
+            <p class="mb-0">Om je de beste ervaring te geven, maken we gebruik van technologieën zoals cookies om
+                informatie over je apparaat op te slaan of te raadplegen. Hiermee kunnen we bijvoorbeeld je surfgedrag
+                bijhouden of unieke ID's op deze site verwerken. Als je akkoord gaat, kunnen we je een soepelere en meer
+                gepersonaliseerde ervaring bieden. Als je geen toestemming geeft of deze later intrekt, kan dat ervoor
+                zorgen dat sommige functies of mogelijkheden van de site minder goed werken.</p>
+        </div>
+        <div class="d-flex flex-row gap-2">
+            <button id="cookie-accept" class="btn btn-success text-nowrap">Accepteren</button>
+            <button id="cookie-decline" class="btn btn-light text-nowrap">Weigeren</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const banner = document.getElementById('cookie-banner');
+        const acceptBtn = document.getElementById('cookie-accept');
+        const declineBtn = document.getElementById('cookie-decline');
+
+        // Cookies that are necessary for the site to function (Login/CSRF)
+        const essentialCookies = ['XSRF-TOKEN', 'laravel_session'];
+
+        function deleteNonEssentialCookies() {
+            const cookies = document.cookie.split(";");
+
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i];
+                const eqPos = cookie.indexOf("=");
+                const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+
+                // Delete if not in whitelist
+                if (!essentialCookies.includes(name)) {
+                    // Try to delete for current path and root
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=" + window.location.pathname;
+                    // Try to delete for domain
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                }
+            }
+        }
+
+        // Check LocalStorage for consent
+        const consent = localStorage.getItem('cookie_consent');
+
+        if (!consent) {
+            // Show banner if no choice made
+            banner.classList.remove('d-none');
+        } else if (consent === 'declined') {
+            // If previously declined, ensure clean state
+            deleteNonEssentialCookies();
+        }
+
+        acceptBtn.addEventListener('click', function () {
+            localStorage.setItem('cookie_consent', 'accepted');
+            banner.classList.add('d-none');
+            // Reload page to allow scripts to load if they were blocked by server-side logic
+            // location.reload();
+        });
+
+        declineBtn.addEventListener('click', function () {
+            localStorage.setItem('cookie_consent', 'declined');
+            banner.classList.add('d-none');
+            deleteNonEssentialCookies();
+        });
+    });
+</script>
+
 </body>
 </html>

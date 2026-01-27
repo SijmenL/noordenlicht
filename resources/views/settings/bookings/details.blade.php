@@ -221,9 +221,18 @@
 
                             {{-- Actions --}}
                             <div class="d-flex gap-2">
-                                <button type="button" onclick="checkFormsAndProceed()" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btn-bulk-order" disabled>
-                                    <span class="material-symbols-rounded fs-6 me-1 align-middle">shopping_cart</span>
-                                    Bijbestellen
+{{--                                <button type="button" onclick="checkFormsAndProceed()" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btn-bulk-order" disabled>--}}
+{{--                                    <span class="material-symbols-rounded fs-6 me-1 align-middle">shopping_cart</span>--}}
+{{--                                    Bijbestellen--}}
+{{--                                </button>--}}
+
+                                <button
+                                    onclick="checkFormsAndProceed()"
+                                    class="btn btn-success flex flex-row align-items-center justify-content-center" id="btn-bulk-order">
+                                    <span class="button-text" id="btn-bulk-order-text"> <span class="material-symbols-rounded fs-6 me-1 align-middle">shopping_cart</span>
+                                    Bijbestellen</span>
+                                    <span style="display: none" class="loading-spinner spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                    <span style="display: none" class="loading-text" role="status">Laden...</span>
                                 </button>
                             </div>
                         </div>
@@ -435,7 +444,7 @@
                 totalQty += qty;
             }
 
-            const btn = document.getElementById('btn-bulk-order');
+            const btn = document.getElementById('btn-bulk-order-text');
             if(totalQty > 0) {
                 btn.disabled = false;
                 btn.innerHTML = `<span class="material-symbols-rounded fs-6 me-1 align-middle">shopping_cart</span> Bijbestellen (${totalQty})`;
@@ -447,6 +456,16 @@
 
         // --- CHECK LOGIC & FORMS ---
         function checkFormsAndProceed() {
+            let button = document.getElementById('btn-bulk-order')
+
+            button.disabled = true;
+            button.classList.add('loading');
+
+            // Show the spinner and hide the text
+            button.querySelector('.button-text').style.display = 'none';
+            button.querySelector('.loading-spinner').style.display = 'inline-block';
+            button.querySelector('.loading-text').style.display = 'inline-block';
+
             // 1. Check if any selected supplement has forms
             let formsNeeded = false;
             const container = document.getElementById('dynamic-forms-container');

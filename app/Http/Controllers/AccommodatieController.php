@@ -194,13 +194,10 @@ class AccommodatieController extends Controller
             'start_time' => 'required',
             'end_date' => 'required|date',
             'end_time' => 'required',
-            'email' => 'required|email',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'address' => 'required|string',
-            'zipcode' => 'required|string',
-            'city' => 'required|string',
             'comment' => 'nullable|string',
+            'public' => 'nullable|boolean',
+            'activity_description' => 'string|max:65535|nullable',
+            'external_link' => 'nullable|url',
         ]);
 
         DB::beginTransaction();
@@ -208,6 +205,7 @@ class AccommodatieController extends Controller
             $start = Carbon::parse($request->start_date . ' ' . $request->start_time);
             $end = Carbon::parse($request->end_date . ' ' . $request->end_time);
             $accommodatie = Accommodatie::findOrFail($request->accommodatie_id);
+            $user = Auth::user();
 
             // Double check availability (Race condition protection)
             $overlap = Booking::where('accommodatie_id', $accommodatie->id)
@@ -221,18 +219,27 @@ class AccommodatieController extends Controller
                 throw new \Exception('Deze periode is zojuist geboekt door iemand anders.');
             }
 
+            if (!ForumController::validatePostData($request->input('activity_description'))) {
+                throw new \Exception('Je beschrijving bevat foute HTML elementen.');
+            }
+
+            $nameParts = explode(' ', $user->name, 2);
+
+            $firstName = $nameParts[0];
+            $lastName = $nameParts[1] ?? '';
+
             // Create Order
             $order = Order::create([
                 'order_number' => 'B-' . strtoupper(uniqid()),
                 'user_id' => Auth::id(),
                 'status' => 'open',
                 'payment_status' => 'pending',
-                'email' => $request->email,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'address' => $request->address,
-                'zipcode' => $request->zipcode,
-                'city' => $request->city,
+                'email' => $user->email,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'address' => $user->street,
+                'zipcode' => $user->postal_code,
+                'city' => $user->city,
                 'country' => 'NL',
                 'total_amount' => 0,
             ]);
@@ -322,6 +329,7 @@ class AccommodatieController extends Controller
             }
 
             $order->update(['total_amount' => $grandTotal]);
+            $isPublic = $request->has('public');
 
             // Create the Booking record
             Booking::create([
@@ -332,6 +340,9 @@ class AccommodatieController extends Controller
                 'end' => $end,
                 'status' => 'confirmed',
                 'comment' => $request->comment,
+                'public' => $isPublic,
+                'activity_description' => $isPublic ? $request->activity_description : null,
+                'external_link' => $isPublic ? $request->external_link : null,
             ]);
 
             if ($grandTotal == 0) {

@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\Activity;
 use App\Models\ActivityException;
+use App\Models\Booking;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -70,6 +71,35 @@ trait AgendaPublicScheduleTrait
 
                 $activities->push($occurrence);
             }
+        }
+
+        $fetchedBookings = Booking::with('accommodatie')
+            ->where('status', '!=', 'cancelled')
+            ->where('public', '=', '1')
+            ->where(function ($query) use ($rangeStart, $rangeEnd) {
+                $query->whereBetween('start', [$rangeStart, $rangeEnd])
+                    ->orWhereBetween('end', [$rangeStart, $rangeEnd]);
+            })->get();
+
+        foreach ($fetchedBookings as $booking) {
+            // Duck-typing booking as an activity for the view
+            $fakeActivity = new Activity();
+            $fakeActivity->id = $booking->id;
+            $fakeActivity->isBooking = true;
+            $fakeActivity->title = "Activiteit door " . $booking->user->praktijknaam;
+            $fakeActivity->content = $booking->activity_description;
+            $fakeActivity->location = $booking->accommodatie->name;
+            $fakeActivity->date_start = $booking->start;
+            $fakeActivity->date_end = $booking->end;
+            $fakeActivity->image = null; // Or accommodation image
+            $fakeActivity->should_highlight = false; // Styling
+            $fakeActivity->lesson_id = null; // Not a lesson
+            $fakeActivity->booking = true; // Not a lesson
+
+            // Allow admin access
+            $fakeActivity->should_highlight = false; // Or true if you want to highlight rentals
+
+            $activities->push($fakeActivity);
         }
 
         $activities = $activities->sortBy('date_start')->values();

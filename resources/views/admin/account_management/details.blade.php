@@ -26,75 +26,10 @@
         @endif
 
         @if($account !== null)
-        <div class="overflow-scroll no-scrolbar" style="max-width: 100vw">
-            <table class="table table-striped">
-                <tbody>
-                <tr>
-                    <th>Volledige naam</th>
-                    <th>{{ $account->name }}</th>
-                </tr>
-
-                @if($account->profile_picture)
-                    <tr>
-                        <th>Profielfoto</th>
-                        <th>
-                            <img alt="profielfoto" class="w-25 zoomable-image"
-                                 src="{{ asset('/profile_pictures/' . $account->profile_picture) }}">
-                        <th>
-                    </tr>
-                @endif
-                @if($account->roles->count() > 0)
-                <tr>
-                    <th>Rollen</th>
-                    <th>
-                        @foreach ($account->roles as $role)
-                            <span title="{{ $role->description }}"
-                                class="badge rounded-pill text-bg-primary text-white fs-6 p-2">{{ $role->role }}</span>
-                        @endforeach
-                    </th>
-                </tr>
-                @endif
-
-                <tr>
-                    <th>Geslacht</th>
-                    <th>{{ $account->sex }}</th>
-                </tr>
-                <tr>
-                    <th>Geboortedatum</th>
-                    <th>{{ \Carbon\Carbon::parse($account->birth_date)->format('d-m-Y') }}</th>
-                </tr>
-                <tr>
-                    <th>Straat & huisnummer</th>
-                    <th>{{ $account->street }}</th>
-                </tr>
-                <tr>
-                    <th>Postcode</th>
-                    <th>{{ $account->postal_code }}</th>
-                </tr>
-                <tr>
-                    <th>Woonplaats</th>
-                    <th>{{ $account->city }}</th>
-                </tr>
-                <tr>
-                    <th>Telefoonnummer</th>
-                    <th><a href="tel:{{ $account->phone }}">{{ $account->phone }}</a></th>
-                </tr>
-                <tr>
-                    <th>E-mail</th>
-                    <th><a href="mailto:{{ $account->email }}">{{ $account->email }}</a></th>
-                </tr>
-
-                <tr>
-                    <th>Aangepast op</th>
-                    <th>{{ \Carbon\Carbon::parse($account->updated_at)->format('d-m-Y H:i:s') }}</th>
-                </tr>
-                <tr>
-                    <th>Aangemaakt op</th>
-                    <th>{{ \Carbon\Carbon::parse($account->created_at)->format('d-m-Y H:i:s') }}</th>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+            <x-user_details
+                :hide="[]"
+                :user="$account"
+            />
         @else
             <div class="alert alert-warning d-flex align-items-center" role="alert">
                 <span class="material-symbols-rounded me-2">person_off</span>Geen account gevonden...

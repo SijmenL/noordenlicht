@@ -63,7 +63,7 @@
                         <th scope="col">Titel</th>
                         <th scope="col">Datum</th>
                         <th scope="col">Categorie</th>
-                        <th scope="col">Gebruiker</th>
+                        <th scope="col">Auteur</th>
                         <th scope="col">Opties</th>
                     </tr>
                     </thead>

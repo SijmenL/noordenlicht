@@ -104,7 +104,11 @@
                             @endphp
 
                             <a
+                                @if($activity->booking)
+                                    href="{{ route('agenda.public.booking', $linkParams) }}"
+                                @else
                                     href="{{ route('agenda.public.activity', $linkParams) }}"
+                                @endif
                                class="text-decoration-none"
                                style="color: unset; cursor: pointer">
                                 <div class="d-flex flex-row">

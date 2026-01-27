@@ -14,6 +14,9 @@ class Booking extends Model
         'end',
         'status',
         'comment',
+        'public',
+        'activity_description',
+        'external_link',
     ];
 
     protected $casts = [

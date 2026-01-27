@@ -56,7 +56,8 @@
                                    'Praktijkbegeleider', 'Loodsen Mentor', 'Ouderraad'
                                ]);
                            }) || $isTeacher)
-        <div id="popUpSubmission" class="popup" style="margin-top: -122px; display: none; z-index: 99999; top: 681px; left: 0; position: absolute">
+        <div id="popUpSubmission" class="popup"
+             style="margin-top: -122px; display: none; z-index: 99999; top: 681px; left: 0; position: absolute">
             <div class="popup-body" style="width: 97vw; height: 95vh">
                 <h2>Inschrijvingen {{ $activity->title }}</h2>
                 <div class="w-100" style="height: 100%; min-height: 0px">
@@ -123,7 +124,11 @@
                     <li class="breadcrumb-item"><a
                             @if($view === 'month') href="{{ route('agenda.month', ['month' => $month, 'all' => $wantViewAll ? 1 : 0]) }}"
                             @else href="{{ route('agenda.schedule', ['month' => $month, 'all' => $wantViewAll ? 1 : 0]) }}" @endif>
-                            @if($view === 'month') Agenda @else Evenementen @endif</a></li>
+                            @if($view === 'month')
+                                Agenda
+                            @else
+                                Evenementen
+                            @endif</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ $activity->title }}</li>
                 </ol>
             </nav>
@@ -151,7 +156,7 @@
                 @endif
                 @if(isset($activity->image))
                     <img class="mt-3 zoomable-image"
-                         style="width: 100%; max-width: 800px; object-fit: cover; object-position: center;"
+                         style="width: 100%; max-width: 400px; object-fit: cover; object-position: center;"
                          alt="Activiteit Afbeelding"
                          src="{{ asset('files/agenda/agenda_images/'.$activity->image) }}">
                 @endif
@@ -200,8 +205,9 @@
                             <h4 class="mb-2">Tickets</h4>
 
                             @if($activity->max_tickets !== null)
-                            <p class="m-0">{{ $activity->ticketsSold() }} tickets verkocht van de {{ $activity->max_tickets }}</p>
-                                @else
+                                <p class="m-0">{{ $activity->ticketsSold() }} tickets verkocht van
+                                    de {{ $activity->max_tickets }}</p>
+                            @else
                                 <p class="m-0">{{ $activity->ticketsSold() }} tickets verkocht</p>
 
                             @endif
@@ -536,6 +542,92 @@
                         </script>
                     @endif
                 </div>
+            </div>
+
+        @endif
+
+        @if($activity->tickets->count() > 0)
+            <div class="bg-white w-100 p-4 rounded mt-3">
+                <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">local_activity</span>Verkochte tickets
+                </h2>
+                <p>{{ $activity->tickets->count() }} @if($activity->tickets->count() == 1)ticket @else tickets @endif verkocht van de {{ $activity->max_tickets }}</p>
+
+                <div class="" style="max-width: 100vw">
+                    <table class="table table-striped">
+                        <thead class="thead-dark table-bordered table-hover">
+                        <tr>
+                            <th scope="col">Ticket ID</th>
+                            <th scope="col">Eigenaar</th>
+                            <th scope="col">Datum</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Opties</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        @foreach ($activity->tickets as $ticket)
+                            <tr>
+                                <th>
+                                <span title="{{ $ticket->uuid }}">
+                                    {{ substr($ticket->uuid, 0, 8) }}...
+                                </span>
+                                </th>
+
+                                <td>
+                                    @if($ticket->user)
+                                        {{ $ticket->user->name }}
+                                    @else
+                                        {{ $ticket->order->first_name }} {{ $ticket->order->last_name }}
+
+                                    @endif
+                                </td>
+                                <td>{{ $ticket->created_at->format('d-m-Y') }}</td>
+                                <td>
+                                    @php
+                                        $statusClass = match($ticket->status) {
+                                            'valid' => 'success',
+                                            'used' => 'secondary',
+                                            'pending' => 'warning',
+                                            'cancelled' => 'danger',
+                                            default => 'info'
+                                        };
+                                    @endphp
+                                    <span class="badge bg-{{ $statusClass }}">
+                                    @if($ticket->status == 'valid') Geldig
+                                        @elseif($ticket->status == 'used') Gebruikt
+                                        @elseif($ticket->status == 'pending') In afwachting
+                                        @elseif($ticket->status == 'warning') Waarschuwing
+                                        @elseif($ticket->status == 'cancelled') Niet geldig
+                                        @else
+                                            {{ ucfirst($ticket->status) }}
+                                        @endif
+                                </span>
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Opties
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a href="{{ route('admin.tickets.details', $ticket->uuid) }}" class="dropdown-item">
+                                                    Bekijk details
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('ticket.download', $ticket->uuid) }}" class="dropdown-item">
+                                                    Download PDF
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
 
         @endif
