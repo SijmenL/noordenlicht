@@ -22,29 +22,40 @@
     $percentageDiscounts = $allPrices->where('type', 4);
 
     $totalBasePrice = $basePrices->sum('amount');
-    $preDiscountPrice = $totalBasePrice;
 
-    // 1. Apply percentage additions
-    $totalPercentageAdditions = 0;
-    foreach ($percentageAdditions as $percentage) {
-        $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
-        $totalPercentageAdditions += $percentage->amount;
-    }
+ $preDiscountVatAmount = 0;
+                    foreach ($percentageAdditions as $percentage) {
+                        $preDiscountVatAmount += $totalBasePrice * ($percentage->amount / 100);
+                    }
+                    $preDiscountPrice = $totalBasePrice + $preDiscountVatAmount;
 
-    $calculatedPrice = $preDiscountPrice;
+    // 1. Discounts
+                    $priceAfterDiscounts = $totalBasePrice;
+                    $totalPercentageDiscounts = 0;
 
-    $totalPercentageDiscounts = 0;
-    // 2. Apply percentage discounts
-    foreach ($percentageDiscounts as $percentage) {
-        $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
-        $totalPercentageDiscounts += $percentage->amount;
-    }
+                    foreach ($percentageDiscounts as $percentage) {
+                        $priceAfterDiscounts -= $totalBasePrice * ($percentage->amount / 100);
+                        $totalPercentageDiscounts += $percentage->amount;
+                    }
+                    $priceAfterDiscounts -= $fixedDiscounts->sum('amount');
 
-    // 3. Apply fixed amount discounts
-    $calculatedPrice -= $fixedDiscounts->sum('amount');
+                    $taxableAmount = max($priceAfterDiscounts, 0);
 
-    $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
-    // --- End Price Calculation ---
+                    // 2. Additions (VAT)
+                    $totalVatAmount = 0;
+                    $totalPercentageAdditions = 0; // Sum of percentage rates
+                    foreach ($percentageAdditions as $percentage) {
+                        $totalVatAmount += $taxableAmount * ($percentage->amount / 100);
+                        $totalPercentageAdditions += $percentage->amount;
+                    }
+
+                    $priceInclVat = $taxableAmount + $totalVatAmount;
+
+                    // 3. Extras
+                    $calculatedPrice = $priceInclVat;
+
+                    $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
+                    // --- End Price Calculation ---
 
 @endphp
 
@@ -220,6 +231,9 @@
                                 @if($totalPercentageDiscounts > 0)
                                     {{ $totalPercentageDiscounts }}%
                                 @endif
+
+                                @if($totalPercentageDiscounts > 0 && $fixedDiscounts->sum('amount') > 0) én @endif
+
                                 @if($fixedDiscounts->sum('amount') > 0)
                                     -€{{ $fixedDiscounts->sum('amount') }}
                                 @endif
@@ -546,11 +560,26 @@
 
         @endif
 
-        @if($activity->tickets->count() > 0)
+        @php
+            $currentTickets = $activity->tickets;
+            // If it is a recurring activity, filter tickets to only show those for the current occurrence date.
+            // The controller has already updated $activity->date_start to the occurrence date.
+            if ($activity->recurrence_rule && $activity->recurrence_rule !== 'never') {
+                $currentOccurrenceDate = \Carbon\Carbon::parse($activity->date_start)->startOfDay();
+                $currentTickets = $activity->tickets->filter(function ($ticket) use ($currentOccurrenceDate) {
+                    if (empty($ticket->start_date)) {
+                        return false;
+                    }
+                    return \Carbon\Carbon::parse($ticket->start_date)->startOfDay()->equalTo($currentOccurrenceDate);
+                });
+            }
+        @endphp
+
+        @if($currentTickets->count() > 0)
             <div class="bg-white w-100 p-4 rounded mt-3">
                 <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">local_activity</span>Verkochte tickets
                 </h2>
-                <p>{{ $activity->tickets->count() }} @if($activity->tickets->count() == 1)ticket @else tickets @endif verkocht van de {{ $activity->max_tickets }}</p>
+                <p>{{ $currentTickets->count() }} @if($currentTickets->count() == 1)ticket @else tickets @endif verkocht van de {{ $activity->max_tickets }}</p>
 
                 <div class="" style="max-width: 100vw">
                     <table class="table table-striped">
@@ -565,7 +594,7 @@
                         </thead>
                         <tbody>
 
-                        @foreach ($activity->tickets as $ticket)
+                        @foreach ($currentTickets as $ticket)
                             <tr>
                                 <th>
                                 <span title="{{ $ticket->uuid }}">
@@ -581,7 +610,7 @@
 
                                     @endif
                                 </td>
-                                <td>{{ $ticket->created_at->format('d-m-Y') }}</td>
+                                <td>{{ $ticket->created_at->format('d-m-Y H:i') }}</td>
                                 <td>
                                     @php
                                         $statusClass = match($ticket->status) {
@@ -634,4 +663,3 @@
 
     </div>
 @endsection
-

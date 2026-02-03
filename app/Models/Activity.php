@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Activity extends Model
 {
@@ -41,7 +42,10 @@ class Activity extends Model
         return $this->hasMany(Ticket::class);
     }
 
-    public function hasTicketsAvailable(int $quantity = 1): bool
+    /**
+     * Check if tickets are available for a specific occurrence date.
+     */
+    public function hasTicketsAvailable(int $quantity = 1, $date = null): bool
     {
         // If max_tickets is null, we assume unlimited tickets
         if (is_null($this->max_tickets)) {
@@ -53,36 +57,55 @@ class Activity extends Model
             return false;
         }
 
-        // Count actual records in the tickets table
-        $soldTickets = $this->ticketsSold();
+        // Count actual records in the tickets table for this specific occurrence
+        $soldTickets = $this->ticketsSold($date);
 
         return ($soldTickets + $quantity) <= $this->max_tickets;
     }
 
-    public function ticketsLeft()
+    /**
+     * Get the number of tickets left for a specific occurrence date.
+     */
+    public function ticketsLeft($date = null)
     {
         // If max_tickets is null, we assume unlimited tickets
         if (is_null($this->max_tickets)) {
             return null;
         }
 
-        $soldTickets = $this->ticketsSold();
+        $soldTickets = $this->ticketsSold($date);
 
         return $this->max_tickets - $soldTickets;
     }
 
-    public function ticketsSold()
+    /**
+     * Count sold tickets, optionally filtered by the occurrence date.
+     */
+    public function ticketsSold($date = null)
     {
-        $soldTickets = $this->tickets()->count();
+        $query = $this->tickets();
 
-        return $soldTickets;
+        // 1. If a specific date is passed, filter by it.
+        if ($date) {
+            $formattedDate = $date instanceof Carbon ? $date->toDateString() : Carbon::parse($date)->toDateString();
+            $query->whereDate('start_date', $formattedDate);
+        }
+        // 2. If no date is passed, BUT this is a recurring activity, we must scope to the current occurrence.
+        // The AgendaController updates $this->date_start to the specific occurrence date before rendering the view.
+        elseif ($this->recurrence_rule && $this->recurrence_rule !== 'never') {
+            $formattedDate = $this->date_start instanceof Carbon ? $this->date_start->toDateString() : Carbon::parse($this->date_start)->toDateString();
+            $query->whereDate('start_date', $formattedDate);
+        }
+        // 3. If it's a non-recurring event and no date is passed, we simply count all tickets for this ID.
+        // This maintains backward compatibility for standard events.
+
+        return $query->count();
     }
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-
 
     public function formElements()
     {
@@ -96,9 +119,6 @@ class Activity extends Model
 
     public function prices()
     {
-        // Assuming you are using the pivot table 'product_prices' created earlier
-        // If you are using a polymorphic relationship, adjust accordingly.
         return $this->hasMany(ActivityPrice::class);
     }
-
 }

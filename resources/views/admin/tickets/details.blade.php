@@ -120,7 +120,7 @@
 
                     <div class="-body">
                         <p class="mb-1"><strong>Naam:</strong> {{ $ticket->user->name }}</p>
-                        <p class="mb-1"><strong>Email:</strong> <a href="mailto:{{ $ticket->user->email }}">{{ $ticket->user->name }}</a>
+                        <p class="mb-1"><strong>Email:</strong> <a href="mailto:{{ $ticket->user->email }}">{{ $ticket->user->email }}</a>
                         </p>
                     </div>
 

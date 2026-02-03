@@ -121,8 +121,8 @@
                         <label for="type" class="col-md-4 col-form-label ">Type product</label>
                         <select id="type" class="form-select @error('type') is-invalid @enderror" name="type">
                             <option @if(old('type', $product->type) == "null") selected @endif value="null">Selecteer een optie</option>
-                            <option @if(old('type', $product->type) == "0") selected @endif value="0">Supplementen bij accommodatie</option>
-                            <option @if(old('type', $product->type) == "1") selected @endif value="1">Evenement ticket</option>
+                            <option @if(old('type', $product->type) == "0") selected @endif value="0">Toevoegingen bij verhuur accommodatie</option>
+{{--                            <option @if(old('type', $product->type) == "1") selected @endif value="1">Evenement ticket</option>--}}
                             <option @if(old('type', $product->type) == "2") selected @endif value="2">Overnachting</option>
                         </select>
                         @error('type')
@@ -400,7 +400,7 @@
                                 <label for="new_price_type" class="form-label mb-1">Type</label>
                                 <select id="new_price_type" class="form-select">
                                     <option value="0">Standaard Prijs (€)</option>
-                                    <option value="1">Percentage Toeslag (%)</option>
+                                    <option value="1">BTW</option>
                                     <option value="2">Vaste Korting (€)</option>
                                     <option value="4">Percentage Korting (%)</option>
                                     <option value="3">Extra Kosten (excl.)</option>
@@ -557,7 +557,7 @@
             getTypeText(type) {
                 switch(parseInt(type, 10)) {
                     case 0: return 'Standaard Prijs (€)';
-                    case 1: return 'Percentage Toeslag (%)';
+                    case 1: return 'BTW';
                     case 2: return 'Vaste Korting (€)';
                     case 3: return 'Extra Kosten (excl.)';
                     case 4: return 'Percentage Korting (%)';

@@ -123,6 +123,8 @@
 
         .barcode-img {
             height: 60px;
+            max-width: 450px;
+            background-repeat: no-repeat;
             margin-bottom: 10px;
         }
 

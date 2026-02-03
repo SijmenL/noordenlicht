@@ -8,9 +8,9 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
                 <div>
                     <h1 class="fw-bold">Aanvraagformulier boekingen</h1>
-                    <p>Meldt je bij de eerste keer aan middels het aanvraag formulier. Je ontvangt een reactie of je
-                        praktijk resoneert bij NoordenLicht. Na goedkeuring krijg je de mogelijkheid om accommodates bij
-                        ons te boeken door in te loggen met het e-mail en wachtwoord wat je hier invult.</p>
+                    <p>Meld je bij de eerste keer aan middels het aanvraagformulier. Je ontvangt een reactie of je
+                        praktijk resoneert bij NoordenLicht. Na goedkeuring kun je de accommodaties boeken door
+                        in te loggen met het e-mail en wachtwoord wat je hier invult.</p>
                 </div>
             </div>
 

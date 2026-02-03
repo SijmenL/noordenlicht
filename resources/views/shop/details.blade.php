@@ -2,7 +2,7 @@
 
 @section('content')
     @if(Session::has('success') && session('success') == "CardAdded")
-        <div id="cartConfirm" class="popup" style="margin-top: -92px;">
+        <div id="cartConfirm" class="popup" style="margin-top: -97px;">
             <div class="popup-body">
                 <div class="page">
                     <h2>Toegevoegd aan winkelwagen!</h2>
@@ -31,8 +31,7 @@
 
     @php
         $categoryNames = [
-            '0' => 'Supplementen bij accommodatie',
-            '1' => 'Evenement ticket',
+            '0' => 'Toevoegingen bij accommodatie',
             '2' => 'Overnachting',
         ];
     @endphp
@@ -53,26 +52,38 @@
                     $percentageDiscounts = $allPrices->where('type', 4);
 
                     $totalBasePrice = $basePrices->sum('amount');
-                    $preDiscountPrice = $totalBasePrice;
 
-                    // 1. Apply percentage additions
-                    $totalPercentageAdditions = 0;
+                    $preDiscountVatAmount = 0;
                     foreach ($percentageAdditions as $percentage) {
-                        $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
+                        $preDiscountVatAmount += $totalBasePrice * ($percentage->amount / 100);
+                    }
+                    $preDiscountPrice = $totalBasePrice + $preDiscountVatAmount;
+
+
+                    // 1. Discounts
+                    $priceAfterDiscounts = $totalBasePrice;
+                    $totalPercentageDiscounts = 0;
+
+                    foreach ($percentageDiscounts as $percentage) {
+                        $priceAfterDiscounts -= $totalBasePrice * ($percentage->amount / 100);
+                        $totalPercentageDiscounts += $percentage->amount;
+                    }
+                    $priceAfterDiscounts -= $fixedDiscounts->sum('amount');
+
+                    $taxableAmount = max($priceAfterDiscounts, 0);
+
+                    // 2. Additions (VAT)
+                    $totalVatAmount = 0;
+                    $totalPercentageAdditions = 0; // Sum of percentage rates
+                    foreach ($percentageAdditions as $percentage) {
+                        $totalVatAmount += $taxableAmount * ($percentage->amount / 100);
                         $totalPercentageAdditions += $percentage->amount;
                     }
 
-                    $calculatedPrice = $preDiscountPrice;
+                    $priceInclVat = $taxableAmount + $totalVatAmount;
 
-                    $totalPercentageDiscounts = 0;
-                    // 2. Apply percentage discounts
-                    foreach ($percentageDiscounts as $percentage) {
-                        $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
-                        $totalPercentageDiscounts += $percentage->amount;
-                    }
-
-                    // 3. Apply fixed amount discounts
-                    $calculatedPrice -= $fixedDiscounts->sum('amount');
+                    // 3. Extras
+                    $calculatedPrice = $priceInclVat;
 
                     $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
                     // --- End Price Calculation ---
@@ -134,7 +145,17 @@
                             <div class="p-0">
                                 <div class="mb-3">
                                     @if($hasDiscount)
-                                        <span class="badge bg-success fw-bold mb-3 px-3 py-2 rounded-pill">{{ $totalPercentageDiscounts }}% korting!</span>
+                                        <span class="badge bg-success fw-bold mb-3 px-3 py-2 rounded-pill">
+                                            @if($totalPercentageDiscounts > 0)
+                                                {{ $totalPercentageDiscounts }}%
+                                            @endif
+
+                                            @if($totalPercentageDiscounts > 0 && $fixedDiscounts->sum('amount') > 0) én @endif
+
+                                            @if($fixedDiscounts->sum('amount') > 0)
+                                                -€{{ $fixedDiscounts->sum('amount') }}
+                                            @endif
+                                korting!</span>
                                     @endif
 
                                     <div class="mb-3">

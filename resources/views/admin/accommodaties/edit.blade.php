@@ -70,12 +70,23 @@
                         @enderror
                     </div>
 
-                    <div class="d-flex flex-column mb-3">
-                        <label for="type_input" class="col-md-4 col-form-label ">Type accommodatie</label>
-                        <input placeholder="e.g. Kleine groepsruimte" name="type" type="text" class="form-control @error('type') is-invalid @enderror" id="type_input" value="{{ old('type', $accommodatie->type) }}">
-                        @error('type')
-                        <span class="text-danger small">{{ $message }}</span>
-                        @enderror
+                    <div class="row">
+                        <div class="col-md-9 d-flex flex-column mb-3">
+                            <label for="type_input" class="col-form-label ">Type accommodatie</label>
+                            <input placeholder="e.g. Kleine groepsruimte" name="type" type="text" class="form-control @error('type') is-invalid @enderror" id="type_input" value="{{ old('type', $accommodatie->type) }}">
+                            @error('type')
+                            <span class="text-danger small">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-3 d-flex flex-column mb-3">
+                            <label for="order_input" class="col-form-label">Volgorde (Index)</label>
+                            <input name="order" type="number" class="form-control @error('order') is-invalid @enderror" id="order_input" value="{{ old('order', $accommodatie->order) }}">
+                            <small class="text-muted">Lager nummer = hoger in de lijst</small>
+                            @error('order')
+                            <span class="text-danger small">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
 
                     <div class="mb-4">
@@ -153,7 +164,7 @@
 
                     {{-- PRICE EDITOR --}}
                     <div class="mb-5 mt-5 p-3 border rounded-3 bg-white">
-                         <h2 class="flex-row gap-3"><span
+                        <h2 class="flex-row gap-3"><span
                                 class="material-symbols-rounded me-2">attach_money</span>Prijsconfiguratie
                         </h2>
 
@@ -170,7 +181,7 @@
                                 <label for="new_price_type" class="form-label mb-1">Type</label>
                                 <select id="new_price_type" class="form-select">
                                     <option value="0">Standaard Prijs (€)</option>
-                                    <option value="1">Percentage Toeslag (%)</option>
+                                    <option value="1">BTW</option>
                                     <option value="2">Vaste Korting (€)</option>
                                     <option value="4">Percentage Korting (%)</option>
                                     <option value="3">Extra Kosten (excl.)</option>
@@ -360,7 +371,7 @@
             getTypeText(type) {
                 switch(parseInt(type, 10)) {
                     case 0: return 'Standaard Prijs (€)';
-                    case 1: return 'Percentage Toeslag (%)';
+                    case 1: return 'BTW';
                     case 2: return 'Vaste Korting (€)';
                     case 3: return 'Extra Kosten (excl.)';
                     case 4: return 'Percentage Korting (%)';
@@ -786,4 +797,3 @@
         });
     </script>
 @endsection
-

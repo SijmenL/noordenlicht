@@ -9,7 +9,7 @@
 @section('content')
 
     @if(Session::has('success') && session('success') == "CardAdded")
-        <div id="cartConfirm" class="popup" style="margin-top: -92px;">
+        <div id="cartConfirm" class="popup" style="margin-top: -97px;">
             <div class="popup-body">
                 <div class="page">
                     <h2>Toegevoegd aan winkelwagen!</h2>
@@ -52,7 +52,12 @@
                 $percentageDiscounts = $allPrices->where('type', 4);
 
                 $totalBasePrice = $basePrices->sum('amount');
-                $preDiscountPrice = $totalBasePrice;
+
+                $preDiscountVatAmount = 0;
+                    foreach ($percentageAdditions as $percentage) {
+                        $preDiscountVatAmount += $totalBasePrice * ($percentage->amount / 100);
+                    }
+                    $preDiscountPrice = $totalBasePrice + $preDiscountVatAmount;
 
                 // 1. Apply percentage additions
                 foreach ($percentageAdditions as $percentage) {

@@ -33,29 +33,40 @@
                 $percentageDiscounts = $allPrices->where('type', 4);
 
                 $totalBasePrice = $basePrices->sum('amount');
-                $preDiscountPrice = $totalBasePrice;
 
-                // 1. Apply percentage additions
-                $totalPercentageAdditions = 0;
-                foreach ($percentageAdditions as $percentage) {
-                    $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
-                    $totalPercentageAdditions += $percentage->amount;
-                }
+$preDiscountVatAmount = 0;
+                    foreach ($percentageAdditions as $percentage) {
+                        $preDiscountVatAmount += $totalBasePrice * ($percentage->amount / 100);
+                    }
+                    $preDiscountPrice = $totalBasePrice + $preDiscountVatAmount;
 
-                $calculatedPrice = $preDiscountPrice;
+                // 1. Discounts
+                    $priceAfterDiscounts = $totalBasePrice;
+                    $totalPercentageDiscounts = 0;
 
-                $totalPercentageDiscounts = 0;
-                // 2. Apply percentage discounts
-                foreach ($percentageDiscounts as $percentage) {
-                    $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
-                    $totalPercentageDiscounts += $percentage->amount;
-                }
+                    foreach ($percentageDiscounts as $percentage) {
+                        $priceAfterDiscounts -= $totalBasePrice * ($percentage->amount / 100);
+                        $totalPercentageDiscounts += $percentage->amount;
+                    }
+                    $priceAfterDiscounts -= $fixedDiscounts->sum('amount');
 
-                // 3. Apply fixed amount discounts
-                $calculatedPrice -= $fixedDiscounts->sum('amount');
+                    $taxableAmount = max($priceAfterDiscounts, 0);
 
-                $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
-                // --- End Price Calculation ---
+                    // 2. Additions (VAT)
+                    $totalVatAmount = 0;
+                    $totalPercentageAdditions = 0; // Sum of percentage rates
+                    foreach ($percentageAdditions as $percentage) {
+                        $totalVatAmount += $taxableAmount * ($percentage->amount / 100);
+                        $totalPercentageAdditions += $percentage->amount;
+                    }
+
+                    $priceInclVat = $taxableAmount + $totalVatAmount;
+
+                    // 3. Extras
+                    $calculatedPrice = $priceInclVat;
+
+                    $hasDiscount = $fixedDiscounts->isNotEmpty() || $percentageDiscounts->isNotEmpty();
+                    // --- End Price Calculation ---
 
 
 
@@ -92,6 +103,9 @@
                                 @if($totalPercentageDiscounts > 0)
                                     {{ $totalPercentageDiscounts }}%
                                 @endif
+
+                                @if($totalPercentageDiscounts > 0 && $fixedDiscounts->sum('amount') > 0) én @endif
+
                                 @if($fixedDiscounts->sum('amount') > 0)
                                     -€{{ $fixedDiscounts->sum('amount') }}
                                 @endif

@@ -33,4 +33,20 @@ class HomeController extends Controller
 
         return view('home', ['news' => $news, 'locations' => $locations, 'activities' => $activities] + $agendaViewData);
     }
+    public function eula() {
+        return view('policies.eula');
+    }
+
+    public function cancellationPolicy() {
+        return view('policies.cancelation');
+    }
+
+    public function privacyPolicy() {
+        return view('policies.privacy');
+    }
+
+    public function rules() {
+        return view('policies.rules');
+    }
+
 }

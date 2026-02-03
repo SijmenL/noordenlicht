@@ -13,6 +13,17 @@ class OrderItem extends Model
         'quantity',
         'unit_price',
         'total_price',
+        // New fields
+        'unit_base_price',
+        'unit_vat',
+        'unit_discount_percentage',
+        'unit_discount_amount',
+        'unit_extra',
+        'price_metadata'
+    ];
+
+    protected $casts = [
+        'price_metadata' => 'array',
     ];
 
     public function order()

@@ -23,19 +23,16 @@
                      src="{{ asset('img/photo/compressed/NoordenLicht.webp') }}" alt="NoordenLicht Poort">
                 <div style="backdrop-filter: blur(2px);">
                     <h1 class="text-center">NoordenLicht nodigt uit tot verbinden en ont-moeten.</h1>
-                    <p>NoordenLicht is een krachtige en bijzondere plek, midden in het bos in Schoonoord in Drenthe.
-                        Rust, thuis komen bij jezelf en verbinding is wat je er onder andere kunt vinden.</p>
-                    <p>De energie hier is uitzonderlijk: slechts 20 centimeter onder het maaiveld ligt nog altijd de
-                        oergrond uit de ijstijd, volledig intact. Dit maakt dat er talloze leylijnen samenkomen, wat
-                        deze plek tot een ware krachtplaats maakt.</p>
-                    <p>De energie van het bos werkt helend en transformerend – simpelweg door er te zijn. We benaderen
-                        deze plek met respect en een lichte voetafdruk; als gasten in de natuur.</p>
-                    <p>Het is een plek waar je jezelf en de ander kunt ontmoeten zoals je werkelijk bent – in je
-                        grootsheid, je licht en je kracht.</p>
+                    <h2 class="text-center">NoordenLicht brengt magie in je hart</h2>
+                    <p class="text-center">NoordenLicht is een krachtige en prachtige plek in het bos in Schoonoord in
+                        Drenthe. De energie is bijzonder, doordat de oergrond uit de ijstijd slechts 20 cm
+                        onder het maaiveld nog volledig intact is. Dit geeft vele leylijnen, wat de plek tot een
+                        ware krachtplek maakt. De energie van het bos geeft healing en transformatie, alleen
+                        al door er te zijn. We proberen deze bijzondere plek met een lichte voetprint te
+                        betreden en voelen ons dan ook te gast in de natuur. NoordenLicht is een plek om te
+                        verbinden en te ont-moeten. Een plek waar je jezelf en de ander mag zien voor wie je
 
-                    <div class="d-flex align-items-center justify-content-center">
-                        {{--                        <a class="btn btn-secondary text-white">Ontdek Meer</a> drie stippels--}}
-                    </div>
+                        echt bent. In je grootsheid, licht en kracht.</p>
                 </div>
             </div>
         </div>
@@ -44,18 +41,25 @@
              style="position: relative; z-index: 9; margin-top: -25px; background-position: unset !important; background-image: url('{{ asset('img/logo/doodles/Wolf.webp') }}'); background-repeat: no-repeat; background-size: cover">
             <div class="container justify-content-center align-items-center d-flex flex-column gap-5">
                 <div style="backdrop-filter: blur(2px);">
-                    <h1 class="text-center">Ruimtes & Accomodaties</h1>
-                    <h2 class="text-center">NoordenLicht is een plek voor en door gelijkgestemden. Een ontmoetingsplek
-                        om samen te komen en samen te creëren.</h2>
-                    <p class="text-center">NoordenLicht ligt in een bosrijke omgeving in Drenthe en biedt sfeervolle
-                        ruimtes die per uur te huur zijn.</p>
-                    <p class="text-center">Het is een plek voor verbinding – speciaal voor ondernemers die werken aan
-                        fysieke, emotionele, mentale of spirituele gezondheid. Zij delen hier hun kennis en missie via
-                        workshops, sessies of andere activiteiten.</p>
-                    <p class="text-center">Hun bezoekers zijn mensen die bewuster willen leven, op zoek zijn naar
-                        verbinding, groei en een lichter, gelukkiger leven.</p>
-                    <p class="text-center">Bij NoordenLicht ontmoeten deze twee groepen elkaar – in een omgeving vol
-                        rust, balans en natuurlijke energie.</p>
+                    <h1 class="text-center">Accommodaties &amp; Retraites</h1>
+                    <h2 class="text-center">NoordenLicht is een plek voor en door gelijkgestemden. Een
+                        ontmoetingsplek om samen te komen en samen te creëren.</h2>
+                    <p class="text-center">De accommodaties zijn te huur voor 1 op 1 sessies, groepsactiviteiten en
+                        retraites,
+                        welke bijdragen aan de persoonlijke- en intuïtieve ontwikkeling.</p>
+                    <p class="text-center">Alle accommodaties zijn duurzaam en gebouwd met natuurlijke materialen als
+                        hout,
+                        leem, kurk en sedum en hebben grote raampartijen wat veel licht en een grootse
+                        bosbeleving geeft.</p>
+                    <p class="text-center">Dit bepaalt de bijzondere sfeer op deze krachtplek. De gebouwen zijn
+                        vrijstaand en
+                        gaan op in de natuur. Zo is het hout aan de buitenzijde afkomstig van eigen bomen
+                        die eerder op deze plek hebben gestaan. In de ruimte is een kachel, zodat je als
+                        gebruiker zelf de temperatuur kunt bepalen, een theekeuken en een toilet.</p>
+                    <p class="text-center">Op kampeerveld Het VogelNest kun je overnachten middels eigen tenten, of een
+                        ingerichte tent boeken. Caravans en campers kunnen op de ruime parkeerplaats
+                        geplaatst worden. Het VogelNest beschikt over een sanitaire ruimte met toilets,
+                        douches en een buitenkeuken.</p>
                 </div>
 
 
@@ -102,7 +106,8 @@
                     </div>
                 </div>
 
-                <a href="{{ route('accommodaties') }}" class="btn btn-secondary text-white btn-lg rounded-pill shadow">Bekijk Alles</a>
+                <a href="{{ route('accommodaties') }}" class="btn btn-secondary text-white btn-lg rounded-pill shadow">Bekijk
+                    Alles</a>
             </div>
         </div>
 
@@ -259,7 +264,8 @@
 
             </div>
 
-            <a href="{{ route('agenda.public.month') }}" class="mt-4 btn btn-primary btn-lg rounded-pill shadow">Bekijk Alles</a>
+            <a href="{{ route('agenda.public.month') }}" class="mt-4 btn btn-primary btn-lg rounded-pill shadow">Bekijk
+                Alles</a>
 
 
         </div>
@@ -301,10 +307,6 @@
                         het
                         directe
                         aanspreekpunt en helpt je graag waar nodig..</p>
-                    <div class="d-flex align-items-center justify-content-center">
-                        <a class="btn btn-secondary text-white btn-lg rounded-pill shadow">Lees Verder</a>
-
-                    </div>
                 </div>
 
                 <div style="width: clamp(100px, 75vw, 450px); min-width: 50%">
@@ -329,33 +331,39 @@
                 <div class="w-100">
                     <h1 class="text-center">Bosvrienden</h1>
                     <h2 class="text-center">Het realiseren en het manifesteren van NoordenLicht doen we Samen!</h2>
-                    <p>Na vier jaar BosKlussen is het eindelijk zover, de eerste accommodaties zijn klaar en zijn in
-                        gebruik
-                        genomen. Het resultaat van al het harde werken is nu echt goed zichtbaar. NoordenLicht begint
-                        steeds
-                        meer vorm te krijgen. De vele geplante bomen, heesters en planten doen hun best om weer een
-                        sterk
-                        bos te worden. Het heeft vooral tijd nodig…</p>
-                    <p>Elke volgende (bouw-) fase brengt weer nieuwe werkSaamheden met zich mee en daarom ontvangen wij,
-                        ter
-                        versterking en ondersteuning van onze BosVrienden-werkgroep, graag bij verschillende klussen een
-                        paar extra helpende handjes.</p>
-                    <p>Bijna elke zaterdag is er een bosklusdag (eventuele andere dagen wisselen en zijn in
-                        overleg).</p>
-                    <p>Voel je op deze dagen van harte welkom om op vrijwillige basis, eens of vaker, aan te
-                        sluiten.</p>
-                    <strong>
-                        <p>We zijn op zoek naar:</p>
-                        <ul>
-                            <li>Mensen met groene vingers voor team ‘Moedertje Groen’</li>
-                            <li>Veelzijdige creatievelingen</li>
-                            <li>Handige timmermensen en/of groot-houtbewerkers</li>
-                            <li>Versterking voor ons kookteam</li>
-                            <li>All round bosklussers</li>
-                            <li>Zaaghulp</li>
-                            <li>Mensen met groene vingers gezocht voor het groene team</li>
-                        </ul>
-                    </strong>
+                    <p>NoordenLicht is ontstaan door vele handen. Sinds juli 2021 komen vrijwilligers op de
+                        zaterdag samen om deze plek te laten groeien en bloeien. Nadat we ca 3000 door de
+                        Letterzetter gestorven bomen hebben opgeruimd, doen vele geplante bomen, heesters
+                        en planten hun best om weer een sterk bos te worden. Het heeft vooral tijd nodig…</p>
+                    <p>Ook voor dit seizoen zijn Helpende Handjes meer dan welkom. Er staan grote en
+                        kleine projecten op stapel om volgend seizoen nog mooier te kunnen stralen.</p>
+                    <p>Wil jij meedragen aan de opbouw van NoordenLicht? Ben je goed gezind en kun je
+                        jezelf dragen?</p>
+                    <p>Voel je welkom om op een zaterdag kennis te komen maken. Wanneer je &quot;ingewerkt&quot;
+                        ben, is het ook mogelijk om op andere dagen te bosklussen. Laat je even weten als je
+                        komt of af te stemmen via 06-31223045.</p>
+                    <p>We hebben de taken in groepen opgedeeld:</p>
+                    <p><strong>Moedertje Groen</strong>: Kom Sandra helpen met het verplanten, snoeien en bemestenvan
+                        alle nieuwe aanplanting.</p>
+                    <p><strong>Stef Special</strong>: Stef is onze hout kunstenaar. Hij maakt banken, tafels en
+                        ornamentenvan ons eigen hout. Ook staat er een heksen boshuisje bouwen op zijn programma.
+                    </p>
+                    <p><strong>Elfeling</strong>: Liane kan creatieve hulp gebruiken bij het beschilderen,
+                        decoreren en deopbouw van oa Gloepertieland. Dit zijn ook creatieve klusjes die je thuis
+                        kunt doen</p>
+                    <p><strong>De Breurs</strong>: Timo en Jeroen bouwen erop los. Zij kunnen timmerhulp gebruiken
+                        bijhet bouwen van het atelier/muziekstudio.</p>
+                    <p><strong>Woodiewood</strong>: Nuttah heeft enorme stapels boomstammen liggen diegetransformeerd
+                        willen worden tot planken middels de lintzaag. Het veilig kunnenwerken met een kettingzaag
+                        is een pr&eacute;.</p>
+                    <p><strong>De droomtram</strong>: Deze 100-jarige wordt omgetoverd tot een magischeovernachtingsplek.
+                        Voor dit project zoeken we handige handjes die van timmeren,schuren en schilderen houden.
+                    </p>
+                    <p><strong>Kookfee en Afwasfee</strong>: Omdat wij ieder buikje graag gezond vullen, en Nuttah
+                        nietalles tegelijk kan, zoeken we iemand die van niets iets kan maken. Voor op dezaterdag,
+                        maar ook als oproepkracht door de weeks.</p>
+                    <p>Ieder seizoen maken we de balans op en een nieuwe planning. Je hoeft je dus niet
+                        voor lange tijd te binden als vrijwilliger aan NoordenLicht.</p>
                     <div class="d-flex align-items-center justify-content-center">
                         <a class="btn btn-secondary btn-lg text-white rounded-pill shadow">Bekijk Alles</a>
 
@@ -365,7 +373,7 @@
         </div>
 
         <div class=" bg-white d-flex flex-column container-block"
-             style="position: relative; z-index: 4; margin-top: -25px; background-image: url('{{ asset('img/logo/doodles/BuizerdVlucht.webp') }}'); background-repeat: no-repeat; background-size: 150vw; background-position: center">
+             style="position: relative; z-index: 2; margin-top: -25px; background-image: url('{{ asset('img/logo/doodles/BuizerdVlucht.webp') }}'); background-repeat: no-repeat; background-size: 150vw; background-position: center">
             <h1 class="text-center">Blog</h1>
             @if($news->count() > 0)
                 <div class="d-flex flex-row-responsive gap-4 justify-content-center"
@@ -413,8 +421,10 @@
     </div>
 
     <!-- Custom Newsletter Popup -->
-    <div id="newsletterPopup" class="popup" style="display: none; z-index: 99999; top: 0; left: 0; position: fixed; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); align-items: center; justify-content: center;">
-        <div class="popup-body" style="position: relative; width: clamp(300px, 90%, 800px); max-height: 90vh; margin: 0; background: white; border-radius: 12px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);">
+    <div id="newsletterPopup" class="popup"
+         style="display: none; z-index: 99999; top: 0; left: 0; position: fixed; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); align-items: center; justify-content: center;">
+        <div class="popup-body"
+             style="position: relative; width: clamp(300px, 90%, 800px); max-height: 90vh; margin: 0; background: white; border-radius: 12px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);">
 
             <div class="d-flex justify-content-between align-items-center p-3 border-bottom w-100">
                 <h5 class="mb-0 fw-bold">Blijf op de hoogte!</h5>
@@ -424,30 +434,35 @@
             </div>
 
             <!-- Content Area -->
-            <div class="p-4 d-flex flex-column flex-md-row gap-4 align-items-center justify-content-center" style="flex-grow: 1;">
+            <div class="p-4 d-flex flex-column flex-md-row gap-4 align-items-center justify-content-center"
+                 style="flex-grow: 1;">
 
                 <!-- Optional Image (visible on md+) -->
                 <div class="d-none d-md-block" style="flex: 1; text-align: center;">
-                    <img src="{{ asset('img/logo/logo zonder tekst.webp') }}" style="width: 100%; max-width: 300px; height: auto; object-fit: contain;" alt="Nieuwsbrief">
+                    <img src="{{ asset('img/logo/logo zonder tekst.webp') }}"
+                         style="width: 100%; max-width: 300px; height: auto; object-fit: contain;" alt="Nieuwsbrief">
                 </div>
 
                 <!-- Form -->
                 <div style="flex: 1; width: 100%;">
                     <div class="text-center">
                         <span class="material-symbols-rounded text-primary mb-2" style="font-size: 4rem;">mail</span>
-                        <p class="mb-4 text-muted">Meld je aan voor onze nieuwsbrief en mis geen enkel evenement of update van NoordenLicht.</p>
+                        <p class="mb-4 text-muted">Meld je aan voor onze nieuwsbrief en mis geen enkel evenement of
+                            update van NoordenLicht.</p>
                     </div>
 
                     <form id="newsletter-form">
                         <div class="mb-3">
-                            <input type="email" class="form-control form-control-lg text-center" id="newsletter-email" name="email" placeholder="Jouw e-mailadres" required>
+                            <input type="email" class="form-control form-control-lg text-center" id="newsletter-email"
+                                   name="email" placeholder="Jouw e-mailadres" required>
                         </div>
                         <div id="newsletter-message" class="mb-3 d-none text-center"></div>
                         <button type="submit" class="btn btn-primary rounded-pill w-100 btn-lg">Aanmelden</button>
                     </form>
 
                     <div class="text-center mt-3">
-                        <small class="text-muted" style="cursor: pointer;" id="dismissPopupLink">Nee bedankt, ik kijk liever gewoon rond.</small>
+                        <small class="text-muted" style="cursor: pointer;" id="dismissPopupLink">Nee bedankt, ik kijk
+                            liever gewoon rond.</small>
                     </div>
                 </div>
 
@@ -456,7 +471,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Popup Elements
             const popup = document.getElementById('newsletterPopup');
             const closeBtn = document.getElementById('closePopupBtn');
@@ -490,14 +505,14 @@
             dismissLink.addEventListener('click', closePopup);
 
             // Close on click outside (optional)
-            popup.addEventListener('click', function(e) {
+            popup.addEventListener('click', function (e) {
                 if (e.target === popup) {
                     closePopup();
                 }
             });
 
             // Handle Form Submission
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
 
                 // Disable button
@@ -515,7 +530,7 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ email: email })
+                    body: JSON.stringify({email: email})
                 })
                     .then(response => response.json())
                     .then(data => {

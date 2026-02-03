@@ -111,9 +111,7 @@
 
         <style>
             /* Reset & Custom Styles */
-            .custom-search-input:focus {
-                box-shadow: 0 0 0 4px rgba(0,0,0,0.05) !important;
-            }
+
 
             /* Category Pills */
             .category-pill {

@@ -15,46 +15,75 @@ class Product extends Model
 
     public function prices()
     {
-        // Assuming you are using the pivot table 'product_prices' created earlier
-        // If you are using a polymorphic relationship, adjust accordingly.
         return $this->hasMany(ProductPrice::class);
     }
 
-    /**
-     * Centralized Price Calculation Accessor.
-     * Use as: $product->calculated_price
-     */
+    // Base - Discounts + VAT (No Extras)
     public function getCalculatedPriceAttribute()
     {
-        // Eager load prices if not already loaded to prevent N+1 queries
         $allPrices = $this->relationLoaded('prices')
             ? $this->prices->map(fn($pp) => $pp->price)
             : $this->prices()->with('price')->get()->map(fn($pp) => $pp->price);
 
         $basePrices = $allPrices->where('type', 0);
-        $percentageAdditions = $allPrices->where('type', 1);
-        $fixedDiscounts = $allPrices->where('type', 2);
-        $percentageDiscounts = $allPrices->where('type', 4);
+        $percentageAdditions = $allPrices->where('type', 1); // VAT
+        $fixedDiscounts = $allPrices->where('type', 2);      // Fixed Discounts
+        $percentageDiscounts = $allPrices->where('type', 4); // % Discounts
 
         $totalBasePrice = $basePrices->sum('amount');
-        $preDiscountPrice = $totalBasePrice;
 
-        // 1. Additions
-        foreach ($percentageAdditions as $percentage) {
-            $preDiscountPrice += $totalBasePrice * ($percentage->amount / 100);
-        }
-
-        $calculatedPrice = $preDiscountPrice;
-
-        // 2. Percentage Discounts
+        // 1. Discounts
+        $discountAmount = 0;
         foreach ($percentageDiscounts as $percentage) {
-            $calculatedPrice -= $preDiscountPrice * ($percentage->amount / 100);
+            $discountAmount += $totalBasePrice * ($percentage->amount / 100);
+        }
+        $discountAmount += $fixedDiscounts->sum('amount');
+
+        $taxableAmount = max($totalBasePrice - $discountAmount, 0);
+
+        // 2. VAT (Additions) on Taxable Amount
+        $vatAmount = 0;
+        foreach ($percentageAdditions as $percentage) {
+            $vatAmount += $taxableAmount * ($percentage->amount / 100);
         }
 
-        // 3. Fixed Discounts
-        $calculatedPrice -= $fixedDiscounts->sum('amount');
+        return max($taxableAmount + $vatAmount, 0);
+    }
 
-        return max($calculatedPrice, 0);
+    // Base - Discounts + VAT + Extras
+    public function getCalculatedFullPriceAttribute()
+    {
+        $allPrices = $this->relationLoaded('prices')
+            ? $this->prices->map(fn($pp) => $pp->price)
+            : $this->prices()->with('price')->get()->map(fn($pp) => $pp->price);
+
+        $basePrices = $allPrices->where('type', 0);
+        $percentageAdditions = $allPrices->where('type', 1); // VAT
+        $fixedDiscounts = $allPrices->where('type', 2);      // Fixed Discounts
+        $extraCosts = $allPrices->where('type', 3);          // Extras
+        $percentageDiscounts = $allPrices->where('type', 4); // % Discounts
+
+        $totalBasePrice = $basePrices->sum('amount');
+
+        // 1. Discounts
+        $discountAmount = 0;
+        foreach ($percentageDiscounts as $percentage) {
+            $discountAmount += $totalBasePrice * ($percentage->amount / 100);
+        }
+        $discountAmount += $fixedDiscounts->sum('amount');
+
+        $taxableAmount = max($totalBasePrice - $discountAmount, 0);
+
+        // 2. VAT (Additions) on Taxable Amount
+        $vatAmount = 0;
+        foreach ($percentageAdditions as $percentage) {
+            $vatAmount += $taxableAmount * ($percentage->amount / 100);
+        }
+
+        // 3. Extras
+        $extrasAmount = $extraCosts->sum('amount');
+
+        return max($taxableAmount + $vatAmount + $extrasAmount, 0);
     }
 
     public function formElements()
@@ -66,5 +95,4 @@ class Product extends Model
     {
         return $this->hasMany(ActivityFormElement::class, 'product_id');
     }
-
 }

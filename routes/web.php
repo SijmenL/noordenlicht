@@ -32,6 +32,11 @@ Auth::routes();
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+Route::get('/algemene-voorwaarden', [HomeController::class, 'eula'])->name('home.eula');
+Route::get('/annuleringsvoorwaarden', [HomeController::class, 'cancellationPolicy'])->name('home.cancellation');
+Route::get('/huisregels', [HomeController::class, 'rules'])->name('home.rules');
+Route::get('/privacyverklaring', [HomeController::class, 'privacyPolicy'])->name('home.privacy');
+
 Route::get('/nieuws/item/{id}', [NewsController::class, 'viewNewsItem'])->name('news.item');
 
 Route::get('/nieuws/{id}', [NewsController::class, 'viewNewsItem'])->name('news.item');
@@ -73,10 +78,13 @@ Route::post('/winkelmandje/bulk-toevoegen', [OrderController::class, 'bulkAdd'])
 Route::get('/afrekenen', [OrderController::class, 'checkout'])->name('checkout');
 Route::post('/afrekenen', [OrderController::class, 'store'])->name('checkout.store');
 Route::get('/bestelling/success/{order_number}', [OrderController::class, 'success'])->name('order.success');
+Route::get('/bestelling/success/{order_number}/download', [OrderController::class, 'downloadInvoice'])->name('order.invoice');
 Route::get('/afrekenen/{id}/retry', [OrderController::class, 'retry'])->name('order.retry');
 
 Route::get('/ticket/download/{ticket_uuid}', [TicketController::class, 'download'])->name('ticket.download');
+
 Route::get('/tickets/stream/{ticket_uuid}/', [TicketController::class, 'streamPdf'])->name('admin.tickets.stream');
+Route::get('/order/stream/{order_number}/', [OrderController::class, 'streamInvoicePdf'])->name('admin.order.invoice.stream');
 
 Route::post('/webhooks/mollie', [OrderController::class, 'handleWebhook'])->name('webhooks.mollie');
 
@@ -86,8 +94,11 @@ Route::post('/user-search', [ForumController::class, 'searchUser'])->name('searc
 Route::get('/nieuwsbrieven', [App\Http\Controllers\LapostaController::class, 'publicList'])->name('newsletters');
 Route::post('/nieuwsbrieven/abonneer', [App\Http\Controllers\LapostaController::class, 'subscribe'])->name('newsletters.subscribe');
 
-// Bookings
+// Pricelist
+Route::get('/prijslijst', [PriceController::class, 'pricePage'])->name('prices.list');
+Route::get('/prijslijst/download', [PriceController::class, 'downloadPdf'])->name('prices.download');
 
+// Bookings
 Route::middleware(['checkAccepted',])->group(function () {
     Route::post('/accommodatie/boeken/', [App\Http\Controllers\AccommodatieController::class, 'storeBooking'])->name('accommodatie.store_booking');
     Route::get('/accommodatie/boeken/{id}', [App\Http\Controllers\AccommodatieController::class, 'book'])->name('accommodatie.book');
@@ -290,6 +301,8 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::post('/dashboard/accommodaties/temp/image', [AccommodatieController::class, 'uploadTempImage'])->name('admin.accommodaties.temp.image');
     Route::delete('/dashboard/accommodaties/temp/image/{image}', [AccommodatieController::class, 'deleteTempImage'])->name('admin.accommodaties.temp.image.delete');
     Route::delete('/dashboard/accommodaties/temp/icon/{icon}', [AccommodatieController::class, 'deleteTempIcon'])->name('admin.accommodaties.temp.icon.delete');
+
+    Route::post('/dashboard/accommodaties/reorder', [AccommodatieController::class, 'reorder'])->name('admin.accommodaties.reorder');
 });
 
 Route::post('/upload-image', [ForumController::class, 'uploadImage'])->name('forum.image');

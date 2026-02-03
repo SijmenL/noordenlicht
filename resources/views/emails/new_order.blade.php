@@ -27,13 +27,45 @@
             @foreach($order->items as $item)
                 <tr>
                     <td style="padding: 8px 0; border-bottom: 1px solid #e6eacb; vertical-align: top;">
-                        <span style="font-weight: 600; color: #5a7123;">
-                            {{ $item->product_name ?? $item->name ?? 'Product' }}
-                        </span>
+            <span style="font-weight: 600; color: #5a7123;">
+                {{ $item->product_name ?? $item->name ?? 'Product' }}
+            </span>
                         <br>
                         <span style="font-size: 13px; color: #666;">Aantal: {{ $item->quantity }}</span>
-                    </td>
 
+                        {{-- Price Details Block --}}
+                        @php
+                            $meta = $item->price_metadata ?? [];
+                            $hasDiscount = $item->unit_discount_amount > 0 || $item->unit_discount_percentage > 0;
+                            $preDiscountPrice = $meta['pre_discount_price'] ?? ($item->unit_base_price + $item->unit_vat);
+                        @endphp
+
+                        <div style="font-size: 11px; color: #888; margin-top: 4px;">
+                            @if($hasDiscount)
+                                <span style="text-decoration: line-through;">&euro; {{ number_format($preDiscountPrice, 2, ',', '.') }}</span>
+                                @if($item->unit_discount_percentage > 0)
+                                    <span style="color: #198754; font-weight: bold;">(-{{ $item->unit_discount_percentage }}%)</span>
+                                @endif
+                                <br>
+                            @endif
+
+                            @if(!empty($meta['additions']))
+                                <span>(incl.
+                    @foreach($meta['additions'] as $add)
+                                        {{ $add['name'] }} {{ $add['amount'] }}%@if(!$loop->last), @endif
+                                    @endforeach
+                                    )</span><br>
+                            @endif
+
+                            @if(!empty($meta['extras']))
+                                <span>(excl.
+                    @foreach($meta['extras'] as $ex)
+                        {{ $ex['name'] }} &euro; {{ number_format($ex['amount'], 2, ',', '.') }}@if(!$loop->last), @endif
+                                    @endforeach
+                                    )</span>
+                            @endif
+                        </div>
+                    </td>
 
                     <td style="padding: 8px 0; border-bottom: 1px solid #e6eacb; text-align: right; vertical-align: top; white-space: nowrap;">
                         &euro; {{ number_format($item->unit_price, 2, ',', '.') }}

@@ -14,7 +14,8 @@ class Accommodatie extends Model
         'image',
         'min_check_in',
         'max_check_in',
-        'min_duration_minutes'
+        'min_duration_minutes',
+        'order'
     ];
 
     public function images()
@@ -35,5 +36,73 @@ class Accommodatie extends Model
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    // Base - Discounts + VAT
+    public function getCalculatedPriceAttribute()
+    {
+        $allPrices = $this->relationLoaded('prices')
+            ? $this->prices->map(fn($pp) => $pp->price)
+            : $this->prices()->with('price')->get()->map(fn($pp) => $pp->price);
+
+        $basePrices = $allPrices->where('type', 0);
+        $percentageAdditions = $allPrices->where('type', 1);
+        $fixedDiscounts = $allPrices->where('type', 2);
+        $percentageDiscounts = $allPrices->where('type', 4);
+
+        $totalBasePrice = $basePrices->sum('amount');
+
+        // 1. Discounts
+        $discountAmount = 0;
+        foreach ($percentageDiscounts as $percentage) {
+            $discountAmount += $totalBasePrice * ($percentage->amount / 100);
+        }
+        $discountAmount += $fixedDiscounts->sum('amount');
+
+        $taxableAmount = max($totalBasePrice - $discountAmount, 0);
+
+        // 2. VAT
+        $vatAmount = 0;
+        foreach ($percentageAdditions as $percentage) {
+            $vatAmount += $taxableAmount * ($percentage->amount / 100);
+        }
+
+        return max($taxableAmount + $vatAmount, 0);
+    }
+
+    // Base - Discounts + VAT + Extras
+    public function getCalculatedFullPriceAttribute()
+    {
+        $allPrices = $this->relationLoaded('prices')
+            ? $this->prices->map(fn($pp) => $pp->price)
+            : $this->prices()->with('price')->get()->map(fn($pp) => $pp->price);
+
+        $basePrices = $allPrices->where('type', 0);
+        $percentageAdditions = $allPrices->where('type', 1);
+        $fixedDiscounts = $allPrices->where('type', 2);
+        $extraCosts = $allPrices->where('type', 3);
+        $percentageDiscounts = $allPrices->where('type', 4);
+
+        $totalBasePrice = $basePrices->sum('amount');
+
+        // 1. Discounts
+        $discountAmount = 0;
+        foreach ($percentageDiscounts as $percentage) {
+            $discountAmount += $totalBasePrice * ($percentage->amount / 100);
+        }
+        $discountAmount += $fixedDiscounts->sum('amount');
+
+        $taxableAmount = max($totalBasePrice - $discountAmount, 0);
+
+        // 2. VAT
+        $vatAmount = 0;
+        foreach ($percentageAdditions as $percentage) {
+            $vatAmount += $taxableAmount * ($percentage->amount / 100);
+        }
+
+        // 3. Extras
+        $extrasAmount = $extraCosts->sum('amount');
+
+        return max($taxableAmount + $vatAmount + $extrasAmount, 0);
     }
 }

@@ -4,7 +4,7 @@
 
     @php
         $categoryNames = [
-            '0' => 'Supplementen bij accommodatie',
+            '0' => 'Toevoegingen bij accommodatie',
             '1' => 'Evenement ticket',
             '2' => 'Overnachting',
         ];

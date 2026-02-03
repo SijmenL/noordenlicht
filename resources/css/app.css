@@ -37,6 +37,10 @@ html.noscroll {
     margin-bottom: 0; /* Optional: remove margin to align with content */
 }
 
+.custom-search-input:focus {
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.05) !important;
+}
+
 .nav-tabs .nav-item .nav-link {
     padding: 5px;
 }
@@ -1414,10 +1418,11 @@ th .form-control, .form-select {
     font-size: 18px;
     line-height: 1.62;
     width: 150px;
+    color: var(--primary-color);
 }
 
 .month-devider-line {
-    background-color: var(--secondary-color);
+    background-color: var(--primary-color);
     content: "";
     display: block;
     flex: auto;
