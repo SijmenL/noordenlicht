@@ -2,14 +2,14 @@
 
 @section('content')
     <div class="container my-5">
-        <div class="shadow-sm w-100 border-0 rounded-4 overflow-hidden">
-            <div class="text-center p-5 bg-white">
+        <div class="w-100 border-0 rounded-4 overflow-hidden">
+            <div class="text-center p-5">
                 <span class="material-symbols-rounded text-info" style="font-size: 64px;">pending</span>
                 <h1 class="mt-3 text-dark">Betaling in behandeling</h1>
                 <p class="lead text-muted">
                     We wachten nog op de bevestiging van de betaling voor bestelling #{{ $order->order_number }}.
                     <br>
-                    Dit kan enkele minuten duren. Je ontvangt vanzelf een e-mail zodra de betaling is verwerkt.
+                    Dit kan enkele minuten duren.
                 </p>
 
                 <hr class="my-4 w-50 mx-auto">

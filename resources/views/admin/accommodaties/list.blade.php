@@ -41,7 +41,7 @@
         </form>
 
         @if($all_accommodaties->count() > 0)
-            <div class="" style="max-width: 100vw">
+            <div class="overflow-x-scroll" style="max-width: 100vw">
                 <table class="table table-striped">
                     <thead class="thead-dark table-bordered table-hover">
                     <tr>

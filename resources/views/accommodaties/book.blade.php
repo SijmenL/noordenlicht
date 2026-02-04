@@ -5,7 +5,7 @@
 @section('content')
 
     <div class="rounded-bottom-5 bg-light mt-5 pb-5"
-         style="position: relative; margin-top: 0 !important; padding-top: 50px; padding-bottom: 50px; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
+         style="position: relative; margin-top: 0 !important; padding-top: 50px; padding-bottom: 50px; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
 
         <div class="container">
 
@@ -345,10 +345,10 @@
                 <h2 id="popup-title" class="fw-bold mb-0"></h2>
 
                 <div id="popup-img-wrapper" class="mb-3 text-center d-none">
-                    <img id="popup-img" src="" class="img-fluid rounded" style="max-height: 300px;">
+                    <img id="popup-img" src="" class="img-fluid rounded" style="max-height: 25vh;">
                 </div>
 
-                <div id="popup-desc" style="text-align: left"></div>
+                <div id="popup-desc" style="text-align: left; max-height: 50vh; overflow-y: scroll"></div>
 
             </div>
             <div class="button-container">
@@ -1218,7 +1218,7 @@
                     // Get name from supplements array to be safe
                     const prod = supplements.find(s => s.id == id);
                     const name = prod ? prod.name : 'Extra';
-                    suppList += `<div class="d-flex justify-content-between text-muted small"><span>${name} x${qty}</span><span>€ ${(p * qty).toFixed(2).replace('.', ',')}</span></div>`;
+                    suppList += `<div class="d-flex justify-content-between text-muted small"><span>${name} x${qty}</span><span>€ ${(p * qty).toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
                 }
             }
 
@@ -1227,9 +1227,9 @@
                 minute: '2-digit'
             })} - ${end.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`;
             document.getElementById('overview-hours').innerText = `${hours.toFixed(1)} uur`;
-            document.getElementById('overview-acco-total').innerText = '€ ' + total.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+            document.getElementById('overview-acco-total').innerText = '€ ' + total.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('overview-supplements-list').innerHTML = suppList;
-            document.getElementById('overview-grand-total').innerText = '€ ' + (total + suppTotal).toLocaleString('nl-NL', {minimumFractionDigits: 2});
+            document.getElementById('overview-grand-total').innerText = '€ ' + (total + suppTotal).toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             const arr = [];
             for (const [id, qty] of Object.entries(selectedSupplements)) if (qty > 0) arr.push({id, qty});

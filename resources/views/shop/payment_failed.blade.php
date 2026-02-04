@@ -2,8 +2,8 @@
 
 @section('content')
     <div class="container my-5">
-        <div class="shadow-sm w-100 border-0 rounded-4 overflow-hidden">
-            <div class="text-center p-5 bg-white">
+        <div class="w-100 border-0 rounded-4 overflow-hidden">
+            <div class="text-center p-5">
 
                 @if($status == 'canceled')
                     <span class="material-symbols-rounded text-warning" style="font-size: 64px;">cancel</span>

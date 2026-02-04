@@ -16,7 +16,7 @@
 @section('content')
     <div>
         <div class="rounded-bottom-5 bg-light d-flex flex-column container-block container-block-animated"
-             style="position: relative; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}');">
+             style="position: relative; top: 50px; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}');">
             <div class="container justify-content-center align-items-center d-flex flex-row-responsive gap-5">
                 <img class="zoomable-image"
                      style="width: clamp(100px, 75vw, 500px); aspect-ratio: 1/1; object-fit: cover; border-radius: 50%"
@@ -38,7 +38,7 @@
         </div>
 
         <div class="rounded-bottom-5 bg-white d-flex flex-column container-block"
-             style="position: relative; z-index: 9; margin-top: -25px; background-position: unset !important; background-image: url('{{ asset('img/logo/doodles/Wolf.webp') }}'); background-repeat: no-repeat; background-size: cover">
+             style="position: relative; z-index: 9; margin-top: 10px; background-position: unset !important; background-image: url('{{ asset('img/logo/doodles/Wolf.webp') }}'); background-repeat: no-repeat; background-size: cover">
             <div class="container justify-content-center align-items-center d-flex flex-column gap-5">
                 <div style="backdrop-filter: blur(2px);">
                     <h1 class="text-center">Accommodaties &amp; Retraites</h1>
@@ -135,7 +135,7 @@
                             <span class="text-primary material-symbols-rounded">arrow_forward_ios</span>
                         </a>
 
-                        <a href=""
+                        <a href="{{ route('agenda.public.schedule') }}"
                            class="text-decoration-none news-anchor p-3 rounded-5 d-flex flex-row justify-content-between align-items-center"
                            style="background-image: url('{{ asset('img/logo/doodles/Treewoman2a.webp') }}'); background-repeat: no-repeat; background-size: cover; background-position: center">
                             <div class="d-flex flex-row gap-4 align-items-center">
@@ -224,7 +224,9 @@
                                 </div>
                                 <div
                                     class="p-3 rounded-5 bg-light mt-2 w-100 d-flex flex-row-responsive-reverse align-items-center justify-content-between">
-                                    <div class="d-flex flex-column  justify-content-between">
+
+                                    {{-- Added min-width: 0 to prevent flex items from forcing overflow --}}
+                                    <div class="d-flex flex-column justify-content-between" style="min-width: 0;">
                                         <div>
                                             @if($activitiesStart->isSameDay($activityEnd))
                                                 <p>{{ $activitiesStart->format('j') }} {{ $activitiesStart->translatedFormat('F') }}
@@ -236,7 +238,9 @@
                                             @endif
                                             <h3>{{ $activity->title }}</h3>
                                             <p><strong>{{ $activity->location }}</strong></p>
-                                            <p>{{ \Str::limit(strip_tags(html_entity_decode($activity->content)), 300, '...') }}</p>
+
+                                            {{-- Added word-break styles to force wrapping --}}
+                                            <p style="overflow-wrap: break-word; word-break: break-word;">{{ \Str::limit(strip_tags(html_entity_decode($activity->content)), 300, '...') }}</p>
                                         </div>
                                         <div>
                                             @if(isset($activity->price))

@@ -179,7 +179,7 @@
                                     @endif
                                     <h3>{{ $activity->title }}</h3>
                                     <p><strong>{{ $activity->location }}</strong></p>
-                                    <p>{{ \Str::limit(strip_tags(html_entity_decode($activity->content)), 300, '...') }}</p>
+                                        <p style="overflow-wrap: break-word; word-break: break-word;">{{ \Str::limit(strip_tags(html_entity_decode($activity->content)), 300, '...') }}</p>
                                 </div>
                                 <div>
                                     @if(isset($activity->price))

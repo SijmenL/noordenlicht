@@ -531,8 +531,9 @@ table, th, td, label {
 }
 
 .settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
     gap: 1.5rem;
     margin-top: 1rem;
 }
@@ -540,6 +541,7 @@ table, th, td, label {
 .setting-item {
     display: flex;
     align-items: center;
+    flex-grow: 1;
     justify-content: space-between;
     padding: 1.5rem;
     background-color: #f8f9fa;
@@ -555,6 +557,10 @@ table, th, td, label {
     background-color: #fff;
     border-color: #d1d5db;
     color: inherit;
+}
+
+.setting-content {
+   max-width: 50%;
 }
 
 .setting-content h3 {

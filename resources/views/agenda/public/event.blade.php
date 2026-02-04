@@ -132,7 +132,7 @@
                                 </div>
 
                                 @if($calculatedPrice > 0 || $allPrices->isNotEmpty())
-                                    <div class="flex-shrink-0" style="min-width: 350px;">
+                                    <div class="flex-shrink-0 d-flex justify-content-center align-items-center">
                                         <div class="card shadow-lg border-0 rounded-4 overflow-hidden position-relative"
                                              style="border: 1px solid #e0e0e0;">
                                             <!-- Decorative Header Background -->

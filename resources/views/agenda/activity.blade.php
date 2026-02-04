@@ -108,7 +108,7 @@
                 class="d-flex flex-row align-items-center justify-content-center btn btn-info">
                 <span
                     class="material-symbols-rounded me-2">edit</span>
-                <span>Bewerk activiteit</span></a>
+                <span class="no-mobile">Bewerk activiteit</span></a>
                 @endif
             </div>
         </div>

@@ -171,7 +171,7 @@
                                 <input type="text" id="new_price_name" class="form-control"
                                        placeholder="Naam van prijscomponent">
                             </div>
-                            <div style="max-width: 150px;">
+                            <div>
                                 <label for="new_price_amount" class="form-label mb-1">Bedrag / %</label>
                                 <input type="number" step="0.01" id="new_price_amount" class="form-control"
                                        placeholder="0.00">
@@ -375,7 +375,7 @@
             },
 
             createPriceRow(price, index) {
-                const wrapper = createElement('div', {className: 'd-flex align-items-center gap-3 p-2 border rounded'});
+                const wrapper = createElement('div', {className: 'd-flex align-items-center gap-3 p-2 border rounded flex-wrap'});
                 const nameEl = createElement('div', {className: 'flex-grow-1'}, `<strong>${price.name}</strong>`);
                 const amountText = `${(parseInt(price.type, 10) === 1 || parseInt(price.type, 10) === 4) ? '' : '€ '}${parseFloat(price.amount).toFixed(2)}${(parseInt(price.type, 10) === 1 || parseInt(price.type, 10) === 4) ? '%' : ''}`;
                 const amountEl = createElement('div', {
@@ -630,7 +630,7 @@
 
             createIconRow(icon, index) {
                 const col = createElement('div', {className: 'col'});
-                const wrapper = createElement('div', {className: 'd-flex align-items-center gap-3 p-2 border rounded'});
+                const wrapper = createElement('div', {className: 'd-flex align-items-center gap-3 p-2 border rounded flex-wrap'});
                 const img = createElement('img', {
                     src: icon.preview,
                     alt: `Icoon`,

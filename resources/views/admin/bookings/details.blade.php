@@ -69,11 +69,11 @@
                             <div class="p-2 bg-light rounded-2 m-1">
                                 <div class="d-flex  flex-column border-bottom py-2">
                                     <span class="fw-bold">Openbare beschrijving:</span>
-                                    <div>{!! $booking->activity_description !!}</div>
+                                    <div style="overflow-wrap: break-word; word-break: break-word;">{!! $booking->activity_description !!}</div>
                                 </div>
                                 <div class="d-flex flex-column border-bottom py-2">
                                     <span class="fw-bold">Openbare link:</span>
-                                    <a href="{{ Str::startsWith($booking->external_link, ['http://', 'https://']) ? $booking->external_link : 'https://' . $booking->external_link }}" target="_blank">
+                                    <a style="overflow-wrap: break-word; word-break: break-word;" href="{{ Str::startsWith($booking->external_link, ['http://', 'https://']) ? $booking->external_link : 'https://' . $booking->external_link }}" target="_blank">
                                         {{ $booking->external_link }}
                                     </a>
                                 </div>

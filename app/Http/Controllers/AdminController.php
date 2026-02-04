@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
+use App\Models\ActivityException;
 use App\Models\Contact;
 use App\Models\Log;
 use App\Models\News;
@@ -9,6 +11,9 @@ use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Role;
 use App\Models\User;
+use Carbon\Carbon;
+use DateTime;
+use DateTimeZone;
 use DOMDocument;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -23,16 +28,145 @@ class AdminController extends Controller
 {
     public function admin()
     {
-        $user = Auth::user();
-        $roles = $user->roles()->orderBy('role', 'asc')->get();
+        // 1. Greeting Logic
+        $hour = Carbon::now()->hour;
+        if ($hour >= 6 && $hour < 12) {
+            $greeting = 'Goeiemorgen';
+        } elseif ($hour >= 12 && $hour < 18) {
+            $greeting = 'Goeiemiddag';
+        } elseif ($hour >= 18 && $hour < 24) {
+            $greeting = 'Goedenavond';
+        } else {
+            $greeting = 'Goedenacht';
+        }
 
-        $contact = Contact::where('done', false)->count();
+        $user = Auth::user();
+        $name = $user ? explode(' ', $user->name)[0] : 'Gebruiker';
+
+        $timezone = new DateTimeZone('Europe/Amsterdam');
+        $date = new DateTime('now', $timezone);
+        $formattedDate = $date->format('d-m-Y H:i:s');
+
+        // 2. Alert Counts
+        $contact = Contact::where('done', 0)->count();
         $orders = Order::where('status', 'paid')->count();
-        $signup = User::where('allow_booking', false)->count();
+        $signup = User::where('allow_booking', false)->count();;
 
         $totalNotifications = $contact + $orders + $signup;
 
-        return view('admin.admin', ['user' => $user, 'roles' => $roles, 'totalNotifications' => $totalNotifications, 'contact' => $contact, 'orders' => $orders, 'signup' => $signup]);
+        // 3. Grid Data
+
+        // A. Upcoming Event (Complex Logic for Recurring Events)
+        $now = Carbon::now();
+        $upcomingEvent = null;
+        $earliestDate = null;
+
+        // Fetch candidates: Future starts OR Past starts that are recurring
+        $candidates = Activity::where('date_start', '>=', $now)
+            ->orWhere(function ($query) use ($now) {
+                $query->where('date_start', '<', $now)
+                    ->whereNotNull('recurrence_rule')
+                    ->where('recurrence_rule', '!=', 'never')
+                    ->where(function ($q) use ($now) {
+                        $q->whereNull('end_recurrence')
+                            ->orWhere('end_recurrence', '>=', $now);
+                    });
+            })
+            ->get();
+
+        foreach ($candidates as $activity) {
+            $nextDate = null;
+            $start = Carbon::parse($activity->date_start);
+
+            if ($start >= $now) {
+                $nextDate = $start;
+            } elseif ($activity->recurrence_rule) {
+                // Calculate next occurrence for past starts
+                switch ($activity->recurrence_rule) {
+                    case 'daily':
+                        $days = $start->diffInDays($now);
+                        $candidate = $start->copy()->addDays($days);
+                        if ($candidate < $now) $candidate->addDay();
+                        $nextDate = $candidate;
+                        break;
+                    case 'weekly':
+                        $weeks = $start->diffInWeeks($now);
+                        $candidate = $start->copy()->addWeeks($weeks);
+                        if ($candidate < $now) $candidate->addWeek();
+                        $nextDate = $candidate;
+                        break;
+                    case 'monthly':
+                        $months = $start->diffInMonths($now);
+                        $candidate = $start->copy()->addMonths($months);
+                        if ($candidate < $now) $candidate->addMonth();
+                        $nextDate = $candidate;
+                        break;
+                }
+
+                // Check end recurrence
+                if ($nextDate && $activity->end_recurrence) {
+                    if ($nextDate->gt(Carbon::parse($activity->end_recurrence)->endOfDay())) {
+                        $nextDate = null;
+                    }
+                }
+            }
+
+            // Check exceptions (skip if date is deleted)
+            if ($nextDate) {
+                for ($i = 0; $i < 3; $i++) { // Try up to 3 occurrences to find a non-deleted one
+                    $isException = ActivityException::where('activity_id', $activity->id)
+                        ->whereDate('date', $nextDate->format('Y-m-d'))
+                        ->exists();
+
+                    if (!$isException) break;
+
+                    // Advance to next slot if exception found
+                    if ($activity->recurrence_rule == 'daily') $nextDate->addDay();
+                    elseif ($activity->recurrence_rule == 'weekly') $nextDate->addWeek();
+                    elseif ($activity->recurrence_rule == 'monthly') $nextDate->addMonth();
+                    else { $nextDate = null; break; }
+
+                    // Re-check bounds
+                    if ($activity->end_recurrence && $nextDate->gt(Carbon::parse($activity->end_recurrence)->endOfDay())) {
+                        $nextDate = null;
+                        break;
+                    }
+                }
+            }
+
+            // Determine if this is the earliest found so far
+            if ($nextDate) {
+                if ($earliestDate === null || $nextDate->lt($earliestDate)) {
+                    $earliestDate = $nextDate;
+                    $upcomingEvent = $activity;
+                    // Important: Update the model's date_start to the actual occurrence
+                    $upcomingEvent->date_start = $nextDate;
+                }
+            }
+        }
+
+        // B. Latest 3 Orders
+        $latestOrders = Order::with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        // C. Latest Contact
+        $latestContact = Contact::orderBy('created_at', 'desc')
+            ->first();
+
+        return view('admin.admin', compact(
+            'greeting',
+            'name',
+            'formattedDate',
+            'totalNotifications',
+            'contact',
+            'orders',
+            'signup',
+            'upcomingEvent',
+            'latestOrders',
+            'latestContact'
+        ));
     }
 
     public function notifications()

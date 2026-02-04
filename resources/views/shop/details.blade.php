@@ -38,7 +38,7 @@
 
 
     <div class="rounded-bottom-5 bg-light container-block pb-5"
-         style="position: relative; margin-top: 0 !important; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
+         style="position: relative; margin-top: 0 !important; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
         <div class="container">
             @if($product !== null)
                 @php

@@ -361,7 +361,7 @@
                     <img id="popup-img" src="" class="img-fluid rounded" style="max-height: 300px;">
                 </div>
 
-                <div id="popup-desc" style="text-align: left"></div>
+                <div id="popup-desc" style="text-align: left; max-height: 50vh; overflow-y: scroll"></div>
 
             </div>
             <div class="popup-header">

@@ -57,6 +57,12 @@ class Activity extends Model
             return false;
         }
 
+        // Ensure we scope to the correct recurrence date if no date is passed
+        // This mirrors the logic in ticketsSold to ensure we check the specific occurrence capacity
+        if (is_null($date) && $this->recurrence_rule && $this->recurrence_rule !== 'never') {
+            $date = $this->date_start;
+        }
+
         // Count actual records in the tickets table for this specific occurrence
         $soldTickets = $this->ticketsSold($date);
 
@@ -73,6 +79,11 @@ class Activity extends Model
             return null;
         }
 
+        // Ensure we scope to the correct recurrence date if no date is passed
+        if (is_null($date) && $this->recurrence_rule && $this->recurrence_rule !== 'never') {
+            $date = $this->date_start;
+        }
+
         $soldTickets = $this->ticketsSold($date);
 
         return $this->max_tickets - $soldTickets;
@@ -83,7 +94,8 @@ class Activity extends Model
      */
     public function ticketsSold($date = null)
     {
-        $query = $this->tickets();
+        // Start the query and exclude cancelled tickets
+        $query = $this->tickets()->where('status', '!=', 'cancelled');
 
         // 1. If a specific date is passed, filter by it.
         if ($date) {

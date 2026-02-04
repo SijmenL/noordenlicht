@@ -570,7 +570,7 @@
                                     <label for="new_price_name" class="form-label mb-1">Naam (bv. "Basisprijs")</label>
                                     <input type="text" id="new_price_name" class="form-control" placeholder="Naam van prijscomponent">
                                 </div>
-                                <div style="max-width: 150px;">
+                                <div>
                                     <label for="new_price_amount" class="form-label mb-1">Bedrag / %</label>
                                     <input type="number" step="0.01" id="new_price_amount" class="form-control" placeholder="0.00">
                                 </div>
@@ -701,7 +701,7 @@
                     <input type="hidden" name="all" id="all" value="{{ $wantViewAll }}">
 
 
-                    <div class="d-flex align-items-center flex-row mt-3 gap-2">
+                    <div class="d-flex align-items-center flex-wrap flex-row mt-3 gap-2">
                         <button id="saveButton"
                                 onclick="function handleButtonClick(button) {
                                  button.disabled = true;
@@ -972,7 +972,7 @@
             },
 
             createPriceRow(priceData, index) {
-                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded' });
+                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded flex-wrap' });
                 const nameEl = createElement('div', { className: 'flex-grow-1' }, `<strong>${priceData.price.name}</strong>`);
                 const amountText = `${(parseInt(priceData.price.type, 10) === 1 || parseInt(priceData.price.type, 10) === 4) ? '' : '€ '}${parseFloat(priceData.price.amount).toFixed(2)}${(parseInt(priceData.price.type, 10) === 1 || parseInt(priceData.price.type, 10) === 4) ? '%' : ''}`;
                 const amountEl = createElement('div', { className: 'fw-bold', style: 'min-width: 80px; text-align: right;'}, amountText);

@@ -37,6 +37,11 @@
 
         <div class="d-flex flex-row flex-wrap gap-2">
             <a href="{{ route('admin.signup') }}" class="btn btn-info">Terug</a>
+            <a href="{{ route('admin.signup.accept', ['id' => $account->id]) }}" class="btn btn-success">Accepteer</a>
+            <a class="delete-button btn btn-outline-danger text-white"
+               data-id="{{ $account->id }}"
+               data-name="{{ $account->name . ' ' . $account->infix . ' ' . $account->last_name }}"
+               data-link="{{ route('admin.signup.delete', $account->id) }}">Verwijderen</a>
         </div>
     </div>
 @endsection

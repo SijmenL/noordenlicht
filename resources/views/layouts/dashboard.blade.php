@@ -264,16 +264,16 @@
                                         'uri' => '/dashboard/bestellingen',
                                         'fontSize' => '14px',
                                     ],
-                                    [
-                                        'name' => 'Coupons',
-                                        'uri' => '',
-                                        'fontSize' => '14px',
-                                    ],
-                                    [
-                                        'name' => 'Statistieken',
-                                        'uri' => '',
-                                        'fontSize' => '14px',
-                                    ],
+//                                    [
+//                                        'name' => 'Coupons',
+//                                        'uri' => '',
+//                                        'fontSize' => '14px',
+//                                    ],
+//                                    [
+//                                        'name' => 'Statistieken',
+//                                        'uri' => '',
+//                                        'fontSize' => '14px',
+//                                    ],
                                 ],
                             ],
                             [

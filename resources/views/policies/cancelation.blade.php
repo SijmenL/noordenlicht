@@ -8,7 +8,7 @@
         <div class="container py-5">
             <div class="container justify-content-center align-items-center d-flex flex-column gap-5">
                 <div style="backdrop-filter: blur(2px);">
-                    <h1 class="text-center fw-bold display-5">Annuleringsvoorwaarden</h1>
+                    <h1 class="text-center fw-bold display-5" style="text-wrap: auto; hyphens: auto">Annuleringsvoorwaarden</h1>
 
                     <div>
                         <ul>

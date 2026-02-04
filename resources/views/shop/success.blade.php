@@ -117,7 +117,7 @@
 
                         <h4 class="mb-3">Factuur</h4>
                         <div class="d-grid gap-2 mb-4">
-                            <a href="{{ route('invoice.download', $order->order_number) }}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center">
+                            <a href="{{ route('order.invoice', $order->order_number) }}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center">
                                 <span class="material-symbols-rounded me-2">receipt_long</span>
                                 Download Factuur (PDF)
                             </a>

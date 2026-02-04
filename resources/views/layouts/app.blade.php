@@ -4,6 +4,7 @@
 
     $currentRoute = Route::currentRouteName();
 
+    // Fetch Accommodations
     $accommodations = Accommodatie::orderBy('order')->get()->map(function($accommodation) {
         return [
             'name' => $accommodation->name,
@@ -33,7 +34,7 @@
         // The Info Dropdown
         [
             'name' => 'Info',
-            'route' => null, // This one stays null, so it acts purely as a label if needed, or we point to a general info page
+            'route' => null,
             'sub-pages' => [
                 [
                     'name' => 'Bosvrienden',
@@ -96,10 +97,11 @@
             'is_icon' => true,
             'sub-pages' => [
                 [
-                'name' => 'Log uit',
-                'route' => 'logout',
-                'logout' => true
-]]
+                    'name' => 'Log uit',
+                    'route' => 'logout',
+                    'logout' => true
+                ]
+            ]
         ];
     }
 @endphp
@@ -111,7 +113,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>NoordenLicht</title>
@@ -123,8 +124,8 @@
     <meta name="theme-color" content="#ffffff">
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Figtree">
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"/>
+
     @vite(['resources/sass/app.scss', 'resources/css/app.css', 'resources/js/app.js', 'resources/js/bootstrap.js', 'resources/js/texteditor.js', 'resources/js/user-export.js', 'resources/css/texteditor.css'])
 
     <style>
@@ -137,7 +138,7 @@
         /* --- Hamburger Animation CSS --- */
         .hamburger-lines {
             width: 30px;
-            height: 22px; /* Overall height of the icon */
+            height: 22px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -152,71 +153,50 @@
             background: #624B25; /* Theme Color */
         }
 
-        .hamburger-lines .line1 {
-            transform-origin: 0% 0%;
-            transition: transform 0.3s ease-in-out;
-        }
+        .hamburger-lines .line1 { transform-origin: 0% 0%; transition: transform 0.3s ease-in-out; }
+        .hamburger-lines .line2 { transition: transform 0.1s ease-in-out; }
+        .hamburger-lines .line3 { transform-origin: 0% 100%; transition: transform 0.3s ease-in-out; }
 
-        .hamburger-lines .line2 {
-            transition: transform 0.1s ease-in-out;
-        }
+        .navbar-toggler[aria-expanded="true"] .line1 { transform: rotate(45deg); }
+        .navbar-toggler[aria-expanded="true"] .line2 { transform: scaleY(0); }
+        .navbar-toggler[aria-expanded="true"] .line3 { transform: rotate(-45deg); }
 
-        .hamburger-lines .line3 {
-            transform-origin: 0% 100%;
-            transition: transform 0.3s ease-in-out;
-        }
-
-        /* Active State (When aria-expanded="true") */
-        .navbar-toggler[aria-expanded="true"] .line1 {
-            transform: rotate(45deg);
-        }
-
-        .navbar-toggler[aria-expanded="true"] .line2 {
-            transform: scaleY(0);
-        }
-
-        .navbar-toggler[aria-expanded="true"] .line3 {
-            transform: rotate(-45deg);
+        /* Remove ugly outline on focus */
+        .navbar-toggler:focus {
+            box-shadow: none;
+            outline: none;
         }
 
         /* --- Desktop Specific Styling (Hover & Animation) --- */
         @media (min-width: 768px) {
             .navbar-nav {
-                align-items: center; /* Ensure vertical centering */
+                align-items: center;
             }
 
-            /* Dropdown Menu Box */
+            /* Dropdown Menu Box - Desktop */
             .dropdown-menu {
                 border: none;
                 border-radius: 12px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Softer shadow */
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
                 padding: 10px 0;
                 min-width: 220px;
                 margin-top: 0;
-
-                /* Center relative to parent */
                 left: 50%;
-                transform: translateX(-50%) translateY(10px); /* Start slightly lower */
-
-                /* Animation State Initial */
+                transform: translateX(-50%) translateY(10px);
                 display: block;
                 opacity: 0;
                 visibility: hidden;
-                pointer-events: none; /* Prevent clicking when invisible */
-
-                /* Subtle Fade & Slide Up */
+                pointer-events: none;
                 transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
             }
 
-            /* Show Dropdown on Hover of the LI */
-            .nav-item.dropdown:hover .dropdown-menu {
+            .nav-item-bar.dropdown:hover .dropdown-menu {
                 opacity: 1;
                 visibility: visible;
                 pointer-events: auto;
-                transform: translateX(-50%) translateY(0); /* Smooth landing */
+                transform: translateX(-50%) translateY(0);
             }
 
-            /* Little Arrow on top of dropdown */
             .dropdown-menu::before {
                 content: '';
                 position: absolute;
@@ -228,7 +208,6 @@
                 border-bottom: 7px solid white;
             }
 
-            /* Dropdown Items */
             .dropdown-item {
                 padding: 8px 20px;
                 color: #555;
@@ -238,8 +217,7 @@
 
             .dropdown-item:hover {
                 background-color: #f8f9fa;
-                color: #5a7123; /* Theme Color */
-                /* Removed the drastic slide-right padding change for a cleaner feel */
+                color: #5a7123;
             }
 
             /* Hide the mobile toggle button on desktop */
@@ -252,57 +230,60 @@
         @media (max-width: 767.98px) {
             .navbar-collapse {
                 background-color: white;
-                padding: 1rem;
-                margin-top: 1rem;
-                border-radius: 1rem;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-
-                /* 1. SCROLLABLE NAVBAR FIX */
-                max-height: 75vh;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
-            }
-
-            .navbar-nav .nav-item {
+                /* Make it full width and clean */
+                position: absolute;
+                /* Overlap slightly with the navbar to hide behind the rounded corners */
+                top: calc(100% - 20px);
+                left: 0;
+                right: 0;
                 width: 100%;
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                align-items: center;
+                /* Add padding to account for the overlap */
+                padding: 20px 0 0 0;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+                border-top: none;
+                max-height: 80vh;
+                overflow-y: auto;
+                /* Ensure it sits behind the navbar header (which we will set to 99998) */
+                z-index: 99997;
             }
 
-            .dropdown-menu {
-                border: none;
-                background-color: #f9f9f9;
-                box-shadow: none;
-                padding: 0;
-                margin-top: 0.5rem;
-                border-radius: 0.5rem;
-                width: 100%; /* Full width in mobile */
-                text-align: center;
+            .navbar-nav {
+                width: 100%;
+                padding: 1rem 0;
             }
 
-            .dropdown-item {
-                padding: 12px;
-                color: #666;
-                border-bottom: 1px solid #eee;
+            .nav-item-bar {
+                width: 100%;
+                border-bottom: 1px solid #f8f8f8;
             }
 
-            .dropdown-item:last-child {
+            .nav-item-bar:last-child {
                 border-bottom: none;
             }
 
-            .dropdown-item:active {
-                background-color: #e9ecef;
+            /* Container to split Text and Arrow to edges */
+            .mobile-nav-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                padding-right: 15px; /* Space for the arrow */
             }
 
-            /* Mobile Split Button Styling */
-            .nav-link.main-link {
-                flex-grow: 1; /* Take up space */
-                text-align: center;
+            .nav-link-bar {
+                padding: 15px 20px !important; /* Larger touch target */
+                font-size: 1.1rem;
+                text-align: left;
+                width: 100%;
+                color: #333;
             }
 
-            /* The specific toggle button for mobile */
+            .nav-link-bar.active {
+                color: #5a7123 !important;
+                font-weight: 600;
+            }
+
+            /* The Arrow Button */
             .mobile-dropdown-toggle {
                 background: none;
                 border: none;
@@ -310,17 +291,39 @@
                 color: #624B25;
                 display: flex;
                 align-items: center;
-                cursor: pointer;
+                justify-content: center;
+                transition: transform 0.3s;
+                /* Ensure large touch target */
+                min-width: 44px;
+                min-height: 44px;
             }
 
-            /* Rotate chevron when open */
             .mobile-dropdown-toggle[aria-expanded="true"] span {
                 transform: rotate(180deg);
-                transition: transform 0.3s ease;
             }
 
-            .mobile-dropdown-toggle span {
-                transition: transform 0.3s ease;
+            /* Dropdown Items in Mobile */
+            .dropdown-menu {
+                border: none;
+                background-color: #fcfcfc; /* Slight contrast */
+                box-shadow: inset 0 2px 5px rgba(0,0,0,0.03); /* Inner shadow for depth */
+                /* Increased padding as requested */
+                padding: 1rem 0 0.5rem 0;
+                margin: 0;
+                border-radius: 0;
+                width: 100%;
+
+                /* IMPORTANT: Override Popper.js inline styles to force correct flow */
+                position: static !important;
+                transform: none !important;
+                float: none;
+            }
+
+            .dropdown-item {
+                padding: 12px 20px 12px 40px; /* Indented */
+                color: #666;
+                border-bottom: 1px solid #eee;
+                font-size: 1rem;
             }
         }
     </style>
@@ -329,10 +332,16 @@
 <div id="app">
     <div class="d-flex flex-column justify-content-between min-vh-100">
         @yield('above-nav')
-        <nav class="navbar navbar-expand-md navbar-light bg-white sticky-top rounded-bottom-5"
-             style="z-index: 99998;">
-            <div class="container d-flex flex-column">
-                <div class="d-flex justify-content-end w-100">
+
+        <!-- Navbar z-index set higher than collapse so collapse slides from "behind" -->
+        <nav class="navbar navbar-expand-md navbar-light bg-white sticky-top rounded-bottom-5" style="z-index: 99998;">
+            <div class="container">
+                <!-- Branding or Logo could go here -->
+                <a class="navbar-brand d-md-none" href="{{ route('home') }}">
+                    <!-- Optional: Add Logo Here -->
+                </a>
+
+                <div class="d-flex justify-content-end w-100 d-md-none">
                     <button class="navbar-toggler border-0 p-2" type="button" data-bs-toggle="collapse"
                             data-bs-target="#navbarContent" aria-controls="navbarContent"
                             aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
@@ -344,10 +353,8 @@
                     </button>
                 </div>
 
-                <div class="collapse navbar-collapse justify-content-center rounded-bottom-5 navbar-info"
-                     id="navbarContent">
-                    <ul class="navbar-nav text-center align-items-center gap-1 gap-md-2">
-
+                <div class="collapse navbar-collapse justify-content-center rounded-bottom-5" id="navbarContent">
+                    <ul class="navbar-nav">
                         @foreach($menuItems as $item)
                             @php
                                 // Resolve URL
@@ -366,27 +373,38 @@
 
                                 // Check if it has dropdown items
                                 $hasSubPages = !empty($item['sub-pages']);
+                                // Unique ID for collapse
+                                $collapseId = 'collapse-' . Str::slug($item['name']);
+                                $menuId = 'menu-' . Str::slug($item['name']);
                             @endphp
 
                             @if($hasSubPages)
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link main-link white-text {{ $isActive ? 'active' : '' }}"
-                                       href="{{ $url }}">
-                                        @if(isset($item['is_icon']) && $item['is_icon'])
-                                            <span class="material-symbols-rounded">{{ $item['name'] }}</span>
-                                        @else
-                                            {{ $item['name'] }}
-                                        @endif
-                                    </a>
+                                <li class="nav-item nav-item-bar dropdown">
+                                    <div class="mobile-nav-row">
+                                        <!-- Main Link -->
+                                        <a class="nav-link nav-link-bar main-link {{ $isActive ? 'active' : '' }}"
+                                           href="{{ isset($item['route']) || isset($item['url']) ? $url : 'javascript:void(0);' }}"
+                                           @if(!isset($item['route']) && !isset($item['url'])) onclick="toggleMobileDropdown(event, '{{ $menuId }}', 'btn-{{ $collapseId }}')" @endif
+                                        >
+                                            @if(isset($item['is_icon']) && $item['is_icon'])
+                                                <span class="material-symbols-rounded align-middle">{{ $item['name'] }}</span>
+                                            @else
+                                                {{ $item['name'] }}
+                                            @endif
+                                        </a>
 
-                                    <button class="mobile-dropdown-toggle"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false">
-                                        <span class="material-symbols-rounded fs-5">expand_more</span>
-                                    </button>
+                                        <!-- Mobile Dropdown Toggle (Arrow) -->
+                                        <!-- Removed data-bs-toggle="dropdown" to fix the JS error -->
+                                        <button class="mobile-dropdown-toggle"
+                                                id="btn-{{ $collapseId }}"
+                                                type="button"
+                                                onclick="toggleMobileDropdown(event, '{{ $menuId }}', 'btn-{{ $collapseId }}')"
+                                                aria-expanded="false">
+                                            <span class="material-symbols-rounded fs-4">expand_more</span>
+                                        </button>
+                                    </div>
 
-                                    <ul class="dropdown-menu">
+                                    <ul class="dropdown-menu" id="{{ $menuId }}">
                                         @foreach($item['sub-pages'] as $subPage)
                                             @php
                                                 $subUrl = '#';
@@ -399,38 +417,38 @@
                                             <li>
                                                 @if(isset($subPage['logout']))
                                                     <a onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                                         class="dropdown-item">Uitloggen
+                                                       class="dropdown-item">Uitloggen
                                                     </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                    @csrf
-                </form>
-                                                    @else
-                                                <a class="dropdown-item" href="{{ $subUrl }}">
-                                                    {{ $subPage['name'] }}
-                                                </a>
+                                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                                        @csrf
+                                                    </form>
+                                                @else
+                                                    <a class="dropdown-item" href="{{ $subUrl }}">
+                                                        {{ $subPage['name'] }}
+                                                    </a>
                                                 @endif
                                             </li>
                                         @endforeach
                                     </ul>
                                 </li>
                             @else
-                                <li class="nav-item">
-                                    <a class="nav-link white-text {{ $isActive ? 'active' : '' }}" href="{{ $url }}">
-                                        @if(isset($item['is_icon']) && $item['is_icon'])
-                                            <span class="material-symbols-rounded">{{ $item['name'] }}</span>
-                                        @else
-                                            {{ $item['name'] }}
-                                        @endif
-                                    </a>
+                                <li class="nav-item nav-item-bar">
+                                    <div class="mobile-nav-row">
+                                        <a class="nav-link nav-link-bar {{ $isActive ? 'active' : '' }}" href="{{ $url }}">
+                                            @if(isset($item['is_icon']) && $item['is_icon'])
+                                                <span class="material-symbols-rounded align-middle">{{ $item['name'] }}</span>
+                                            @else
+                                                {{ $item['name'] }}
+                                            @endif
+                                        </a>
+                                    </div>
                                 </li>
                             @endif
                         @endforeach
-
                     </ul>
                 </div>
             </div>
         </nav>
-
 
         <main>
             @yield('content')
@@ -459,17 +477,34 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // --- Navbar Logic Removed ---
-        // The CSS animation handles the hamburger now, so we don't need JS to swap SVGs anymore.
-        // Bootstrap's data-bs-toggle handles the aria-expanded state which triggers our CSS rotation.
+    // --- Custom Mobile Dropdown Toggle ---
+    function toggleMobileDropdown(event, menuId, btnId) {
+        // Prevent default anchor behavior if clicking empty link
+        // and stop propagation to prevent weird bubbling issues
+        if(event) {
+            event.stopPropagation();
+        }
 
+        const menu = document.getElementById(menuId);
+        const btn = document.getElementById(btnId);
+
+        if(menu) {
+            menu.classList.toggle('show');
+
+            // Handle arrow rotation
+            if(btn) {
+                const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', !isExpanded);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
         // --- Cookie Banner Logic ---
         const banner = document.getElementById('cookie-banner');
         const acceptBtn = document.getElementById('cookie-accept');
         const declineBtn = document.getElementById('cookie-decline');
 
-        // Cookies that are necessary for the site to function (Login/CSRF)
         const essentialCookies = ['XSRF-TOKEN', 'laravel_session'];
 
         function deleteNonEssentialCookies() {
@@ -480,25 +515,19 @@
                 const eqPos = cookie.indexOf("=");
                 const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
 
-                // Delete if not in whitelist
                 if (!essentialCookies.includes(name)) {
-                    // Try to delete for current path and root
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=" + window.location.pathname;
-                    // Try to delete for domain
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
                 }
             }
         }
 
-        // Check LocalStorage for consent
         const consent = localStorage.getItem('cookie_consent');
 
         if (!consent) {
-            // Show banner if no choice made
             banner.classList.remove('d-none');
         } else if (consent === 'declined') {
-            // If previously declined, ensure clean state
             deleteNonEssentialCookies();
         }
 

@@ -9,7 +9,7 @@
     <title>Factuur {{ $order->order_number }}</title>
     <style>
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: 'Georgia', serif;
             color: #333;
             font-size: 12px;
             line-height: 1.4;
@@ -101,9 +101,19 @@
             padding-top: 10px;
         }
         .status-paid {
-            color: #198754;
+            color: #76e44a;
             font-weight: bold;
-            border: 1px solid #198754;
+            border: 1px solid #76e44a;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .status-unpaid {
+            color: #ff7670;
+            font-weight: bold;
+            border: 1px solid #ff7670;
             padding: 5px 10px;
             border-radius: 4px;
             display: inline-block;
@@ -179,6 +189,9 @@
 
         @if($order->status == 'paid' || $order->payment_status == 'paid')
             <div class="status-paid">BETAALD</div>
+        @else
+            <div class="status-unpaid">NOG NIET BETAALD</div>
+
         @endif
     </div>
     <div style="clear: both;"></div>

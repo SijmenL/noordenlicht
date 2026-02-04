@@ -46,7 +46,7 @@
                             <option value="open" {{ request('status') == "open" ? 'selected' : '' }}>Niet betaald</option>
                             <option value="shipped" {{ request('status') == 'shipped' ? 'selected' : '' }}>Verzonden</option>
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Afgerond</option>
-                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Geannuleerd</option>
+                            <option value="canceled" {{ request('status') == 'canceled' ? 'selected' : '' }}>Geannuleerd</option>
                             <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Misgegaan</option>
                             <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Verlopen</option>
                         </select>
@@ -56,7 +56,7 @@
         </form>
 
         @if($orders->count() > 0)
-            <div class="" style="max-width: 100vw">
+            <div class="overflow-x-scroll" style="max-width: 100vw">
                 <table class="table table-striped">
                     <thead class="thead-dark table-bordered table-hover">
                     <tr>
@@ -83,7 +83,7 @@
                                         'completed', 'shipped' => 'success',
                                         'paid' => 'info',
                                         'open', 'pending' => 'dark',
-                                        'cancelled', 'failed', 'expired' => 'danger',
+                                        'canceled', 'failed', 'expired' => 'danger',
                                         default => 'secondary'
                                     };
                                 @endphp
@@ -93,7 +93,7 @@
                                    @if($order->status == 'paid') Betaald @endif
                                    @if($order->status == 'shipped') Verzonden @endif
                                    @if($order->status == 'completed') Afgerond @endif
-                                   @if($order->status == 'cancelled') Geannuleerd @endif
+                                   @if($order->status == 'canceled') Geannuleerd @endif
                                    @if($order->status == 'failed') Misgegaan @endif
                                    @if($order->status == 'expired') Verlopen @endif
                                 </span>

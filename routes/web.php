@@ -48,13 +48,13 @@ Route::get('/agenda/activiteit/{id}', [AgendaController::class, 'agendaActivityP
 Route::get('/agenda/boeking/{id}', [AgendaController::class, 'agendaBookingPublic'])->name('agenda.public.booking');
 
 Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact');
+Route::get('/contact/success', [NonLoggedInController::class, 'contactSuccess'])->name('contact.success');
 Route::post('/contact', [NonLoggedInController::class, 'contactSubmit'])->name('contact.submit');
 
 Route::post('/agenda/public/activiteit/{id}', [NonLoggedInController::class, 'handleActivityForm'])->name('agenda.activity.submit');
 
 Route::get('/agenda/feed/{token}.ics', [AgendaController::class, 'exportFeed'])->name('agenda.feed');
 
-Route::get('/contact', [NonLoggedInController::class, 'contact'])->name('contact');
 
 Route::get('/accommodaties', [AccommodatieController::class, 'home'])->name('accommodaties');
 Route::get('/accommodaties/aanvraagformulier', [AccommodatieController::class, 'form'])->name('accommodaties.form');
@@ -73,6 +73,9 @@ Route::post('/winkelmandje/toevoegen/{id}', [CartController::class, 'add'])->nam
 Route::post('/winkelmandje/bewerken/{id}', [CartController::class, 'update'])->name('cart.update');
 Route::post('/winkelmandje/verwijderen/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
+Route::post('/winkelmandje/api/bewerken', [OrderController::class, 'updateCartApi'])->name('cart.api.update');
+Route::post('/winkelmandje/api/verwijderen', [OrderController::class, 'removeCartApi'])->name('cart.api.remove');
+
 Route::post('/winkelmandje/bulk-toevoegen', [OrderController::class, 'bulkAdd'])->name('cart.bulk_add');
 
 Route::get('/afrekenen', [OrderController::class, 'checkout'])->name('checkout');
@@ -80,6 +83,9 @@ Route::post('/afrekenen', [OrderController::class, 'store'])->name('checkout.sto
 Route::get('/bestelling/success/{order_number}', [OrderController::class, 'success'])->name('order.success');
 Route::get('/bestelling/success/{order_number}/download', [OrderController::class, 'downloadInvoice'])->name('order.invoice');
 Route::get('/afrekenen/{id}/retry', [OrderController::class, 'retry'])->name('order.retry');
+
+Route::get('/bestelling/{order_number}/betalen', [OrderController::class, 'pay'])->name('order.pay');
+
 
 Route::get('/ticket/download/{ticket_uuid}', [TicketController::class, 'download'])->name('ticket.download');
 

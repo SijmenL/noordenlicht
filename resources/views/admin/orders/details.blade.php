@@ -33,7 +33,7 @@
                 <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">local_activity</span>Producten, Boekingen & Tickets
                 </h2>
 
-                <div class="w-100">
+                <div class="w-100 overflow-x-scroll">
                     <div class="card-body p-0">
                         <table class="table table-striped mb-0">
                             <thead>
@@ -167,7 +167,7 @@
                             'completed', 'shipped' => 'success',
                             'paid' => 'info',
                             'open', 'pending' => 'dark',
-                            'cancelled', 'failed', 'expired' => 'danger',
+                            'canceled', 'failed', 'expired' => 'danger',
                             default => 'secondary'
                         };
                     @endphp
@@ -177,7 +177,7 @@
                         @if($order->status == 'paid') Betaald @endif
                         @if($order->status == 'shipped') Verzonden @endif
                         @if($order->status == 'completed') Afgerond @endif
-                        @if($order->status == 'cancelled') Geannuleerd @endif
+                        @if($order->status == 'canceled') Geannuleerd @endif
                         @if($order->status == 'failed') Misgegaan @endif
                         @if($order->status == 'expired') Verlopen @endif
                                 </span>

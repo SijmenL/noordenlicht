@@ -160,7 +160,7 @@
                                             </button>
                                         @endif
                                     @endguest
-                                    <a class="btn btn-outline-primary rounded-pill">Bekijk Huisregels</a>
+                                    <a href="{{ route('home.rules') }}" class="btn btn-outline-primary rounded-pill">Bekijk Huisregels</a>
                                 </div>
                             </div>
                         </div>

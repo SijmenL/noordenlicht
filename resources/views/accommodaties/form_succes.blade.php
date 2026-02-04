@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="rounded-bottom-5 bg-light container-block align-items-center justify-content-center d-flex"
-         style="min-height: 80vh; position: relative; margin-top: 0 !important; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
+         style="min-height: 80vh; position: relative; margin-top: 0 !important; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
 
         <div class="container pt-4 pb-5">
             <div class="row justify-content-center">

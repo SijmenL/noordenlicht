@@ -129,8 +129,10 @@
                                                 <p class="day-number">{{ $activitiesStart->format('j') }}</p>
                                             </div>
                                             <div
-                                                class="event bg-light mt-2 w-100 d-flex flex-row-responsive-reverse justify-content-between">
-                                                <div class="d-flex flex-column justify-content-between">
+                                                class="p-3 rounded-5 bg-light mt-2 w-100 d-flex flex-row-responsive-reverse align-items-center justify-content-between">
+
+                                                {{-- Added min-width: 0 to prevent flex items from forcing overflow --}}
+                                                <div class="d-flex flex-column justify-content-between" style="min-width: 0;">
                                                     <div>
                                                         @if($activitiesStart->isSameDay($activityEnd))
                                                             <p>{{ $activitiesStart->format('j') }} {{ $activitiesStart->translatedFormat('F') }}
@@ -142,7 +144,9 @@
                                                         @endif
                                                         <h3>{{ $activity->title }}</h3>
                                                         <p><strong>{{ $activity->location }}</strong></p>
-                                                        <p>{{ \Str::limit(strip_tags(html_entity_decode($activity->content)), 300, '...') }}</p>
+
+                                                        {{-- Added word-break styles to force wrapping --}}
+                                                        <p style="overflow-wrap: break-word; word-break: break-word;">{{ \Str::limit(strip_tags(html_entity_decode($activity->content)), 300, '...') }}</p>
                                                     </div>
                                                     <div>
                                                         @if(isset($activity->price))
@@ -155,11 +159,8 @@
                                                     </div>
                                                 </div>
                                                 @if($activity->image)
-                                                    <div
-                                                        class="d-flex align-items-center justify-content-center p-2">
-                                                        <img class="event-image" alt="Activiteit Afbeelding"
-                                                             src="{{ asset('files/agenda/agenda_images/'.$activity->image) }}">
-                                                    </div>
+                                                    <img class="event-image m-0" alt="Activiteit Afbeelding"
+                                                         src="{{ asset('files/agenda/agenda_images/'.$activity->image) }}">
                                                 @endif
                                             </div>
                                         </div>

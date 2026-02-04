@@ -28,6 +28,11 @@ class NonLoggedInController extends Controller
         return view('contact.contact');
     }
 
+    public function contactSuccess() {
+
+        return view('contact.succes');
+    }
+
     public function contactSubmit(Request $request) {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -49,7 +54,7 @@ class NonLoggedInController extends Controller
         $log = new Log();
         $log->createLog(null, 2, 'Contact', 'Admin', $contact->id, 'Contact formulier opgeslagen');
 
-        return view('contact.succes');
+        return redirect()->route('contact.success');
     }
 
     public function inschrijven() {

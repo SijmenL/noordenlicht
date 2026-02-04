@@ -13,7 +13,7 @@
     @endphp
 
     <div class="rounded-bottom-5 bg-white d-flex flex-column container-block"
-         style="position: relative; z-index: 9; margin-top: -25px; background-position: center !important; background-image: url('{{ asset('img/logo/doodles/Wolf.webp') }}'); background-repeat: no-repeat; background-size: cover; min-height: 100vh;">
+         style="position: relative; margin-top: -25px; background-position: center !important; background-image: url('{{ asset('img/logo/doodles/Wolf.webp') }}'); background-repeat: no-repeat; background-size: cover; min-height: 100vh;">
 
         <div class="container py-5">
             <div class="container justify-content-center align-items-center d-flex flex-column gap-5">

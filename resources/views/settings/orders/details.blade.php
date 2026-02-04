@@ -253,6 +253,26 @@
                     </ul>
                 </div>
 
+                <div class="bg-white border w-100 p-4 rounded mt-3">
+                    <h2 class="flex-row gap-3"><span class="material-symbols-rounded me-2">picture_as_pdf</span>Factuur</h2>
+                        <div class="col-lg-8 mb-4 mb-lg-0">
+                            <div class="border rounded p-2 h-100">
+                                <iframe src="{{ route('admin.order.invoice.stream', $order->order_number) }}"
+                                        width="100%"
+                                        height="500px"
+                                        style="border: none;"
+                                        title="Factuur PDF">
+                                </iframe>
+                            </div>
+                        </div>
+
+
+                        <a href="{{ route('order.invoice', $order->order_number) }}" class="btn btn-primary mt-2">
+                            <span class="material-symbols-rounded align-middle me-2">download</span> Download PDF
+                        </a>
+
+                </div>
+
             </div>
         </div>
     </div>

@@ -41,8 +41,8 @@ class CartController extends Controller
             $activity = Activity::find($id);
             if (!$activity) return redirect()->back()->with('error', 'Activiteit niet gevonden.');
 
-            if (! $activity->hasTicketsAvailable($quantity)) {
-                return back()->withErrors(['message' => 'Er zijn geen tickets meer beschikbaar voor dit evenement.']);
+            if (!$activity->hasTicketsAvailable($quantity, $startDate)) {
+                return redirect()->back()->with('error', 'Er zijn geen tickets meer beschikbaar voor dit evenement.');
             }
             // Create a unique key using ID and Timestamp to separate occurrences
             $dateKey = $startDate ? Carbon::parse($startDate)->timestamp : '0';

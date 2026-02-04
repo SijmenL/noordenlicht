@@ -136,7 +136,8 @@ class OrderController extends Controller
                     'quantity' => $qty,
                     'price' => $price,
                     'model' => $activity,
-                    'details' => Carbon::parse($startDate)->format('d-m-Y H:i')
+                    'details' => Carbon::parse($startDate)->format('d-m-Y H:i'),
+                    'start_date' => $startDate // Passed for API use
                 ]);
             }
         }
@@ -173,6 +174,20 @@ class OrderController extends Controller
         if (empty($cart['products']) && empty($cart['activities'])) {
             return redirect()->route('shop');
         }
+
+        // --- CHECK AVAILABILITY BEFORE STARTING TRANSACTION ---
+        if (!empty($cart['activities'])) {
+            foreach ($cart['activities'] as $item) {
+                $activity = Activity::find($item['id']);
+                if ($activity) {
+                    // Check availability for the specific quantity and date
+                    if (!$activity->hasTicketsAvailable($item['quantity'], $item['start_date'])) {
+                        return redirect()->route('checkout')->with('error', "Er zijn helaas niet genoeg tickets meer beschikbaar voor '{$activity->title}' op de gekozen datum. Pas je bestelling aan.");
+                    }
+                }
+            }
+        }
+        // ----------------------------------------------------
 
         DB::beginTransaction();
         try {
@@ -227,7 +242,7 @@ class OrderController extends Controller
 
             $currentTransactionTotal = 0;
 
-            // Process Products
+            // 1. Process Products
             if (!empty($cart['products'])) {
                 $products = Product::with('prices.price')->whereIn('id', array_keys($cart['products']))->get();
                 foreach ($products as $product) {
@@ -311,13 +326,46 @@ class OrderController extends Controller
                     ]);
 
                     $currentTransactionTotal += $lineTotal;
+                }
+            }
 
-                    // Form Data (omitted)
+            // 2. Process Activities
+            if (!empty($cart['activities'])) {
+                $activityIds = array_map(fn($item) => $item['id'], $cart['activities']);
+                $activities = Activity::with(['prices.price'])->whereIn('id', array_unique($activityIds))->get()->keyBy('id');
+
+                foreach ($cart['activities'] as $cartItem) {
+                    $activity = $activities->get($cartItem['id']);
+                    if (!$activity) continue;
+
+                    $qty = (int)$cartItem['quantity'];
+                    $startDate = $cartItem['start_date'];
+
+                    // Calculate Price (using your existing helper logic)
+                    $unitPrice = $this->calculateActivityPrice($activity);
+                    $lineTotal = $unitPrice * $qty;
+
+                    // Add to total
+                    $currentTransactionTotal += $lineTotal;
+
+                    // Create Tickets
+                    for ($i = 0; $i < $qty; $i++) {
+                        Ticket::create([
+                            'user_id' => $userId, // Can be null if guest
+                            'activity_id' => $activity->id,
+                            'order_id' => $order->id,
+                            'start_date' => $startDate,
+                            'status' => 'open' // Created as open, updated to 'valid' on payment success
+                        ]);
+                    }
                 }
             }
 
             $order->total_amount += $currentTransactionTotal;
             $order->save();
+
+            // Clear session immediately as order is persisted
+            Session::forget(['cart', 'cart_mixed', 'cart_form_data', 'target_order_id']);
 
             if ($currentTransactionTotal == 0) {
                 if (!$targetOrderId) {
@@ -331,8 +379,6 @@ class OrderController extends Controller
                 }
 
                 Ticket::where('order_id', $order->id)->update(['status' => 'valid']);
-
-                Session::forget(['cart', 'cart_mixed', 'cart_form_data', 'target_order_id']);
 
                 DB::commit();
                 return redirect()->route('order.success', ['order_number' => $order->order_number]);
@@ -348,15 +394,69 @@ class OrderController extends Controller
                 "metadata" => ["order_id" => $order->id],
             ]);
 
-            Session::forget(['cart', 'cart_mixed', 'cart_form_data', 'target_order_id']);
+            // UPDATE: Reset payment status to 'open' so the pay page logic knows it needs payment
+            $order->update([
+                'mollie_payment_id' => $payment->id,
+                'payment_status' => 'open', // Reset status if it was previously 'paid'
+                'status' => 'open'
+            ]);
 
-            $order->update(['mollie_payment_id' => $payment->id]);
             DB::commit();
-            return redirect($payment->getCheckoutUrl(), 303);
+            return redirect()->route('order.pay', ['order_number' => $order->order_number, 'new' => 1]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Fout bij verwerken: ' . $e->getMessage());
+        }
+    }
+
+    public function pay(Request $request, $order_number)
+    {
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+
+        // If already paid, go to success
+        if ($order->status == 'paid' || $order->payment_status == 'paid') {
+            return redirect()->route('order.success', ['order_number' => $order->order_number]);
+        }
+
+        try {
+            $checkoutUrl = null;
+
+            // Check if existing open payment is valid
+            if ($order->mollie_payment_id) {
+                try {
+                    $payment = Mollie::api()->payments->get($order->mollie_payment_id);
+                    if ($payment->isOpen()) {
+                        $checkoutUrl = $payment->getCheckoutUrl();
+                    }
+                } catch (\Exception $e) {
+                    // Ignore, create new
+                }
+            }
+
+            // Create new payment if needed
+            if (!$checkoutUrl) {
+                $payment = Mollie::api()->payments->create([
+                    "amount" => [
+                        "currency" => "EUR",
+                        "value" => number_format($order->total_amount, 2, '.', '')
+                    ],
+                    "description" => "Order " . $order->order_number,
+                    "redirectUrl" => route('order.success', ['order_number' => $order->order_number]),
+                    "metadata" => ["order_id" => $order->id],
+                ]);
+
+                $order->update(['mollie_payment_id' => $payment->id]);
+                $checkoutUrl = $payment->getCheckoutUrl();
+            }
+
+            // If 'new' flag is present, enable auto-redirect in view
+            $autoRedirect = $request->has('new');
+
+            return view('shop.payment_start', compact('order', 'checkoutUrl', 'autoRedirect'));
+
+        } catch (\Exception $e) {
+            return redirect()->route('shop')->with('error', 'Kon betaling niet starten: ' . $e->getMessage());
         }
     }
 
@@ -391,6 +491,138 @@ class OrderController extends Controller
 
         return max($taxableAmount + $vatAmount + $totalExtras, 0);
     }
+
+    // --- NEW: AJAX Cart Methods ---
+
+    public function updateCartApi(Request $request)
+    {
+        $request->validate([
+            'id' => 'required',
+            'type' => 'required|in:product,activity',
+            'quantity' => 'required|integer|min:0'
+        ]);
+
+        $cart = Session::get('cart_mixed', [
+            'products' => Session::get('cart', []),
+            'activities' => []
+        ]);
+
+        $itemId = $request->id;
+        $qty = (int)$request->quantity;
+        $type = $request->type;
+
+        if ($qty <= 0) {
+            return $this->removeCartApi($request);
+        }
+
+        if ($type === 'product') {
+            $cart['products'][$itemId] = $qty;
+            // Also update the legacy simple cart for compatibility
+            Session::put('cart', $cart['products']);
+        } else {
+            // Activities are stored as arrays in the session list
+            if (isset($cart['activities'][$itemId])) {
+                // Check availability
+                $activity = Activity::find($cart['activities'][$itemId]['id']);
+                if ($activity) {
+                    // Check if requested quantity is more than available
+                    if (!$activity->hasTicketsAvailable($qty, $cart['activities'][$itemId]['start_date'])) {
+                        return response()->json(['error' => 'Niet genoeg tickets beschikbaar'], 400);
+                    }
+                }
+                $cart['activities'][$itemId]['quantity'] = $qty;
+            }
+        }
+
+        Session::put('cart_mixed', $cart);
+
+        return $this->getCartTotals();
+    }
+
+    public function removeCartApi(Request $request)
+    {
+        $request->validate([
+            'id' => 'required',
+            'type' => 'required|in:product,activity'
+        ]);
+
+        $cart = Session::get('cart_mixed', [
+            'products' => Session::get('cart', []),
+            'activities' => []
+        ]);
+
+        $itemId = $request->id;
+        $type = $request->type;
+
+        if ($type === 'product') {
+            unset($cart['products'][$itemId]);
+            Session::put('cart', $cart['products']);
+        } else {
+            unset($cart['activities'][$itemId]);
+        }
+
+        Session::put('cart_mixed', $cart);
+
+        return $this->getCartTotals();
+    }
+
+    private function getCartTotals()
+    {
+        $cart = Session::get('cart_mixed', [
+            'products' => [],
+            'activities' => []
+        ]);
+
+        $total = 0;
+        $itemCount = 0;
+        $itemsData = [];
+
+        // Products
+        if (!empty($cart['products'])) {
+            $products = Product::with(['prices.price'])->whereIn('id', array_keys($cart['products']))->get();
+            foreach ($products as $product) {
+                $qty = $cart['products'][$product->id];
+                $price = $product->calculated_full_price;
+                $lineTotal = $price * $qty;
+                $total += $lineTotal;
+                $itemCount += $qty;
+                $itemsData['product_' . $product->id] = [
+                    'line_total' => number_format($lineTotal, 2, ',', '.'),
+                    'quantity' => $qty
+                ];
+            }
+        }
+
+        // Activities
+        if (!empty($cart['activities'])) {
+            $activityIds = array_map(fn($item) => $item['id'], $cart['activities']);
+            $activities = Activity::with(['prices.price'])->whereIn('id', array_unique($activityIds))->get()->keyBy('id');
+
+            foreach ($cart['activities'] as $key => $cartItem) {
+                $activity = $activities->get($cartItem['id']);
+                if (!$activity) continue;
+
+                $qty = $cartItem['quantity'];
+                $price = $this->calculateActivityPrice($activity);
+                $lineTotal = $price * $qty;
+                $total += $lineTotal;
+                $itemCount += $qty;
+                $itemsData['activity_' . $key] = [
+                    'line_total' => number_format($lineTotal, 2, ',', '.'),
+                    'quantity' => $qty
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'total' => number_format($total, 2, ',', '.'),
+            'item_count' => $itemCount,
+            'items' => $itemsData,
+            'redirect' => ($itemCount === 0) ? route('shop') : null
+        ]);
+    }
+    // ---------------------------------
 
     // ... (success, downloadInvoice, retry, list, details, updateStatus unchanged)
     public function success($order_number)
