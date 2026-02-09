@@ -57,6 +57,7 @@ class SettingsController extends Controller
             'phone' => 'string',
             'website' => 'string',
             'praktijknaam' => 'string',
+            'activity_details' => 'string',
             'profile_picture' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:6000',
         ]);
 
@@ -81,6 +82,7 @@ class SettingsController extends Controller
         $user->phone = $request->input('phone');
         $user->website = $request->input('website');
         $user->praktijknaam = $request->input('praktijknaam');
+        $user->activity_details = $request->input('activity_details');
 
         $user->save();
 

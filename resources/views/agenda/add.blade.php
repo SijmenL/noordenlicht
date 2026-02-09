@@ -559,7 +559,7 @@
                             @endif
 
                             <div class="d-flex flex-column">
-                                <label for="location" class="col-form-label ">Locatie, bijvoorbeeld "Tramstraat 45a"</label>
+                                <label for="location" class="col-form-label ">Locatie, bijvoorbeeld "Tramstraat 54a"</label>
                                 <input name="location" type="text" class="form-control" id="location"
                                        value="{{ old('location') }}"
                                 >

@@ -103,6 +103,15 @@
                         @enderror
                     </div>
 
+                    <div class="mb-4">
+                        <label for="color" class="col-md-4 col-form-label ">Kleur in de dashboard agenda</label>
+                        <input class="form-control mt-2 @error('color') is-invalid @enderror" id="color" type="color"
+                               name="color" value="{{ old('color', $accommodatie->color) }}">
+                        @error('color')
+                        <span class="text-danger small">{{ $message }}</span>
+                        @enderror
+                    </div>
+
                     <div class="mt-4 mb-4">
                         <label for="text-input">Beschrijving</label>
                         <div class="editor-parent">
@@ -641,7 +650,7 @@
 
             createIconRow(icon, index) {
                 const col = createElement('div', { className: 'col' });
-                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded flex-wrap' });
+                const wrapper = createElement('div', { className: 'd-flex align-items-center gap-3 p-2 border rounded' });
                 const imgSrc = icon.is_new ? icon.preview : icon.path;
 
                 const img = createElement('img', { src: imgSrc, alt: `Icoon`, style: 'width:32px;height:32px;object-fit:contain;' });

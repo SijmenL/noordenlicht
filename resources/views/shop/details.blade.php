@@ -114,8 +114,8 @@
                     <!-- Carousel -->
                     @if($product->image !== null)
 
-                        <div class="w-100">
-                            <div class="sticky-top" style="top: 90px;">
+                        <div class="w-100" style="max-width: 500px">
+                            <div class="sticky-top" style="top: 120px;">
                                 <x-carousel :images="$carrousel_images"/>
                             </div>
                         </div>

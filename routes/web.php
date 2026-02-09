@@ -189,6 +189,8 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::get('/dashboard/boekingen', [BookingController::class, 'list'])->name('admin.bookings');
     Route::get('/dashboard/boekingen/{id}', [BookingController::class, 'details'])->name('admin.bookings.details');
 
+    Route::get('/dashboard/boekingen', [BookingController::class, 'list'])->name('admin.bookings');
+
     Route::post('/dashboard/boekingen/{id}', [BookingController::class, 'updateStatus'])->name('admin.bookings.details.update');
 
     Route::get('/dashboard/aanmeldingen', [AdminController::class, 'signup'])->name('admin.signup');
@@ -197,6 +199,8 @@ Route::middleware(['checkRole:Administratie'])->group(function () {
     Route::get('/dashboard/aanmeldingen/accepteer/{id}', [AdminController::class, 'signupAccept'])->name('admin.signup.accept');
     Route::get('/dashboard/aanmeldingen/verwijder/{id}', [AdminController::class, 'signupDelete'])->name('admin.signup.delete');
 
+    Route::get('/dashboard/reserveren', [AccommodatieController::class, 'adminReserve'])->name('admin.reserve');
+    Route::post('/dashboard/reserveren', [AccommodatieController::class, 'storeAdminReservation'])->name('admin.reserve.store');
 
     // Tickets
     Route::get('/dashboard/tickets/scan', [TicketController::class, 'scanTickets'])->name('admin.tickets.scan');

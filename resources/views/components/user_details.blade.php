@@ -30,7 +30,7 @@
             </tr>
         @endif
 
-        @if(!in_array('parktijknaam', $hide))
+        @if(!in_array('website', $hide))
             <tr>
                 <th>Website</th>
                 <td>
@@ -38,6 +38,39 @@
                         {{ $user->website }}
                     </a>
                 </td>
+            </tr>
+        @endif
+
+        @if(!in_array('activity_details', $hide))
+            @if(!isset($user->activity_details))
+                <tr>
+                    <th>Wat wil de gebruiker organiseren?</th>
+                    <td>
+                        <div class="alert alert-warning d-flex align-items-center" role="alert">
+                            <span class="material-symbols-rounded me-2">mail_off</span>Geen organisatie details gevonden...
+                        </div>
+                    </td>
+                </tr>
+            @else
+                <tr>
+                    <th>Wat wil de gebruiker organiseren?</th>
+                    <td>{{ $user->activity_details }}</td>
+                </tr>
+            @endif
+        @endif
+
+        @if(!in_array('shop_discount', $hide))
+            <tr>
+                <th style="max-width: 200px">Webshopkorting (tickets & extra's)</th>
+                <td>@if($user->shop_discount == 0) Geen webshopkorting @else {{ $user->shop_discount }} %@endif</td>
+            </tr>
+        @endif
+
+
+        @if(!in_array('booking_discount', $hide))
+            <tr>
+                <th style="max-width: 200px">Boekingskorting</th>
+                <td>@if($user->booking_discount == 0) Geen korting op boekingen @else {{ $user->booking_discount }} %@endif</td>
             </tr>
         @endif
 
@@ -178,12 +211,7 @@
             @endif
         @endif
 
-        @if(!in_array('updated_at', $hide))
-            <tr>
-                <th>Aangepast op</th>
-                <td>{{ \Carbon\Carbon::parse($user->updated_at)->format('d-m-Y H:i:s') }}</td>
-            </tr>
-        @endif
+
 
         @if(!in_array('created_at', $hide))
             <tr>

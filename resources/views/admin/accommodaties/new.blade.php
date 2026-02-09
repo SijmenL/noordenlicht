@@ -66,24 +66,25 @@
                         @enderror
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-9 d-flex flex-column mb-3">
-                            <label for="type_input" class="col-form-label ">Type accommodatie</label>
-                            <input placeholder="e.g. Kleine groepsruimte" name="type" type="text" class="form-control @error('type') is-invalid @enderror" id="type_input" value="{{ old('type') }}">
-                            @error('type')
-                            <span class="text-danger small">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-3 d-flex flex-column mb-3">
-                            <label for="order_input" class="col-form-label">Volgorde (Index)</label>
-                            <input name="order" type="number" class="form-control @error('order') is-invalid @enderror" id="order_input" value="{{ old('order') }}">
-                            <small class="text-muted">Lager nummer = hoger in de lijst</small>
-                            @error('order')
-                            <span class="text-danger small">{{ $message }}</span>
-                            @enderror
-                        </div>
+                    <div class="d-flex flex-column mb-3">
+                        <label for="type_input" class="col-form-label ">Type accommodatie</label>
+                        <input placeholder="e.g. Kleine groepsruimte" name="type" type="text"
+                               class="form-control @error('type') is-invalid @enderror" id="type_input"
+                               value="{{ old('type') }}">
+                        @error('type')
+                        <span class="text-danger small">{{ $message }}</span>
+                        @enderror
                     </div>
+
+                    {{--                        <div class="col-md-3 d-flex flex-column mb-3">--}}
+                    {{--                            <label for="order_input" class="col-form-label">Volgorde (Index)</label>--}}
+                    <input name="order" type="hidden" class="form-control @error('order') is-invalid @enderror"
+                           id="order_input" value="0">
+                    {{--                            <small class="text-muted">Lager nummer = hoger in de lijst</small>--}}
+                    {{--                            @error('order')--}}
+                    {{--                            <span class="text-danger small">{{ $message }}</span>--}}
+                    {{--                            @enderror--}}
+                    {{--                        </div>--}}
 
                     <div class="mb-4">
                         <label for="image" class="col-md-4 col-form-label ">Hoofdafbeelding (wordt vertoond op alle
@@ -91,6 +92,15 @@
                         <input class="form-control mt-2 @error('image') is-invalid @enderror" id="image" type="file"
                                name="image" accept="image/*">
                         @error('image')
+                        <span class="text-danger small">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="color" class="col-md-4 col-form-label ">Kleur in de dashboard agenda</label>
+                        <input class="form-control mt-2 @error('color') is-invalid @enderror" id="color" type="color"
+                               name="color">
+                        @error('color')
                         <span class="text-danger small">{{ $message }}</span>
                         @enderror
                     </div>

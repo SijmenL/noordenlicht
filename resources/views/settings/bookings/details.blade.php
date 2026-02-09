@@ -12,6 +12,7 @@
             @php
                 $statusLabel = match($booking->status) {
                     'confirmed' => 'Bevestigd',
+                    'reserved' => 'Gereserveerd',
                     'completed' => 'Afgerond',
                     'pending'   => 'In afwachting',
                     'cancelled' => 'Geannuleerd',
@@ -19,7 +20,7 @@
                 };
                 $statusClass = match($booking->status) {
                     'confirmed', 'completed' => 'success',
-                    'pending'   => 'warning',
+                    'pending', 'reserved'   => 'warning',
                     'cancelled' => 'danger',
                     default     => 'secondary'
                 };

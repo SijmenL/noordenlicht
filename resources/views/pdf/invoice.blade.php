@@ -151,10 +151,10 @@
 <div class="header-container">
     <div class="company-info">
         <div class="company-name">NoordenLicht</div>
-        <div>Adresregel 1</div>
-        <div>1234 AB Plaats</div>
-        <div>KvK: 12345678</div>
-        <div>BTW: NL123456789B01</div>
+        <div>Tramstraat 54A</div>
+        <div>7848 BL Schoonoord</div>
+        <div>KvK: 20115070</div>
+        <div>BTW: NL001807677B14</div>
     </div>
     <img src="{{ public_path('img/logo/logo pdf.png') }}" class="logo-img" alt="Logo">
 </div>

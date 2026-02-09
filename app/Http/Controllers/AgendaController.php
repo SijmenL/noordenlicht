@@ -705,11 +705,16 @@ class AgendaController extends Controller
             $fakeActivity = new Activity();
             $fakeActivity->id = $booking->id;
             $fakeActivity->isBooking = true;
-            $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
+            if($booking->status == 'reserved') {
+                $fakeActivity->title = 'Reservering: ' . $booking->accommodatie->name;
+            } else {
+                $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
+            }
             $fakeActivity->content = "Geboekt door " . ($booking->order->first_name.' '.$booking->order->last_name ?? 'Onbekend');
             $fakeActivity->date_start = $booking->start;
             $fakeActivity->date_end = $booking->end;
             $fakeActivity->image = null; // Or accommodation image
+            $fakeActivity->color = $booking->accommodatie->color; // Or accommodation image
             $fakeActivity->should_highlight = false; // Styling
             $fakeActivity->lesson_id = null; // Not a lesson
 
@@ -1442,7 +1447,8 @@ class AgendaController extends Controller
         $view = $request->query('view', 'month');
 
         // Fetch the public activity by id
-        $activity = Booking::where('id', $id)
+        $activity = Booking::select('*', 'start as date_start', 'end as date_end')
+            ->where('id', $id)
             ->where('public', "1")
             ->first();
 
@@ -1755,7 +1761,11 @@ class AgendaController extends Controller
             $fakeActivity = new Activity();
             $fakeActivity->id = $booking->id;
             $fakeActivity->isBooking = true;
-            $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
+            if($booking->status == 'reserved') {
+                $fakeActivity->title = 'Reservering: ' . $booking->accommodatie->name;
+            } else {
+                $fakeActivity->title = 'Verhuur: ' . $booking->accommodatie->name;
+            }
             $fakeActivity->content = "Geboekt door " . ($booking->order->first_name.' '.$booking->order->last_name ?? 'Onbekend');
             $fakeActivity->date_start = $booking->start;
             $fakeActivity->date_end = $booking->end;

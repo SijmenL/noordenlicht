@@ -62,6 +62,10 @@ class User extends Authenticatable
         'is_associate',
         'praktijknaam',
         'allow_booking',
+        'activity_details',
+        'shop_discount',
+        'booking_discount',
+        'notes',
         'website'
     ];
 

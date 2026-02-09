@@ -58,8 +58,8 @@
         {{-- Dashboard Grid --}}
         <div class="d-flex flex-column gap-5">
 
-            <div class=" h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+            <div class="bg-white rounded-3 h-100 border-0  rounded-4 overflow-hidden">
+                <div class="-header  border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold m-0 d-flex align-items-center gap-2">
                         <span class="material-symbols-rounded text-primary">event</span>
                         Eerstvolgende Event
@@ -78,7 +78,7 @@
                             @endif
                             <div class="position-absolute top-0 end-0 m-2">
                                 <span
-                                    class="badge bg-white text-dark shadow-sm">{{ $upcomingEvent->date_start->format('d M') }}</span>
+                                    class="badge bg-white text-dark ">{{ $upcomingEvent->date_start->format('d M') }}</span>
                             </div>
                         </div>
                         <h5 class="fw-bold mb-1">{{ $upcomingEvent->title }}</h5>
@@ -99,7 +99,7 @@
             </div>
 
 
-            <div class="h-100 border-0 shadow-sm rounded-4">
+            <div class="bg-white overflow-hidden rounded-3 h-100 border-0  rounded-4">
                 <div
                     class="-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold m-0 d-flex align-items-center gap-2">
@@ -112,7 +112,7 @@
                         <div class="list-group list-group-flush py-2">
                             @foreach($latestOrders as $order)
                                 <a href="{{ route('admin.orders.details', $order->id) }}"
-                                   class="list-group-item list-group-item-action border-0 px-4 py-3">
+                                   class="list-group-item bg-white list-group-item-action border-0 px-4 py-3">
                                     <div class="d-flex w-100 justify-content-between align-items-center mb-1">
                                         <span class="fw-bold text-dark">#{{ $order->order_number }}</span>
                                         <small class="text-muted">{{ $order->created_at->diffForHumans() }}</small>
@@ -149,22 +149,17 @@
             </div>
 
 
-            <div class=" h-100 border-0 shadow-sm rounded-4">
+            <div class="bg-white rounded-3 overflow-hidden h-100 border-0  rounded-4">
                 <div
                     class="-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold m-0 d-flex align-items-center gap-2">
                         <span class="material-symbols-rounded text-info">mail</span>
-                        Recente Berichten
+                        Recente Ongelezen Berichten
                     </h5>
                 </div>
                 <div class="-body p-4 d-flex flex-column">
                     @if($latestContact)
                         <div class="d-flex align-items-center mb-3">
-                            <div
-                                class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3"
-                                style="width: 45px; height: 45px; min-width: 45px;">
-                                <span class="material-symbols-rounded text-info">person</span>
-                            </div>
                             <div class="overflow-hidden">
                                 <h6 class="fw-bold mb-0 text-truncate">{{ $latestContact->name }}</h6>
                                 <small class="text-muted">{{ $latestContact->email }}</small>
@@ -190,6 +185,5 @@
                 </div>
             </div>
         </div>
-    </div>
     </div>
 @endsection

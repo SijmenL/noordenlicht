@@ -28,7 +28,7 @@
             'route' => 'agenda.public.schedule',
         ],
         [
-            'name' => 'Winkel',
+            'name' => 'Toevoegingen',
             'route' => 'shop',
         ],
         // The Info Dropdown

@@ -215,8 +215,8 @@
                     @endphp
 
                     <div
-                        class="calendar-cell {{ $i == $currentDay && $month == $currentMonth && $year == $currentYear ? 'highlight' : '' }}"
-                        style="height: {{ $totalHeight }}px;">
+                            class="calendar-cell {{ $i == $currentDay && $month == $currentMonth && $year == $currentYear ? 'highlight' : '' }}"
+                            style="height: {{ $totalHeight }}px;">
                         <p class="calendar-cell-text">{{ $i }}</p>
 
                         @if ($activitiesForDay->isNotEmpty())
@@ -288,13 +288,29 @@
 
                                     // Construct a composite key to fetch the correct positioning.
                                     $compositeKey = $activity->id . '-' . $activitiesStart->format('Y-m-d');
+
+    // Calculate contrast color logic inline
+    $textColor = '#000000'; // Default black
+    if (isset($activity->color) && !empty($activity->color)) {
+        $hex = ltrim($activity->color, '#');
+        // Handle standard #RRGGBB and shorthand #RGB
+        if (ctype_xdigit($hex) && (strlen($hex) == 6 || strlen($hex) == 3)) {
+            if (strlen($hex) == 3) {
+                $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+            }
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            // YIQ brightness formula
+            $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+            $textColor = ($yiq >= 128) ? '#000000' : '#ffffff';
+        }
+    }
                                 @endphp
-
-
 
                                 <a @if($activity->isBooking) href="{{ route('admin.bookings.details', [$activity->id, 'location' => 'agenda']) }}"
                                    @else href="{{ route('agenda.activity', $routeParams) }}" @endif
-                                   style="top: {{ 40 + ($activityPositions[$compositeKey] ?? 0) * 35 }}px;"
+                                   style="top: {{ 40 + ($activityPositions[$compositeKey] ?? 0) * 35 }}px; @if(isset($activity->color)) background-color: {{ $activity->color }} !important; color: {{ $textColor }} !important; @endif"
                                    data-event-id="{{ $activity->id }}"
                                    data-event-start="{{ $formattedStart }}"
                                    data-event-start-date="{{ $activitiesStart->format('Y-m-d') }}"

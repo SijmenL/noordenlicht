@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Accommodatie extends Model
 {
@@ -15,7 +16,8 @@ class Accommodatie extends Model
         'min_check_in',
         'max_check_in',
         'min_duration_minutes',
-        'order'
+        'order',
+        'color'
     ];
 
     public function images()
@@ -52,11 +54,29 @@ class Accommodatie extends Model
 
         $totalBasePrice = $basePrices->sum('amount');
 
+        // Check for User Discount (Booking Discount)
+        $user = Auth::user();
+        $userDiscountPercent = 0;
+
+        // Verify if 'Ledenkorting' is already injected to prevent double counting
+        $hasInjectedDiscount = $percentageDiscounts->contains(function ($price) {
+            return $price->name === 'Ledenkorting';
+        });
+
+        if (!$hasInjectedDiscount && $user && $user->booking_discount > 0) {
+            $userDiscountPercent = $user->booking_discount;
+        }
+
         // 1. Discounts
         $discountAmount = 0;
         foreach ($percentageDiscounts as $percentage) {
             $discountAmount += $totalBasePrice * ($percentage->amount / 100);
         }
+
+        if ($userDiscountPercent > 0) {
+            $discountAmount += $totalBasePrice * ($userDiscountPercent / 100);
+        }
+
         $discountAmount += $fixedDiscounts->sum('amount');
 
         $taxableAmount = max($totalBasePrice - $discountAmount, 0);
@@ -85,11 +105,29 @@ class Accommodatie extends Model
 
         $totalBasePrice = $basePrices->sum('amount');
 
+        // Check for User Discount (Booking Discount)
+        $user = Auth::user();
+        $userDiscountPercent = 0;
+
+        // Verify if 'Ledenkorting' is already injected to prevent double counting
+        $hasInjectedDiscount = $percentageDiscounts->contains(function ($price) {
+            return $price->name === 'Ledenkorting';
+        });
+
+        if (!$hasInjectedDiscount && $user && $user->booking_discount > 0) {
+            $userDiscountPercent = $user->booking_discount;
+        }
+
         // 1. Discounts
         $discountAmount = 0;
         foreach ($percentageDiscounts as $percentage) {
             $discountAmount += $totalBasePrice * ($percentage->amount / 100);
         }
+
+        if ($userDiscountPercent > 0) {
+            $discountAmount += $totalBasePrice * ($userDiscountPercent / 100);
+        }
+
         $discountAmount += $fixedDiscounts->sum('amount');
 
         $taxableAmount = max($totalBasePrice - $discountAmount, 0);

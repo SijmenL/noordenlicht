@@ -46,6 +46,7 @@
                             <option value="open" {{ request('status') == "open" ? 'selected' : '' }}>Niet betaald</option>
                             <option value="shipped" {{ request('status') == 'shipped' ? 'selected' : '' }}>Verzonden</option>
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Afgerond</option>
+                            <option value="lunch_later" {{ request('status') == 'lunch_later' ? 'selected' : '' }}>Ruimte betaald, toevoegingen niet</option>
                             <option value="canceled" {{ request('status') == 'canceled' ? 'selected' : '' }}>Geannuleerd</option>
                             <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Misgegaan</option>
                             <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Verlopen</option>
@@ -80,10 +81,10 @@
                             <td>
                                 @php
                                     $statusClass = match($order->status) {
-                                        'completed', 'shipped' => 'success',
-                                        'paid' => 'info',
+                                        'completed', 'shipped', 'reservation' => 'success',
+                                        'paid', 'lunch_later' => 'info',
                                         'open', 'pending' => 'dark',
-                                        'canceled', 'failed', 'expired' => 'danger',
+                                        'cancelled', 'failed', 'expired' => 'danger',
                                         default => 'secondary'
                                     };
                                 @endphp
@@ -93,9 +94,11 @@
                                    @if($order->status == 'paid') Betaald @endif
                                    @if($order->status == 'shipped') Verzonden @endif
                                    @if($order->status == 'completed') Afgerond @endif
-                                   @if($order->status == 'canceled') Geannuleerd @endif
+                                   @if($order->status == 'lunch_later') Ruimte betaald, toevoegingen niet @endif
+                                   @if($order->status == 'cancelled') Geannuleerd @endif
                                    @if($order->status == 'failed') Misgegaan @endif
                                    @if($order->status == 'expired') Verlopen @endif
+                                   @if($order->status == 'reservation') Admin accommodatie reservering @endif
                                 </span>
                             </td>
                             <td>&#8364;{{ number_format($order->total_amount, 2, ',', '.') }}</td>

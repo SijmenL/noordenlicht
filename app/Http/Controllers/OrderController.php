@@ -53,14 +53,67 @@ class OrderController extends Controller
         // 3. Process Form Data
         if ($request->has('supplement_forms')) {
             $submittedForms = $request->input('supplement_forms');
+
+            // Fix: Decode JSON string if supplement_forms is sent as a string (common in bulk AJAX)
+            if (is_string($submittedForms)) {
+                $submittedForms = json_decode($submittedForms, true);
+            }
+
             $cartFormData = ['products' => [], 'activities' => []];
-            foreach ($submittedForms as $productId => $forms) {
-                $cartFormData['products'][$productId] = $forms;
+
+            if (is_array($submittedForms)) {
+                foreach ($submittedForms as $productId => $forms) {
+                    $cartFormData['products'][$productId] = $forms;
+                }
             }
             Session::put('cart_form_data', $cartFormData);
         }
 
         return $this->processImmediateOrder($request->input('existing_order_id'));
+    }
+
+    /**
+     * Handle "Normal Add" from Product Details page.
+     * Ensures form_elements are saved to session for the store method to pick up.
+     */
+    public function addToCart(Request $request, $id)
+    {
+        $qty = (int)$request->input('quantity', 1);
+        if ($qty < 1) $qty = 1;
+
+        // 1. Update Standard Cart (ID => Qty)
+        $cart = Session::get('cart', []);
+        if (isset($cart[$id])) {
+            $cart[$id] += $qty;
+        } else {
+            $cart[$id] = $qty;
+        }
+        Session::put('cart', $cart);
+
+        // Sync with mixed cart structure
+        $cartMixed = Session::get('cart_mixed', ['products' => [], 'activities' => []]);
+        $cartMixed['products'] = $cart;
+        Session::put('cart_mixed', $cartMixed);
+
+        // 2. Handle Form Data
+        if ($request->has('form_elements')) {
+            $cartFormData = Session::get('cart_form_data', ['products' => [], 'activities' => []]);
+
+            // Store form data keyed by product ID
+            // Note: If adding the same product twice with different form data,
+            // this simple array structure might overwrite.
+            // For distinct items, the cart structure would need to be ID-based (e.g. unique line ID).
+            // For now, this matches the bulkAdd structure.
+            $cartFormData['products'][$id] = $request->input('form_elements');
+
+            Session::put('cart_form_data', $cartFormData);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Toegevoegd aan winkelwagen']);
+        }
+
+        return redirect()->back()->with('success', 'CardAdded');
     }
 
     protected function processImmediateOrder($orderId)
@@ -92,13 +145,18 @@ class OrderController extends Controller
 
         $items = collect();
         $total = 0;
+        $user = Auth::user();
+        $shopDiscount = $user ? $user->shop_discount : 0;
 
         // Process Products
         if (!empty($cart['products'])) {
             $products = Product::with(['prices.price'])->whereIn('id', array_keys($cart['products']))->get();
             foreach ($products as $product) {
                 $qty = $cart['products'][$product->id];
-                $price = $product->calculated_full_price;
+
+                // Calculate price with user discount
+                $price = $this->calculatePriceWithDiscount($product->prices, $shopDiscount);
+
                 $total += $price * $qty;
 
                 $items->push((object)[
@@ -125,7 +183,10 @@ class OrderController extends Controller
 
                 $qty = $cartItem['quantity'];
                 $startDate = $cartItem['start_date'];
-                $price = $this->calculateActivityPrice($activity);
+
+                // Calculate price with user discount
+                $price = $this->calculatePriceWithDiscount($activity->prices, $shopDiscount);
+
                 $total += $price * $qty;
 
                 $items->push((object)[
@@ -160,12 +221,12 @@ class OrderController extends Controller
             ]);
         }
 
-
         $cart = Session::get('cart_mixed', [
             'products' => Session::get('cart', []),
             'activities' => []
         ]);
 
+        // Retrieve form data from session (populated by bulkAdd or addToCart)
         $cartFormData = Session::get('cart_form_data', [
             'products' => [],
             'activities' => []
@@ -194,6 +255,7 @@ class OrderController extends Controller
             $targetOrderId = Session::get('target_order_id');
             $order = null;
             $userId = Auth::id();
+            $user = Auth::user();
 
             if (!$userId && $request->filled('create_account') && $request->create_account == 1) {
                 $existingUser = User::where('email', $request->email)->first();
@@ -209,11 +271,16 @@ class OrderController extends Controller
                         'password' => Hash::make($randomPassword),
                     ]);
                     $userId = $newUser->id;
+                    $user = $newUser;
                     Auth::login($newUser);
                 } else {
                     $userId = $existingUser->id;
+                    $user = $existingUser;
                 }
             }
+
+            // Determine discounts
+            $shopDiscount = $user ? $user->shop_discount : 0;
 
             if ($targetOrderId) {
                 $order = Order::find($targetOrderId);
@@ -267,6 +334,13 @@ class OrderController extends Controller
                         $amount = $totalBasePrice * ($percentage->amount / 100);
                         $currentPrice -= $amount;
                         $totalPercentageValue += $percentage->amount;
+                    }
+
+                    // Apply User Global Shop Discount
+                    if ($shopDiscount > 0) {
+                        $amount = $totalBasePrice * ($shopDiscount / 100);
+                        $currentPrice -= $amount;
+                        $totalPercentageValue += $shopDiscount;
                     }
 
                     $totalFixedDiscount = $fixedDiscounts->sum('amount');
@@ -332,6 +406,7 @@ class OrderController extends Controller
             // 2. Process Activities
             if (!empty($cart['activities'])) {
                 $activityIds = array_map(fn($item) => $item['id'], $cart['activities']);
+                // Added 'prices.price' eager load here to ensure calculation works
                 $activities = Activity::with(['prices.price'])->whereIn('id', array_unique($activityIds))->get()->keyBy('id');
 
                 foreach ($cart['activities'] as $cartItem) {
@@ -341,21 +416,103 @@ class OrderController extends Controller
                     $qty = (int)$cartItem['quantity'];
                     $startDate = $cartItem['start_date'];
 
-                    // Calculate Price (using your existing helper logic)
-                    $unitPrice = $this->calculateActivityPrice($activity);
+                    // --- CALCULATION LOGIC FOR ACTIVITIES (Mirrors Products) ---
+                    $allPrices = $activity->prices->map(fn($p) => $p->price);
+
+                    $basePrices = $allPrices->where('type', 0);
+                    $percentageAdditions = $allPrices->where('type', 1); // VAT
+                    $fixedDiscounts = $allPrices->where('type', 2);
+                    $extraCosts = $allPrices->where('type', 3);
+                    $percentageDiscounts = $allPrices->where('type', 4);
+
+                    $totalBasePrice = $basePrices->sum('amount');
+
+                    // 1. Discounts
+                    $currentPrice = $totalBasePrice;
+                    $totalPercentageValue = 0;
+
+                    foreach ($percentageDiscounts as $percentage) {
+                        $amount = $totalBasePrice * ($percentage->amount / 100);
+                        $currentPrice -= $amount;
+                        $totalPercentageValue += $percentage->amount;
+                    }
+
+                    // Apply User Global Shop Discount (for Activities)
+                    if ($shopDiscount > 0) {
+                        $amount = $totalBasePrice * ($shopDiscount / 100);
+                        $currentPrice -= $amount;
+                        $totalPercentageValue += $shopDiscount;
+                    }
+
+                    $totalFixedDiscount = $fixedDiscounts->sum('amount');
+                    $currentPrice -= $totalFixedDiscount;
+
+                    // Taxable
+                    $taxableAmount = max($currentPrice, 0);
+
+                    // 2. VAT
+                    $totalVatAmount = 0;
+                    $additionsMetadata = [];
+
+                    foreach ($percentageAdditions as $percentage) {
+                        $amount = $taxableAmount * ($percentage->amount / 100);
+                        $totalVatAmount += $amount;
+                        $additionsMetadata[] = [
+                            'name' => $percentage->name,
+                            'amount' => $percentage->amount,
+                            'calculated_amount' => $amount
+                        ];
+                    }
+
+                    $priceInclVat = $taxableAmount + $totalVatAmount;
+
+                    // 3. Extras
+                    $totalExtraCost = $extraCosts->sum('amount');
+                    $extrasMetadata = [];
+                    foreach($extraCosts as $extra) {
+                        $extrasMetadata[] = [
+                            'name' => $extra->name,
+                            'amount' => $extra->amount
+                        ];
+                    }
+
+                    $unitPrice = max($priceInclVat + $totalExtraCost, 0);
                     $lineTotal = $unitPrice * $qty;
+                    // --- END CALCULATION ---
 
                     // Add to total
                     $currentTransactionTotal += $lineTotal;
 
-                    // Create Tickets
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => null, // Explicitly null since it's an activity
+                        'product_name' => $activity->title,
+                        'quantity' => $qty,
+                        'unit_price' => $unitPrice,
+                        'total_price' => $lineTotal,
+                        // Metadata
+                        'unit_base_price' => $totalBasePrice,
+                        'unit_vat' => $totalVatAmount,
+                        'unit_discount_percentage' => $totalPercentageValue,
+                        'unit_discount_amount' => $totalFixedDiscount,
+                        'unit_extra' => $totalExtraCost,
+                        'price_metadata' => [
+                            'additions' => $additionsMetadata,
+                            'extras' => $extrasMetadata,
+                            'pre_discount_price' => $totalBasePrice,
+                            'is_activity' => true,
+                            'start_date' => $startDate
+                        ]
+                    ]);
+
+                    // Create Tickets (Access Record)
                     for ($i = 0; $i < $qty; $i++) {
                         Ticket::create([
-                            'user_id' => $userId, // Can be null if guest
+                            'user_id' => $userId,
                             'activity_id' => $activity->id,
                             'order_id' => $order->id,
                             'start_date' => $startDate,
-                            'status' => 'open' // Created as open, updated to 'valid' on payment success
+                            'status' => 'open'
                         ]);
                     }
                 }
@@ -363,6 +520,49 @@ class OrderController extends Controller
 
             $order->total_amount += $currentTransactionTotal;
             $order->save();
+
+            // --- SAVE FORM DATA (NEW) ---
+            // Iterate through the cart_form_data session and save responses to DB
+            if (!empty($cartFormData['products'])) {
+                foreach ($cartFormData['products'] as $productId => $forms) {
+                    // Only save if product is actually in the cart/order
+                    if (!isset($cart['products'][$productId])) continue;
+
+                    // Retrieve the highest current submitted_id for this product (to match your activity logic)
+                    $maxSubmittedId = ActivityFormResponses::where('product_id', $productId)->max('submitted_id');
+                    $submittedId = $maxSubmittedId ? $maxSubmittedId + 1 : 1;
+
+                    if (is_array($forms)) {
+                        foreach ($forms as $elementId => $value) {
+                            // Mirroring activity logic: Handle array values (e.g. checkboxes) by creating multiple rows
+                            if (is_array($value)) {
+                                foreach ($value as $singleValue) {
+                                    ActivityFormResponses::create([
+                                        'order_id' => $order->id,
+                                        'product_id' => $productId,
+                                        'activity_id' => null, // Explicitly null
+                                        'location' => null,    // Explicitly null
+                                        'activity_form_element_id' => $elementId,
+                                        'response' => $singleValue,
+                                        'submitted_id' => $submittedId,
+                                    ]);
+                                }
+                            } else {
+                                ActivityFormResponses::create([
+                                    'order_id' => $order->id,
+                                    'product_id' => $productId,
+                                    'activity_id' => null, // Explicitly null
+                                    'location' => null,    // Explicitly null
+                                    'activity_form_element_id' => $elementId,
+                                    'response' => $value,
+                                    'submitted_id' => $submittedId,
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+            // ---------------------------
 
             // Clear session immediately as order is persisted
             Session::forget(['cart', 'cart_mixed', 'cart_form_data', 'target_order_id']);
@@ -460,9 +660,9 @@ class OrderController extends Controller
         }
     }
 
-    private function calculateActivityPrice($activity)
+    private function calculatePriceWithDiscount($pivotPrices, $userDiscountPercentage = 0)
     {
-        $allPrices = $activity->prices->map(fn($p) => $p->price);
+        $allPrices = $pivotPrices->map(fn($p) => $p->price);
         $basePrices = $allPrices->where('type', 0);
         $percentageAdditions = $allPrices->where('type', 1); // VAT
         $fixedDiscounts = $allPrices->where('type', 2);
@@ -476,6 +676,12 @@ class OrderController extends Controller
         foreach ($percentageDiscounts as $percentage) {
             $currentPrice -= $totalBasePrice * ($percentage->amount / 100);
         }
+
+        // Apply User Discount
+        if ($userDiscountPercentage > 0) {
+            $currentPrice -= $totalBasePrice * ($userDiscountPercentage / 100);
+        }
+
         $currentPrice -= $fixedDiscounts->sum('amount');
 
         $taxableAmount = max($currentPrice, 0);
@@ -490,6 +696,12 @@ class OrderController extends Controller
         $totalExtras = $extraCosts->sum('amount');
 
         return max($taxableAmount + $vatAmount + $totalExtras, 0);
+    }
+
+    // Kept for backward compatibility if needed, but calculatePriceWithDiscount is generic enough for both
+    private function calculateActivityPrice($activity)
+    {
+        return $this->calculatePriceWithDiscount($activity->prices, 0);
     }
 
     // --- NEW: AJAX Cart Methods ---
@@ -576,13 +788,15 @@ class OrderController extends Controller
         $total = 0;
         $itemCount = 0;
         $itemsData = [];
+        $user = Auth::user();
+        $shopDiscount = $user ? $user->shop_discount : 0;
 
         // Products
         if (!empty($cart['products'])) {
             $products = Product::with(['prices.price'])->whereIn('id', array_keys($cart['products']))->get();
             foreach ($products as $product) {
                 $qty = $cart['products'][$product->id];
-                $price = $product->calculated_full_price;
+                $price = $this->calculatePriceWithDiscount($product->prices, $shopDiscount);
                 $lineTotal = $price * $qty;
                 $total += $lineTotal;
                 $itemCount += $qty;
@@ -603,7 +817,7 @@ class OrderController extends Controller
                 if (!$activity) continue;
 
                 $qty = $cartItem['quantity'];
-                $price = $this->calculateActivityPrice($activity);
+                $price = $this->calculatePriceWithDiscount($activity->prices, $shopDiscount);
                 $lineTotal = $price * $qty;
                 $total += $lineTotal;
                 $itemCount += $qty;
@@ -776,7 +990,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:open,paid,shipped,completed,cancelled'
+            'status' => 'required|in:open,paid,shipped,completed,cancelled,lunch_later'
         ]);
 
         $order = Order::findOrFail($id);

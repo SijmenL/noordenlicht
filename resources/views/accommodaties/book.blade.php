@@ -522,30 +522,65 @@
 
             if (!Array.isArray(bookings)) return 'available';
 
-            const dayBookings = bookings.filter(b => b.start.startsWith(dateStr) || b.end.startsWith(dateStr))
-                .map(b => {
-                    let s = parseNaiveDate(b.start);
-                    let e = parseNaiveDate(b.end);
+            // Define the start and end of the current day being checked
+            const dayStart = new Date(dateStr + 'T00:00:00');
+            const dayEnd = new Date(dateStr + 'T23:59:59');
 
-                    if (s < new Date(dateStr + 'T00:00')) s = new Date(dateStr + 'T00:00');
-                    if (e > new Date(dateStr + 'T23:59:59')) e = new Date(dateStr + 'T23:59:59');
-                    const startM = s.getHours() * 60 + s.getMinutes();
-                    const endM = e.getHours() * 60 + e.getMinutes();
-                    return {start: Math.max(startM, openMins), end: Math.min(endM, closeMins)};
-                })
-                .sort((a, b) => a.start - b.start);
+            // Find all bookings that overlap with this day
+            const dayBookings = bookings.filter(b => {
+                let s = parseNaiveDate(b.start);
+                let e = parseNaiveDate(b.end);
+
+                // Check if the booking overlaps with the current day
+                // (Booking Start <= Day End) AND (Booking End >= Day Start)
+                return s <= dayEnd && e >= dayStart;
+            }).map(b => {
+                let s = parseNaiveDate(b.start);
+                let e = parseNaiveDate(b.end);
+
+                // If booking starts before today, clamp start to opening time (or 00:00)
+                // If booking ends after today, clamp end to closing time (or 23:59)
+
+                // For simplified "full day" logic:
+                // If a booking fully encompasses the day (starts before today, ends after today),
+                // it consumes the whole available slot.
+                if (s < dayStart && e > dayEnd) {
+                    return {start: openMins, end: closeMins};
+                }
+
+                // Normal partial logic for starts/ends on this day
+                if (s < dayStart) s = dayStart; // clamp start
+                if (e > dayEnd) e = dayEnd;     // clamp end
+
+                const startM = s.getHours() * 60 + s.getMinutes();
+                const endM = e.getHours() * 60 + e.getMinutes();
+
+                // Clamp within operating hours for calculation
+                return {
+                    start: Math.max(startM, openMins),
+                    end: Math.min(endM, closeMins)
+                };
+            }).sort((a, b) => a.start - b.start);
 
             let maxGap = 0;
             let cursor = openMins;
 
             dayBookings.forEach(b => {
+                // If there is a gap between cursor and booking start
                 if (b.start > cursor) maxGap = Math.max(maxGap, b.start - cursor);
+                // Move cursor to end of current booking
                 cursor = Math.max(cursor, b.end);
             });
+
+            // Check gap after last booking until close
             if (closeMins > cursor) maxGap = Math.max(maxGap, closeMins - cursor);
 
+            // If the largest available gap is smaller than minimum duration, the day is effectively full
             if (maxGap < minDurationMins) return 'full';
+
+            // If there are any bookings at all, it's partial
             if (dayBookings.length > 0) return 'partial';
+
             return 'available';
         }
 
@@ -768,20 +803,27 @@
             const [eH, eM] = eVal.split(':').map(Number);
             selectionStartMins = sH * 60 + sM;
             selectionEndMins = eH * 60 + eM;
-            validateSelection(true);
+
+            // Pass false for skipInputUpdate (so inputs auto-correct if invalid)
+            // Pass true for fromInput (so we calculate visual FROM time, not time FROM visual)
+            validateSelection(false, true);
         }
 
-        function validateSelection(skipInputUpdate = false) {
+        function validateSelection(skipInputUpdate = false, fromInput = false) {
             const selection = document.getElementById('timeline-selection');
-            const top = parseFloat(selection.style.top);
-            const height = parseFloat(selection.style.height);
-
             const dayStartMins = startHour * 60;
-            const rawStart = dayStartMins + (top / (pxPerHour / 60));
-            const rawEnd = dayStartMins + ((top + height) / (pxPerHour / 60));
 
-            selectionStartMins = Math.round(rawStart / 15) * 15;
-            selectionEndMins = Math.round(rawEnd / 15) * 15;
+            // Only recalculate minutes from DOM if NOT coming from manual input
+            if (!fromInput) {
+                const top = parseFloat(selection.style.top);
+                const height = parseFloat(selection.style.height);
+
+                const rawStart = dayStartMins + (top / (pxPerHour / 60));
+                const rawEnd = dayStartMins + ((top + height) / (pxPerHour / 60));
+
+                selectionStartMins = Math.round(rawStart / 15) * 15;
+                selectionEndMins = Math.round(rawEnd / 15) * 15;
+            }
 
             if (selectionEndMins - selectionStartMins < minDurationMins) {
                 selectionEndMins = selectionStartMins + minDurationMins;
@@ -1205,8 +1247,11 @@
         function calculateTotal() {
             const start = new Date(selectedDate + 'T' + document.getElementById('input_start_time').value);
             const end = new Date(selectedDate + 'T' + document.getElementById('input_end_time').value);
+
             const hours = (end - start) / 36e5;
-            const total = hours * pricePerHour;
+            // Round up to the nearest whole hour for price calculation
+            const billableHours = Math.ceil(hours);
+            const total = billableHours * pricePerHour;
 
             let suppTotal = 0;
             let suppList = '';
@@ -1222,11 +1267,22 @@
                 }
             }
 
+            // Calculate actual hours and minutes for display
+            const actualHours = Math.floor(hours);
+            const actualMinutes = Math.round((hours - actualHours) * 60);
+
+            let timeString = "";
+            if (actualMinutes > 0) {
+                timeString = `${actualHours} uur en ${actualMinutes} min = ${billableHours} uur`;
+            } else {
+                timeString = `${billableHours} uur`;
+            }
+
             document.getElementById('overview-dates').innerText = `${start.toLocaleDateString()} ${start.toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit'
             })} - ${end.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`;
-            document.getElementById('overview-hours').innerText = `${hours.toFixed(1)} uur`;
+            document.getElementById('overview-hours').innerText = timeString;
             document.getElementById('overview-acco-total').innerText = '€ ' + total.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('overview-supplements-list').innerHTML = suppList;
             document.getElementById('overview-grand-total').innerText = '€ ' + (total + suppTotal).toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});

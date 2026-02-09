@@ -18,8 +18,8 @@
         <div class="container py-5">
             <div class="container justify-content-center align-items-center d-flex flex-column gap-5">
                 <div style="backdrop-filter: blur(2px);">
-                    <h1 class="text-center fw-bold display-5">Webshop</h1>
-                    <h2 class="text-center fs-4 text-secondary fw-light">Ontdek onze producten</h2>
+                    <h1 class="text-center fw-bold display-5">Toevoegingen</h1>
+                    <h2 class="text-center fs-4 text-secondary fw-light">Maak je verblijf op NoordenLicht compleet</h2>
                 </div>
 
 
@@ -62,9 +62,15 @@
 
                                     {{-- Image Section --}}
                                     <div class="tile-image-wrapper position-relative">
+                                        @if(isset($product->image))
                                         <img src="{{ asset('/files/products/images/'.$product->image) }}"
                                              class="w-100 h-100 object-fit-cover tile-img"
                                              alt="{{ $product->name }}">
+                                        @else
+                                            <img src="{{ asset('/img/logo/doodles/Ree2b white.webp') }}"
+                                                 class="w-100 bg-light h-100 object-fit-cover tile-img"
+                                                 alt="{{ $product->name }}">
+                                        @endif
 
                                         {{-- Type Badge --}}
                                         <span class="tile-badge">

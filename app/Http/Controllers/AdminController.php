@@ -152,7 +152,7 @@ class AdminController extends Controller
             ->get();
 
         // C. Latest Contact
-        $latestContact = Contact::orderBy('created_at', 'desc')
+        $latestContact = Contact::orderBy('created_at', 'desc')->where('done', 0)
             ->first();
 
         return view('admin.admin', compact(
@@ -792,6 +792,12 @@ class AdminController extends Controller
             'postal_code' => 'nullable|string',
             'city' => 'nullable|string',
             'phone' => 'nullable|string',
+            'website' => 'nullable|string',
+            'praktijknaam' => 'nullable|string',
+            'activity_details' => 'nullable|string',
+            'booking_discount' => 'nullable|int',
+            'shop_discount' => 'nullable|int',
+            'notes' => 'nullable|string',
             'profile_picture' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:6000',
         ]);
 
@@ -831,6 +837,12 @@ class AdminController extends Controller
         $user->postal_code = $request->input('postal_code');
         $user->city = $request->input('city');
         $user->phone = $request->input('phone');
+        $user->website = $request->input('website');
+        $user->praktijknaam = $request->input('praktijknaam');
+        $user->notes = $request->input('notes');
+        $user->activity_details = $request->input('activity_details');
+        $user->shop_discount = $request->input('shop_discount');
+        $user->booking_discount = $request->input('booking_discount');
 
 
         // Save user and sync roles
@@ -897,17 +909,15 @@ class AdminController extends Controller
             'email' => 'string|email|max:255',
             'password' => 'string|min:8',
             'sex' => 'nullable|string',
-            'infix' => 'nullable|string',
-            'last_name' => 'nullable|string',
             'birth_date' => 'nullable|date',
             'street' => 'nullable|string',
             'postal_code' => 'nullable|string',
             'city' => 'nullable|string',
             'phone' => 'nullable|string',
             'avg' => 'nullable|bool',
-            'member_date' => 'nullable|date',
             'profile_picture' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:6000',
-            'dolfijnen_name' => 'nullable|string',
+            'website' => 'nullable|string',
+            'praktijknaam' => 'nullable|string',
         ]);
 
         if (isset($request->profile_picture)) {
@@ -925,15 +935,14 @@ class AdminController extends Controller
                 'password' => Hash::make($request->input('password')),
                 'sex' => $request->input('sex'),
                 'name' => $request->input('name'),
-                'infix' => $request->input('infix'),
-                'last_name' => $request->input('last_name'),
                 'birth_date' => $request->input('birth_date'),
                 'street' => $request->input('street'),
                 'postal_code' => $request->input('postal_code'),
                 'city' => $request->input('city'),
                 'phone' => $request->input('phone'),
-                'member_date' => $request->input('member_date'),
-                'dolfijnen_name' => $request->input('dolfijnen_name'),
+                'website' => $request->input('website'),
+                'praktijknaam' => $request->input('praktijknaam'),
+                'allow_booking' => 1,
             ]);
 
             if (isset($request->profile_picture)) {

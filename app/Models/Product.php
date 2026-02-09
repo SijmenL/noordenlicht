@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Product extends Model
 {
@@ -32,11 +33,31 @@ class Product extends Model
 
         $totalBasePrice = $basePrices->sum('amount');
 
+        // Check for User Discount (Shop Discount)
+        $user = Auth::user();
+        $userDiscountPercent = 0;
+
+        // Verify if 'Ledenkorting' is already injected to prevent double counting
+        // This handles cases where the Controller has already injected the discount for display
+        $hasInjectedDiscount = $percentageDiscounts->contains(function ($price) {
+            return $price->name === 'Ledenkorting';
+        });
+
+        if (!$hasInjectedDiscount && $user && $user->shop_discount > 0) {
+            $userDiscountPercent = $user->shop_discount;
+        }
+
         // 1. Discounts
         $discountAmount = 0;
         foreach ($percentageDiscounts as $percentage) {
             $discountAmount += $totalBasePrice * ($percentage->amount / 100);
         }
+
+        // Apply User Discount if active
+        if ($userDiscountPercent > 0) {
+            $discountAmount += $totalBasePrice * ($userDiscountPercent / 100);
+        }
+
         $discountAmount += $fixedDiscounts->sum('amount');
 
         $taxableAmount = max($totalBasePrice - $discountAmount, 0);
@@ -65,11 +86,30 @@ class Product extends Model
 
         $totalBasePrice = $basePrices->sum('amount');
 
+        // Check for User Discount (Shop Discount)
+        $user = Auth::user();
+        $userDiscountPercent = 0;
+
+        // Verify if 'Ledenkorting' is already injected to prevent double counting
+        $hasInjectedDiscount = $percentageDiscounts->contains(function ($price) {
+            return $price->name === 'Ledenkorting';
+        });
+
+        if (!$hasInjectedDiscount && $user && $user->shop_discount > 0) {
+            $userDiscountPercent = $user->shop_discount;
+        }
+
         // 1. Discounts
         $discountAmount = 0;
         foreach ($percentageDiscounts as $percentage) {
             $discountAmount += $totalBasePrice * ($percentage->amount / 100);
         }
+
+        // Apply User Discount if active
+        if ($userDiscountPercent > 0) {
+            $discountAmount += $totalBasePrice * ($userDiscountPercent / 100);
+        }
+
         $discountAmount += $fixedDiscounts->sum('amount');
 
         $taxableAmount = max($totalBasePrice - $discountAmount, 0);

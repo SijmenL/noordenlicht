@@ -65,20 +65,23 @@
                         </div>
 
                     </div>
-                        @if($booking->public == "1")
-                            <div class="p-2 bg-light rounded-2 m-1">
-                                <div class="d-flex  flex-column border-bottom py-2">
-                                    <span class="fw-bold">Openbare beschrijving:</span>
-                                    <div style="overflow-wrap: break-word; word-break: break-word;">{!! $booking->activity_description !!}</div>
-                                </div>
-                                <div class="d-flex flex-column border-bottom py-2">
-                                    <span class="fw-bold">Openbare link:</span>
-                                    <a style="overflow-wrap: break-word; word-break: break-word;" href="{{ Str::startsWith($booking->external_link, ['http://', 'https://']) ? $booking->external_link : 'https://' . $booking->external_link }}" target="_blank">
-                                        {{ $booking->external_link }}
-                                    </a>
-                                </div>
+                    @if($booking->public == "1")
+                        <div class="p-2 bg-light rounded-2 m-1">
+                            <div class="d-flex  flex-column border-bottom py-2">
+                                <span class="fw-bold">Openbare beschrijving:</span>
+                                <div
+                                    style="overflow-wrap: break-word; word-break: break-word;">{!! $booking->activity_description !!}</div>
                             </div>
-                        @endif
+                            <div class="d-flex flex-column border-bottom py-2">
+                                <span class="fw-bold">Openbare link:</span>
+                                <a style="overflow-wrap: break-word; word-break: break-word;"
+                                   href="{{ Str::startsWith($booking->external_link, ['http://', 'https://']) ? $booking->external_link : 'https://' . $booking->external_link }}"
+                                   target="_blank">
+                                    {{ $booking->external_link }}
+                                </a>
+                            </div>
+                        </div>
+                    @endif
 
                     @if($booking->order->items->count() > 1)
                         <div class="mt-3">
@@ -212,8 +215,14 @@
                         @if($booking->status == 'confirmed')
                             Bevestigd
                         @endif
+                        @if($booking->status == 'reserved')
+                            Gereserveerd
+                        @endif
                         @if($booking->status == 'completed')
                             Afgerond
+                        @endif
+                        @if($booking->status == 'lunch_later')
+                            Ruimte betaald, toevoegingen niet
                         @endif
                         @if($booking->status == 'cancelled')
                             Geannuleerd
@@ -234,8 +243,14 @@
                                 <option value="confirmed" {{ $booking->status == 'confirmed' ? 'selected' : '' }}>
                                     Bevestigd
                                 </option>
+                                <option value="reserved" {{ $booking->status == 'reserved' ? 'selected' : '' }}>
+                                    Gereserveerd
+                                </option>
                                 <option value="completed" {{ $booking->status == 'completed' ? 'selected' : '' }}>
                                     Afgerond
+                                </option>
+                                <option value="lunch_later" {{ $booking->status == 'lunch_later' ? 'selected' : '' }}>
+                                    Ruimte betaald, toevoegingen niet
                                 </option>
                                 <option value="cancelled" {{ $booking->status == 'cancelled' ? 'selected' : '' }}>
                                     Geannuleerd

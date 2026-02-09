@@ -60,6 +60,7 @@ class RegisterController extends Controller
             'phone' => 'string',
             'website' => 'string',
             'praktijknaam' => 'string',
+            'activity_details' => 'string'
         ]);
     }
 
@@ -83,6 +84,7 @@ class RegisterController extends Controller
             'phone' => $data['phone'],
             'website' => $data['website'],
             'praktijknaam' => $data['praktijknaam'],
+            'activity_details' => $data['activity_details'],
         ]);
     }
 }

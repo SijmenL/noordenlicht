@@ -41,6 +41,7 @@
                                 aria-label="Status" aria-describedby="basic-addon1" onchange="this.form.submit();">
                             <option value="all" {{ $status == 'all' || $status == '' ? 'selected' : '' }}>Alle boekingen</option>
                             <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Bevestigd</option>
+                            <option value="reserved" {{ request('status') == 'reserved' ? 'selected' : '' }}>Gereserveerd</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>In afwachting</option>
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Afgerond</option>
                             <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Geannuleerd</option>
@@ -83,7 +84,7 @@
                                 @php
                                     $statusClass = match($booking->status) {
                                         'confirmed', 'completed' => 'success',
-                                        'pending' => 'warning',
+                                        'pending', 'reserved' => 'warning',
                                         'cancelled' => 'danger',
                                         default => 'secondary'
                                     };
@@ -91,6 +92,7 @@
                                 <span class="badge bg-{{ $statusClass }}">
                                    @if($booking->status == 'pending') In afwachting @endif
                                     @if($booking->status == 'confirmed') Bevestigd @endif
+                                    @if($booking->status == 'reserved') Gereserveerd @endif
                                     @if($booking->status == 'completed') Afgerond @endif
                                     @if($booking->status == 'cancelled') Geannuleerd @endif
                                 </span>

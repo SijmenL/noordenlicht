@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="rounded-bottom-5 bg-light container-block pb-5"
-         style="position: relative; margin-top: 0 !important; z-index: 10; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
+         style="position: relative; margin-top: 0 !important; background-image: url('{{ asset('img/logo/doodles/Blad StretchA_white.webp') }}'); background-repeat: repeat; background-size: cover;">
         <div class="container">
             @if($accommodatie !== null)
                 @php
@@ -15,6 +15,7 @@
                     $percentageDiscounts = $allPrices->where('type', 4);
 
                     $totalBasePrice = $basePrices->sum('amount');
+
 
                     // 1. Discounts
                     $priceAfterDiscounts = $totalBasePrice;
@@ -45,6 +46,13 @@
                     // --- End Price Calculation ---
 
 
+                    $preDiscountVatAmount = 0;
+                    foreach ($percentageAdditions as $percentage) {
+                        $preDiscountVatAmount += $totalBasePrice * ($percentage->amount / 100);
+                    }
+                    $preDiscountPrice = $totalBasePrice + $preDiscountVatAmount;
+
+
                     $carrousel_images = [];
                     foreach($accommodatie->images as $image) {
                         $carrousel_images[] = asset('/files/accommodaties/images/'.$accommodatie->image);
@@ -66,7 +74,7 @@
 
                 <div class="d-flex flex-row-responsive gap-5">
                     <!-- Left column (carousel) -->
-                    <div class="w-100">
+                    <div class="w-100" style="max-width: 500px">
                         <div class="sticky-top" style="top: 120px;"> <!-- adjust for navbar height -->
                             <x-carousel :images="$carrousel_images"/>
                         </div>
@@ -83,14 +91,16 @@
                                 @if($hasDiscount)
                                     <span class="badge bg-success fw-bold mb-3 px-3 py-2 rounded-pill">
                                 @if($totalPercentageDiscounts > 0)
-                                                {{ $totalPercentageDiscounts }}%
-                                            @endif
+                                            {{ $totalPercentageDiscounts }}%
+                                        @endif
 
-                                            @if($totalPercentageDiscounts > 0 && $fixedDiscounts->sum('amount') > 0) én @endif
+                                        @if($totalPercentageDiscounts > 0 && $fixedDiscounts->sum('amount') > 0)
+                                            én
+                                        @endif
 
-                                            @if($fixedDiscounts->sum('amount') > 0)
-                                                -€{{ $fixedDiscounts->sum('amount') }}
-                                            @endif
+                                        @if($fixedDiscounts->sum('amount') > 0)
+                                            -€{{ $fixedDiscounts->sum('amount') }}
+                                        @endif
                                 korting!
                             </span>
                                 @endif
@@ -99,7 +109,7 @@
                                     @if($hasDiscount)
                                         <p class="text-muted mb-0"
                                            style="text-decoration: line-through; opacity: 0.7; font-size: 1.1rem;">
-                                            Normale prijs: &#8364;{{ number_format($totalBasePrice, 2, ',', '.') }}
+                                            Normale prijs: &#8364;{{ number_format($preDiscountPrice, 2, ',', '.') }}
                                         </p>
                                     @endif
 
@@ -151,7 +161,8 @@
                                             <a href="{{ route('accommodatie.book', $accommodatie->id) }}"
                                                class="btn btn-primary btn-lg rounded-pill shadow">Nu Boeken</a>
                                         @else
-                                            <div class="alert alert-info">Je boekingsaanvraag is nog niet geaccepteerd. We komen
+                                            <div class="alert alert-info">Je boekingsaanvraag is nog niet geaccepteerd.
+                                                We komen
                                                 zo snel mogelijk bij je terug.
                                             </div>
                                             <button disabled
@@ -160,7 +171,8 @@
                                             </button>
                                         @endif
                                     @endguest
-                                    <a href="{{ route('home.rules') }}" class="btn btn-outline-primary rounded-pill">Bekijk Huisregels</a>
+                                    <a href="{{ route('home.rules') }}" class="btn btn-outline-primary rounded-pill">Bekijk
+                                        Huisregels</a>
                                 </div>
                             </div>
                         </div>
@@ -180,11 +192,14 @@
                             <h2 class="fw-bold mb-4 text-center text-primary">Voorzieningen</h2>
                             <div class="d-flex flex-wrap justify-content-center gap-2 mb-2">
                                 @foreach($accommodatie->icons as $icon)
-                                    <div class="d-flex align-items-center bg-light border border-white rounded-pill px-3 py-2 shadow-sm" title="{{ $icon->text }}">
+                                    <div
+                                        class="d-flex align-items-center bg-light border border-white rounded-pill px-3 py-2 shadow-sm"
+                                        title="{{ $icon->text }}">
                                         <div class="icon-pill-svg me-2" style="height: 22px; width: 22px;">
                                             {!! file_get_contents(public_path('files/accommodaties/icons/'.$icon->icon)) !!}
                                         </div>
-                                        <span class="small fw-semibold text-muted" style="font-size: 0.85rem;">{{ $icon->text }}</span>
+                                        <span class="small fw-semibold text-muted"
+                                              style="font-size: 0.85rem;">{{ $icon->text }}</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -196,10 +211,25 @@
                                     object-fit: contain;
                                     fill: #5a7123;
                                 }
-                                .text-primary { color: #5a7123 !important; }
-                                .btn-primary { background-color: #5a7123; border-color: #5a7123; }
-                                .btn-outline-primary { color: #5a7123; border-color: #5a7123; }
-                                .btn-outline-primary:hover { background-color: #5a7123; border-color: #5a7123; }
+
+                                .text-primary {
+                                    color: #5a7123 !important;
+                                }
+
+                                .btn-primary {
+                                    background-color: #5a7123;
+                                    border-color: #5a7123;
+                                }
+
+                                .btn-outline-primary {
+                                    color: #5a7123;
+                                    border-color: #5a7123;
+                                }
+
+                                .btn-outline-primary:hover {
+                                    background-color: #5a7123;
+                                    border-color: #5a7123;
+                                }
                             </style>
                         </div>
                     </div>

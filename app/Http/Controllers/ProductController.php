@@ -58,6 +58,24 @@ class ProductController extends Controller
             return redirect()->route('shop')->with('error', 'Dit product bestaat niet.');
         }
 
+        // --- INJECT VIRTUAL PRICE FOR DISPLAY ---
+        // This ensures the discount is rendered in the view as if it were a standard price
+        $user = Auth::user();
+        if ($user && $user->shop_discount > 0) {
+            $virtualPrice = new Price([
+                'name' => 'Ledenkorting',
+                'amount' => $user->shop_discount,
+                'type' => 4 // Percentage Discount
+            ]);
+
+            // Create a pseudo-pivot object to match expected structure ($p->price)
+            $pivot = new ProductPrice();
+            $pivot->setRelation('price', $virtualPrice);
+
+            $productDisplay->prices->push($pivot);
+        }
+        // ----------------------------------------
+
         // Logic to fetch supplements if the product is an 'Overnachting' (Type 2)
         $supplements = collect();
         if ($productDisplay->type == '2') {
@@ -75,7 +93,7 @@ class ProductController extends Controller
             $products = Product::with(['prices.price'])->whereIn('id', array_keys($cart['products']))->get();
             foreach ($products as $product) {
                 $qty = $cart['products'][$product->id];
-                $price = $product->calculated_price;
+                $price = $product->calculated_price; // Note: Cart calculations usually handled in OrderController::checkout/getCartTotals
                 $total += $price * $qty;
 
                 $items->push((object)[

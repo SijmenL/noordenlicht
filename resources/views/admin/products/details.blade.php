@@ -79,7 +79,7 @@ $preDiscountVatAmount = 0;
             @endphp
             <div class="d-flex flex-row-responsive justify-content-center align-items-start gap-5">
                 {{-- Carousel Section --}}
-                <div class="w-100" style="max-width: 600px;">
+                <div class="w-100" style="max-width: 400px;">
                     @if(count($carrousel_images) > 0)
                         <x-carousel :images="$carrousel_images"/>
                     @else

@@ -196,10 +196,21 @@
                                     </span>
                         @enderror
                     </div>
+                    <div>
+                        <label for="activity_details" class="col-md-4 col-form-label ">Wat wil je gaan organiseren? <span
+                                class="required-form">*</span></label>
+                        <textarea id="activity_details"
+                                  class="form-control @error('activity_details') is-invalid @enderror" name="activity_details">{{ old('activity_details') }}</textarea>
+                        @error('activity_details')
+                        <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                        @enderror
+                    </div>
                 </div>
 
                 @if ($errors->any())
-                    <div class="alert alert-danger rounded-4 shadow-sm p-4">
+                    <div class="alert mt-3 alert-danger rounded-4 shadow-sm p-4">
                         <h4 class="h5 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Er is iets misgegaan...</h4>
                         <ul class="mb-0 ps-3">
                             @foreach ($errors->all() as $error)

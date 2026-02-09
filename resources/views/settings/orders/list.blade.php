@@ -68,7 +68,7 @@
                         // Determine status color/logic
                         $statusColor = match($order->status) {
                             'completed', 'shipped' => 'success',
-                            'paid' => 'info',
+                            'paid', 'lunch_later' => 'info',
                             'open', 'pending' => 'warning',
                             'cancelled', 'failed', 'expired' => 'danger',
                             default => 'secondary'
@@ -81,6 +81,7 @@
                             'paid' => 'Betaald',
                             'shipped' => 'Verzonden',
                             'completed' => 'Afgerond',
+                            'lunch_later' => 'Ruimte betaald, toevoegingen niet',
                             'cancelled' => 'Geannuleerd',
                             'failed' => 'Misgegaan',
                             'expired' => 'Verlopen',

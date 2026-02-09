@@ -164,10 +164,10 @@
                     </h2>
                     @php
                         $statusClass = match($order->status) {
-                            'completed', 'shipped' => 'success',
-                            'paid' => 'info',
+                            'completed', 'shipped', 'reservation' => 'success',
+                            'paid', 'lunch_later' => 'info',
                             'open', 'pending' => 'dark',
-                            'canceled', 'failed', 'expired' => 'danger',
+                            'cancelled', 'failed', 'expired' => 'danger',
                             default => 'secondary'
                         };
                     @endphp
@@ -177,9 +177,11 @@
                         @if($order->status == 'paid') Betaald @endif
                         @if($order->status == 'shipped') Verzonden @endif
                         @if($order->status == 'completed') Afgerond @endif
-                        @if($order->status == 'canceled') Geannuleerd @endif
+                        @if($order->status == 'lunch_later') Ruimte betaald, toevoegingen niet @endif
+                        @if($order->status == 'cancelled') Geannuleerd @endif
                         @if($order->status == 'failed') Misgegaan @endif
                         @if($order->status == 'expired') Verlopen @endif
+                        @if($order->status == 'reservation') Admin accommodatie reservering @endif
                                 </span>
                 </div>
                 <div class="w-100">
@@ -198,6 +200,7 @@
                                 <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}>Verzonden
                                 </option>
                                 <option value="completed" {{ $order->status == 'completed' ? 'selected' : '' }}>Afgerond
+                                </option> <option value="lunch_later" {{ $order->status == 'lunch_later' ? 'selected' : '' }}>Ruimte betaald, toevoegingen niet
                                 </option>
                                 <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>
                                     Geannuleerd

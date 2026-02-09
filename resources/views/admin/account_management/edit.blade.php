@@ -63,6 +63,63 @@
                                 @enderror</th>
                         </tr>
                         <tr>
+                            <th><label for="praktijknaam" class="col-md-4 col-form-label ">Praktijknaam</label></th>
+                            <th><input id="praktijknaam" value="{{ $account->parktijknaam }}" type="text" class="form-control @error('praktijknaam') is-invalid @enderror" name="praktijknaam"  autocomplete="praktijknaam">
+                                @error('praktijknaam')
+                                <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror</th>
+                        </tr>
+                        <tr>
+                            <th><label for="website" class="col-md-4 col-form-label ">Website</label></th>
+                            <th><input id="website" value="{{ $account->website }}" type="url" class="form-control @error('website') is-invalid @enderror" name="website"  autocomplete="website">
+                                @error('website')
+                                <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror</th>
+                        </tr>
+                        <tr>
+                            <th><label for="activity_details" class="col-md-4 col-form-label ">Wat deze gebruiker wilt organiseren</label></th>
+                            <th><textarea id="activity_details" class="form-control @error('activity_details') is-invalid @enderror" name="activity_details"  autocomplete="activity_details">{{$user->activity_details}}</textarea>
+                                @error('activity_details')
+                                <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror</th>
+                        </tr>
+                        <tr>
+                            <th><label for="shop_discount" class="col-md-4 col-form-label ">Webshopkorting (tickets & extra's)</label></th>
+                            <th>
+                                <div class="input-group mb-3">
+                                    <input id="shop_discount" value="{{ $account->shop_discount }}" type="number" min="0" max="100" class="form-control @error('shop_discount') is-invalid @enderror" name="shop_discount"  autocomplete="shop_discount">
+
+                                    <span class="input-group-text" id="basic-addon2">%</span>
+                                </div>
+                                @error('shop_discount')
+                                <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror</th>
+                        </tr>
+
+                        <tr>
+                            <th><label for="booking_discount" class="col-md-4 col-form-label ">Boekingskorting</label></th>
+                            <th>
+                                <div class="input-group mb-3">
+                                    <input id="booking_discount" value="{{ $account->booking_discount }}" type="number" min="0" max="100" class="form-control @error('booking_discount') is-invalid @enderror" name="booking_discount"  autocomplete="booking_discount">
+
+                                    <span class="input-group-text" id="basic-addon2">%</span>
+                                </div>
+                                @error('booking_discount')
+                                <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror</th>
+                        </tr>
+
+                        <tr>
                             <th><label for="profile_picture" class="col-md-4 col-form-label ">Profielfoto</label></th>
                             <th>
                                 @if($account->profile_picture)
@@ -165,7 +222,16 @@
                                     </span>
                                 @enderror</th>
                         </tr>
+                        <tr>
+                            <th><label for="notes" class="col-md-4 col-form-label ">Opmerkingen</label></th>
+                            <th><textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="4" >{{ $account->notes }}</textarea>
 
+                                @error('notes')
+                                <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror</th>
+                        </tr>
                         <tr>
                             <th>Aangepast op</th>
                             <th>{{ \Carbon\Carbon::parse($account->updated_at)->format('d-m-Y H:i:s') }}</th>

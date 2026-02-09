@@ -52,6 +52,24 @@
                             @enderror</th>
                     </tr>
                     <tr>
+                        <th><label for="praktijknaam" class="col-md-4 col-form-label ">Praktijknaam</label></th>
+                        <th><input id="praktijknaam" value="{{ old('praktijknaam') }}" type="text" class="form-control @error('praktijknaam') is-invalid @enderror" name="praktijknaam"  autocomplete="praktijknaam">
+                            @error('praktijknaam')
+                            <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                            @enderror</th>
+                    </tr>
+                    <tr>
+                        <th><label for="website" class="col-md-4 col-form-label ">Website</label></th>
+                        <th><input id="website" value="{{ old('website') }}" type="url" class="form-control @error('website') is-invalid @enderror" name="website"  autocomplete="website">
+                            @error('website')
+                            <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                            @enderror</th>
+                    </tr>
+                    <tr>
                         <th><label for="password" class="col-md-4 col-form-label ">Wachtwoord</label></th>
                         <th><input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password">
                             @error('password')
@@ -145,6 +163,16 @@
                         <th><label for="phone" class="col-md-4 col-form-label ">Telefoonnummer</label></th>
                         <th><input id="phone" value="{{ old('phone') }}" type="text" class="form-control @error('phone') is-invalid @enderror" name="phone" >
                             @error('phone')
+                            <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                            @enderror</th>
+                    </tr>
+                    <tr>
+                        <th><label for="comment" class="col-md-4 col-form-label ">Opmerkingen</label></th>
+                        <th><textarea class="form-control @error('comment') is-invalid @enderror" id="comment" name="comment" rows="4" ></textarea>
+
+                            @error('comment')
                             <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>

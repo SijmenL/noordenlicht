@@ -31,7 +31,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 1rem;
-            background: var(--bs-primary, #212529);
+            background: var(--bs-primary);
             color: white;
             position: fixed;
             top: 0;
@@ -240,7 +240,12 @@
                                         'notificationsCount' => User::where('allow_booking', false)->count(),
                                     ],
                                     [
-                                        'name' => 'Beheer accomodaties',
+                                        'name' => 'Handmatige Reservatie',
+                                        'uri' => '/dashboard/reserveren',
+                                        'fontSize' => '14px',
+                                    ],
+                                    [
+                                        'name' => 'Beheer accommodaties',
                                         'uri' => '/dashboard/accommodaties',
                                         'fontSize' => '14px',
                                     ],

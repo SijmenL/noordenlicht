@@ -174,7 +174,7 @@
             <div class="value">{{ $ticket->order->first_name }} {{ $ticket->order->last_name }}</div>
 
             <div class="label">Locatie</div>
-            <div class="value">{{ $ticket->activity->location ?? 'NoordenLicht, Tramstraat 45a, 7848 BL Schoonoord' }}</div>
+            <div class="value">{{ $ticket->activity->location ?? 'NoordenLicht, Tramstraat 54a, 7848 BL Schoonoord' }}</div>
         </div>
 
         <!-- Column 2: Order Info -->

@@ -183,6 +183,16 @@
                                     </span>
                         @enderror
                     </div>
+                    <div>
+                        <label for="activity_details" class="col-md-4 col-form-label ">Wat wil je organiseren?</label>
+                        <textarea id="activity_details"
+                                  class="form-control @error('activity_details') is-invalid @enderror" name="activity_details">{{ old('activity_details', $user->activity_details) }}</textarea>
+                        @error('activity_details')
+                        <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                        @enderror
+                    </div>
                 </div>
 
                 @if ($errors->any())
